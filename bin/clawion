@@ -1,0 +1,57 @@
+#!/usr/bin/env node
+
+const { spawn } = require("node:child_process");
+const path = require("node:path");
+
+const workspace = require("../lib/workspace");
+
+function printHelp() {
+  process.stdout.write(`clawion — Mission Control\n\n`);
+  process.stdout.write(`Usage:\n`);
+  process.stdout.write(`  clawion where              Show ~/.clawion/missions\n`);
+  process.stdout.write(`  clawion init               Initialize ~/.clawion/missions (index + template)\n`);
+  process.stdout.write(`  clawion ui                 Start Next.js dev server (same as pnpm dev)\n`);
+  process.stdout.write(`  clawion hello              Print hello\n`);
+}
+
+async function main() {
+  const cmd = process.argv[2] || "help";
+
+  if (cmd === "help" || cmd === "-h" || cmd === "--help") {
+    printHelp();
+    return;
+  }
+
+  if (cmd === "where") {
+    process.stdout.write(`${workspace.getMissionsDir()}\n`);
+    return;
+  }
+
+  if (cmd === "init") {
+    const { missionsDir } = workspace.initWorkspace();
+    process.stdout.write(`ok: ${missionsDir}\n`);
+    return;
+  }
+
+  if (cmd === "hello") {
+    process.stdout.write("hello from clawion\n");
+    return;
+  }
+
+  if (cmd === "ui") {
+    // Run Next dev server from the project root.
+    const root = path.resolve(__dirname, "..");
+    const child = spawn("pnpm", ["dev"], { cwd: root, stdio: "inherit" });
+    child.on("exit", (code) => process.exit(code ?? 0));
+    return;
+  }
+
+  process.stderr.write(`Unknown command: ${cmd}\n\n`);
+  printHelp();
+  process.exit(2);
+}
+
+main().catch((err) => {
+  process.stderr.write(`${err?.stack || err}\n`);
+  process.exit(1);
+});
