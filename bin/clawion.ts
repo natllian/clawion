@@ -2,8 +2,10 @@
 import { spawn } from "node:child_process";
 import { Command } from "commander";
 import { ensureWorkspace } from "../src/core/workspace/init";
+import { resolveMissionPath } from "../src/core/workspace/mission";
 import { resolveMissionsDir } from "../src/core/workspace/paths";
 import { assertManager } from "../src/core/workspace/permissions";
+import { addWorker } from "../src/core/workspace/workers";
 
 type CliContext = {
 	missionsDir: string;
@@ -130,6 +132,51 @@ task.action(() => {
 });
 
 const worker = program.command("worker").description("Worker management");
+
+worker
+	.command("add")
+	.description("Register a worker for a mission")
+	.requiredOption("--mission <id>", "Mission ID")
+	.requiredOption("--id <workerId>", "Worker ID")
+	.requiredOption("--name <displayName>", "Display name")
+	.requiredOption("--system-role <role>", "System role (manager|worker)")
+	.option("--role-description <text>", "Role description for the worker")
+	.option("--status <status>", "Status (active|paused)", "active")
+	.action(async (options) => {
+		const missionPath = await resolveMissionPath(
+			context.missionsDir,
+			options.mission,
+		);
+
+		const systemRole = options.systemRole as "manager" | "worker";
+		if (systemRole !== "manager" && systemRole !== "worker") {
+			console.error("system-role must be manager or worker.");
+			process.exitCode = 1;
+			return;
+		}
+
+		const status = options.status as "active" | "paused";
+		if (status !== "active" && status !== "paused") {
+			console.error("status must be active or paused.");
+			process.exitCode = 1;
+			return;
+		}
+
+		try {
+			await addWorker(missionPath, {
+				id: options.id,
+				displayName: options.name,
+				roleDescription: options.roleDescription,
+				systemRole,
+				status,
+			});
+			console.log(`Worker registered: ${options.id}`);
+		} catch (error) {
+			console.error(error instanceof Error ? error.message : String(error));
+			process.exitCode = 1;
+		}
+	});
+
 worker.action(() => {
 	worker.help();
 });

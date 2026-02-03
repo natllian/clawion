@@ -91,7 +91,7 @@ describe("schemas", () => {
 		expect(result.success).toBe(true);
 	});
 
-	it("rejects workers file without a manager", () => {
+	it("accepts workers file without a manager", () => {
 		const result = workersSchema.safeParse({
 			schemaVersion: 1,
 			workers: [
@@ -104,7 +104,15 @@ describe("schemas", () => {
 				},
 			],
 		});
-		expect(result.success).toBe(false);
+		expect(result.success).toBe(true);
+	});
+
+	it("accepts empty workers file", () => {
+		const result = workersSchema.safeParse({
+			schemaVersion: 1,
+			workers: [],
+		});
+		expect(result.success).toBe(true);
 	});
 
 	it("requires mentions to be a string", () => {

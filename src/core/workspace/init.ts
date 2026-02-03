@@ -41,16 +41,7 @@ function defaultTasksTemplate() {
 function defaultWorkersTemplate() {
 	return {
 		schemaVersion: 1,
-		workers: [
-			{
-				id: "manager",
-				displayName: "Manager",
-				roleDescription:
-					"Coordinates tasks, assignments, and final acceptance.",
-				systemRole: "manager",
-				status: "active",
-			},
-		],
+		workers: [],
 	};
 }
 
