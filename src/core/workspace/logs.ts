@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 import { readJson, writeJsonAtomic } from "../fs/json";
+import { pathExists } from "../fs/util";
 import { logEventSchema, logSchema } from "../schemas";
 import { resolveMissionPath } from "./mission";
 
@@ -65,4 +66,21 @@ export async function addLogEvent(input: LogInput) {
 
 	await writeJsonAtomic(log.path, nextLog);
 	return event.id;
+}
+
+export async function getLog(
+	missionsDir: string,
+	missionId: string,
+	workerId: string,
+) {
+	const missionPath = await resolveMissionPath(missionsDir, missionId);
+	const logPath = join(missionPath, "logs", `${workerId}.json`);
+	if (!(await pathExists(logPath))) {
+		return logSchema.parse({
+			schemaVersion: 1,
+			workerId,
+			events: [],
+		});
+	}
+	return readJson(logPath, logSchema);
 }

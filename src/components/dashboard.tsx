@@ -2,17 +2,14 @@
 
 import {
 	Activity,
-	ArrowDownRight,
-	ArrowUpRight,
-	Radar,
+	AlertTriangle,
+	FileText,
+	MessagesSquare,
 	Sparkles,
 } from "lucide-react";
 import * as React from "react";
-
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -22,7 +19,6 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -30,121 +26,352 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type {
+	LogFile,
+	Mission,
+	MissionIndexItem,
+	TasksFile,
+	ThreadFile,
+	WorkersFile,
+} from "@/core/schemas";
 import { cn } from "@/lib/utils";
 
-type SummaryItem = {
-	label: string;
-	value: string;
-	delta: string;
-	trend: "up" | "down" | "flat";
-	note: string;
-};
-
-type SignalItem = {
-	id: string;
-	name: string;
-	owner: string;
-	score: number;
-	change: string;
-	status: "watch" | "stabilizing" | "cooling";
-};
-
-type ActivityItem = {
-	id: string;
-	title: string;
-	tag: string;
-	actor: string;
-	time: string;
-};
-
-type AgentItem = {
-	id: string;
-	name: string;
-	role: string;
-	focus: string;
-	status: "online" | "idle";
-};
-
-type OverviewData = {
+type MissionsResponse = {
+	missionsDir: string;
 	updatedAt: string;
-	summary: SummaryItem[];
-	signals: SignalItem[];
-	activity: ActivityItem[];
-	agents: AgentItem[];
+	missions: MissionIndexItem[];
 };
 
-const statusTone: Record<SignalItem["status"], string> = {
-	watch: "bg-primary/15 text-primary border border-primary/30",
-	stabilizing:
-		"bg-chart-2/15 text-foreground border border-chart-2/40 dark:text-chart-2",
-	cooling: "bg-muted text-muted-foreground border border-border/60",
+type MissionResponse = {
+	mission: Mission;
+	roadmap: string;
 };
 
-const statusCopy: Record<SignalItem["status"], string> = {
-	watch: "Watch",
-	stabilizing: "Stabilizing",
-	cooling: "Cooling",
+type WorkingResponse = {
+	workerId: string;
+	content: string;
 };
 
-const summarySkeletons = ["summary-a", "summary-b", "summary-c", "summary-d"];
-const agentSkeletons = ["agent-a", "agent-b", "agent-c"];
-const signalSkeletons = ["signal-a", "signal-b", "signal-c"];
-const activitySkeletons = ["activity-a", "activity-b", "activity-c"];
+const missionStatusTone: Record<Mission["status"], string> = {
+	active: "border-primary/50 text-primary",
+	paused: "border-amber-400/50 text-amber-600 dark:text-amber-300",
+	archived: "border-border/60 text-muted-foreground",
+	completed: "border-emerald-400/40 text-emerald-600 dark:text-emerald-300",
+};
+
+const logLevelTone: Record<"info" | "warn" | "error", string> = {
+	info: "border-border/70 text-muted-foreground",
+	warn: "border-amber-400/50 text-amber-600 dark:text-amber-300",
+	error: "border-destructive/50 text-destructive",
+};
+
+const missionSkeletons = ["mission-a", "mission-b", "mission-c"];
+const taskSkeletons = ["task-a", "task-b", "task-c", "task-d"];
+const workerSkeletons = ["worker-a", "worker-b", "worker-c"];
+const threadSkeletons = ["thread-a", "thread-b", "thread-c"];
+const logSkeletons = ["log-a", "log-b", "log-c", "log-d"];
+
+function isAbortError(error: unknown) {
+	return error instanceof DOMException && error.name === "AbortError";
+}
+
+function formatDate(value?: string) {
+	if (!value) {
+		return "—";
+	}
+
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) {
+		return value;
+	}
+
+	return new Intl.DateTimeFormat("en-US", {
+		dateStyle: "medium",
+		timeStyle: "short",
+	}).format(date);
+}
 
 export function Dashboard() {
-	const [data, setData] = React.useState<OverviewData | null>(null);
+	const [missionsDir, setMissionsDir] = React.useState<string | null>(null);
+	const [missions, setMissions] = React.useState<MissionIndexItem[]>([]);
+	const [activeMissionId, setActiveMissionId] = React.useState<string | null>(
+		null,
+	);
+	const [mission, setMission] = React.useState<Mission | null>(null);
+	const [roadmap, setRoadmap] = React.useState<string>("");
+	const [tasks, setTasks] = React.useState<TasksFile | null>(null);
+	const [workers, setWorkers] = React.useState<WorkersFile | null>(null);
+	const [activeTaskId, setActiveTaskId] = React.useState<string | null>(null);
+	const [activeWorkerId, setActiveWorkerId] = React.useState<string | null>(
+		null,
+	);
+	const [thread, setThread] = React.useState<ThreadFile | null>(null);
+	const [working, setWorking] = React.useState<string>("");
+	const [log, setLog] = React.useState<LogFile | null>(null);
 	const [error, setError] = React.useState<string | null>(null);
+	const [loadingMissions, setLoadingMissions] = React.useState(true);
+	const [loadingMission, setLoadingMission] = React.useState(false);
+	const [loadingThread, setLoadingThread] = React.useState(false);
+	const [loadingWorker, setLoadingWorker] = React.useState(false);
 
 	React.useEffect(() => {
 		const controller = new AbortController();
 
-		async function load() {
+		async function loadMissions() {
+			setLoadingMissions(true);
+			setError(null);
 			try {
-				const response = await fetch("/api/overview", {
+				const response = await fetch("/api/missions", {
 					cache: "no-store",
 					signal: controller.signal,
 				});
-
 				if (!response.ok) {
-					throw new Error("Failed to load overview data.");
+					throw new Error("Failed to load missions index.");
 				}
-
-				const payload = (await response.json()) as OverviewData;
-				setData(payload);
+				const payload = (await response.json()) as MissionsResponse;
+				setMissionsDir(payload.missionsDir);
+				setMissions(payload.missions);
+				setActiveMissionId((current) => {
+					if (current && payload.missions.some((item) => item.id === current)) {
+						return current;
+					}
+					return payload.missions[0]?.id ?? null;
+				});
 			} catch (err) {
-				if (err instanceof DOMException && err.name === "AbortError") {
+				if (isAbortError(err)) {
 					return;
 				}
-
-				setError("We could not refresh the live feed.");
+				setError("Unable to read missions index. Run clawion init first.");
+			} finally {
+				setLoadingMissions(false);
 			}
 		}
 
-		void load();
+		void loadMissions();
 
 		return () => {
 			controller.abort();
 		};
 	}, []);
 
-	const isLoading = !data && !error;
-	const summary = data?.summary ?? [];
-	const signals = data?.signals ?? [];
-	const activity = data?.activity ?? [];
-	const agents = data?.agents ?? [];
+	React.useEffect(() => {
+		if (!activeMissionId) {
+			setMission(null);
+			setRoadmap("");
+			setTasks(null);
+			setWorkers(null);
+			setActiveTaskId(null);
+			setActiveWorkerId(null);
+			return;
+		}
 
+		const controller = new AbortController();
+		setLoadingMission(true);
+		setError(null);
+
+		async function loadMission() {
+			try {
+				const [missionResponse, tasksResponse, workersResponse] =
+					await Promise.all([
+						fetch(`/api/missions/${activeMissionId}`, {
+							cache: "no-store",
+							signal: controller.signal,
+						}),
+						fetch(`/api/missions/${activeMissionId}/tasks`, {
+							cache: "no-store",
+							signal: controller.signal,
+						}),
+						fetch(`/api/missions/${activeMissionId}/workers`, {
+							cache: "no-store",
+							signal: controller.signal,
+						}),
+					]);
+
+				if (!missionResponse.ok) {
+					throw new Error("Mission not found.");
+				}
+
+				const missionPayload =
+					(await missionResponse.json()) as MissionResponse;
+				const tasksPayload = (await tasksResponse.json()) as TasksFile;
+				const workersPayload = (await workersResponse.json()) as WorkersFile;
+
+				setMission(missionPayload.mission);
+				setRoadmap(missionPayload.roadmap);
+				setTasks(tasksPayload);
+				setWorkers(workersPayload);
+
+				setActiveTaskId((current) => {
+					if (
+						current &&
+						tasksPayload.tasks.some((task) => task.id === current)
+					) {
+						return current;
+					}
+					return tasksPayload.tasks[0]?.id ?? null;
+				});
+				setActiveWorkerId((current) => {
+					if (
+						current &&
+						workersPayload.workers.some((worker) => worker.id === current)
+					) {
+						return current;
+					}
+					return workersPayload.workers[0]?.id ?? null;
+				});
+			} catch (err) {
+				if (isAbortError(err)) {
+					return;
+				}
+				setError("Unable to load mission data. Verify the workspace files.");
+			} finally {
+				setLoadingMission(false);
+			}
+		}
+
+		void loadMission();
+
+		return () => {
+			controller.abort();
+		};
+	}, [activeMissionId]);
+
+	React.useEffect(() => {
+		if (!activeMissionId || !activeTaskId) {
+			setThread(null);
+			return;
+		}
+
+		const controller = new AbortController();
+		setLoadingThread(true);
+
+		async function loadThread() {
+			try {
+				const response = await fetch(
+					`/api/missions/${activeMissionId}/threads/${activeTaskId}`,
+					{
+						cache: "no-store",
+						signal: controller.signal,
+					},
+				);
+				if (!response.ok) {
+					throw new Error("Thread not found.");
+				}
+				const payload = (await response.json()) as ThreadFile;
+				setThread(payload);
+			} catch (err) {
+				if (isAbortError(err)) {
+					return;
+				}
+				setThread(null);
+			} finally {
+				setLoadingThread(false);
+			}
+		}
+
+		void loadThread();
+
+		return () => {
+			controller.abort();
+		};
+	}, [activeMissionId, activeTaskId]);
+
+	React.useEffect(() => {
+		if (!activeMissionId || !activeWorkerId) {
+			setWorking("");
+			setLog(null);
+			return;
+		}
+
+		const controller = new AbortController();
+		setLoadingWorker(true);
+
+		async function loadWorker() {
+			try {
+				const [workingResponse, logResponse] = await Promise.all([
+					fetch(`/api/missions/${activeMissionId}/working/${activeWorkerId}`, {
+						cache: "no-store",
+						signal: controller.signal,
+					}),
+					fetch(`/api/missions/${activeMissionId}/logs/${activeWorkerId}`, {
+						cache: "no-store",
+						signal: controller.signal,
+					}),
+				]);
+				const workingPayload =
+					(await workingResponse.json()) as WorkingResponse;
+				const logPayload = (await logResponse.json()) as LogFile;
+				setWorking(workingPayload.content);
+				setLog(logPayload);
+			} catch (err) {
+				if (isAbortError(err)) {
+					return;
+				}
+				setWorking("");
+				setLog(null);
+			} finally {
+				setLoadingWorker(false);
+			}
+		}
+
+		void loadWorker();
+
+		return () => {
+			controller.abort();
+		};
+	}, [activeMissionId, activeWorkerId]);
+
+	const tasksColumns = tasks?.columns
+		? [...tasks.columns].sort((a, b) => a.order - b.order)
+		: [];
+
+	const tasksByColumn = React.useMemo(() => {
+		const map = new Map<string, TasksFile["tasks"]>();
+		if (!tasks) {
+			return map;
+		}
+		for (const column of tasks.columns) {
+			map.set(column.id, []);
+		}
+		for (const task of tasks.tasks) {
+			const list = map.get(task.columnId) ?? [];
+			list.push(task);
+			map.set(task.columnId, list);
+		}
+		return map;
+	}, [tasks]);
+
+	const completion = React.useMemo(() => {
+		if (!tasks || tasks.tasks.length === 0) {
+			return 0;
+		}
+
+		const doneColumn =
+			tasks.columns.find((column) => column.id.toLowerCase() === "done") ??
+			tasks.columns.find((column) =>
+				column.name.toLowerCase().includes("done"),
+			) ??
+			tasks.columns[tasks.columns.length - 1];
+
+		const doneCount = tasks.tasks.filter(
+			(task) => task.columnId === doneColumn?.id,
+		).length;
+		return Math.round((doneCount / tasks.tasks.length) * 100);
+	}, [tasks]);
+
+	const activeTask = tasks?.tasks.find((task) => task.id === activeTaskId);
 	return (
 		<div className="relative min-h-screen overflow-hidden">
 			<div className="pointer-events-none absolute inset-0">
 				<div className="aurora absolute inset-0 opacity-90" />
-				<div className="magic-grid absolute inset-0 opacity-60" />
+				<div className="magic-grid absolute inset-0 opacity-70" />
 				<div className="magic-noise absolute inset-0" />
 				<div className="absolute -left-24 top-24 h-72 w-72 rounded-full bg-chart-4/40 blur-[120px] animate-float" />
 				<div className="absolute right-[-15%] top-[-10%] h-96 w-96 rounded-full bg-chart-2/40 blur-[140px] animate-orbit" />
 				<div className="absolute bottom-[-20%] right-[20%] h-80 w-80 rounded-full bg-chart-1/40 blur-[140px] animate-float" />
 			</div>
 
-			<div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-10 px-6 py-10 lg:py-16">
+			<div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-8 px-6 py-10 lg:py-16">
 				<header className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
 					<div className="flex flex-col gap-4 sm:flex-row sm:items-center">
 						<div className="flex items-center gap-4">
@@ -156,376 +383,507 @@ export function Dashboard() {
 									Clawion
 								</p>
 								<h1 className="font-display text-3xl text-foreground">
-									Signal Observatory
+									Mission Control
 								</h1>
 							</div>
 						</div>
-						<Badge
-							variant="secondary"
-							className="w-fit rounded-full bg-secondary/70 px-3 py-1 text-[0.65rem] uppercase tracking-[0.35em]"
-						>
+						<Badge className="w-fit rounded-full bg-secondary/70 px-3 py-1 text-[0.65rem] uppercase tracking-[0.35em]">
 							Read-only
 						</Badge>
 					</div>
 					<div className="flex flex-wrap items-center gap-3">
-						<Button size="sm" variant="secondary" className="rounded-full">
-							Request Access
-						</Button>
-						<Button size="sm" variant="outline" className="rounded-full">
-							Export Snapshot
-						</Button>
+						<div className="rounded-full border border-border/60 bg-card/70 px-4 py-2 text-xs text-muted-foreground shadow-sm backdrop-blur">
+							Workspace: <span className="font-mono">{missionsDir ?? "—"}</span>
+						</div>
 						<ThemeToggle />
 					</div>
 				</header>
 
-				<section className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
+				{error ? (
+					<Card className="glass-panel border-destructive/40 bg-destructive/10">
+						<CardContent className="flex items-center gap-3 py-6 text-sm text-destructive">
+							<AlertTriangle className="h-4 w-4" />
+							{error}
+						</CardContent>
+					</Card>
+				) : null}
+
+				<section className="grid gap-6 lg:grid-cols-[0.55fr_1.45fr]">
 					<Card className="glass-panel border-border/60 bg-card/80 backdrop-blur">
-						<CardHeader className="gap-4">
-							<div className="flex flex-wrap items-start justify-between gap-4">
+						<CardHeader>
+							<CardTitle className="font-display text-xl">Missions</CardTitle>
+							<CardDescription>
+								Index from <span className="font-mono">index.json</span>
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="flex flex-col gap-3">
+							{loadingMissions ? (
+								missionSkeletons.map((key) => (
+									<div
+										key={key}
+										className="rounded-xl border border-border/60 bg-background/70 p-4"
+									>
+										<Skeleton className="h-4 w-32" />
+										<Skeleton className="mt-3 h-3 w-40" />
+									</div>
+								))
+							) : missions.length === 0 ? (
+								<div className="rounded-xl border border-border/60 bg-background/70 p-4 text-sm text-muted-foreground">
+									No missions yet. Run{" "}
+									<span className="font-mono">clawion init</span> and create
+									one.
+								</div>
+							) : (
+								missions.map((item) => {
+									const isActive = item.id === activeMissionId;
+									return (
+										<button
+											key={item.id}
+											onClick={() => setActiveMissionId(item.id)}
+											type="button"
+											className={cn(
+												"w-full rounded-xl border border-border/60 bg-background/70 p-4 text-left transition",
+												isActive &&
+													"border-primary/60 bg-primary/10 shadow-[0_0_0_1px_rgba(0,0,0,0.03)]",
+											)}
+										>
+											<div className="flex items-start justify-between gap-3">
+												<div>
+													<p className="text-sm font-medium text-foreground">
+														{item.name}
+													</p>
+													<p className="mt-1 text-xs text-muted-foreground">
+														{item.description}
+													</p>
+												</div>
+												<Badge
+													variant="outline"
+													className={cn(
+														"rounded-full text-[0.6rem] uppercase tracking-[0.25em]",
+														missionStatusTone[item.status],
+													)}
+												>
+													{item.status}
+												</Badge>
+											</div>
+											<div className="mt-3 text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
+												Updated {formatDate(item.updatedAt)}
+											</div>
+										</button>
+									);
+								})
+							)}
+						</CardContent>
+					</Card>
+
+					<Card className="glass-panel border-border/60 bg-card/80 backdrop-blur">
+						<CardHeader>
+							<CardTitle className="font-display text-2xl">
+								{mission?.name ?? "Mission Overview"}
+							</CardTitle>
+							<CardDescription>
+								{mission?.description ??
+									"Select a mission to inspect its files."}
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="grid gap-6 md:grid-cols-[1.2fr_0.8fr]">
+							<div className="space-y-4 rounded-xl border border-border/60 bg-background/70 p-4">
+								<div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-muted-foreground">
+									<FileText className="h-3.5 w-3.5" />
+									Roadmap snapshot
+								</div>
+								<div className="max-h-40 overflow-hidden text-sm text-muted-foreground whitespace-pre-wrap">
+									{loadingMission
+										? "Loading ROADMAP.md..."
+										: roadmap || "No roadmap yet."}
+								</div>
+							</div>
+							<div className="space-y-4">
+								<div className="rounded-xl border border-border/60 bg-background/70 p-4">
+									<p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+										Mission status
+									</p>
+									<p className="mt-2 text-lg font-medium">
+										{mission?.status ?? "—"}
+									</p>
+									<p className="mt-2 text-xs text-muted-foreground">
+										Created {formatDate(mission?.createdAt)}
+									</p>
+									<p className="text-xs text-muted-foreground">
+										Updated {formatDate(mission?.updatedAt)}
+									</p>
+								</div>
+								<div className="rounded-xl border border-border/60 bg-background/70 p-4">
+									<div className="flex items-center justify-between">
+										<p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+											Tasks
+										</p>
+										<span className="text-xs text-muted-foreground">
+											{tasks?.tasks.length ?? 0}
+										</span>
+									</div>
+									<Progress
+										value={completion}
+										className="mt-3 h-2 [&>[data-slot=progress-indicator]]:bg-gradient-to-r [&>[data-slot=progress-indicator]]:from-primary [&>[data-slot=progress-indicator]]:to-chart-2"
+									/>
+								</div>
+							</div>
+						</CardContent>
+						<CardFooter className="text-xs text-muted-foreground">
+							{missionsDir ? "Reading from" : "Workspace"}{" "}
+							<span className="font-mono">{missionsDir ?? "—"}</span>
+						</CardFooter>
+					</Card>
+				</section>
+
+				<section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+					<Card className="glass-panel border-border/60 bg-card/80 backdrop-blur">
+						<CardHeader>
+							<div className="flex items-center justify-between">
 								<div>
-									<CardTitle className="font-display text-2xl">
-										Live Constellation
+									<CardTitle className="font-display text-xl">
+										Tasks Board
 									</CardTitle>
 									<CardDescription>
-										Streaming telemetry from 12 synthesis clusters.
+										From <span className="font-mono">tasks.json</span>
 									</CardDescription>
 								</div>
 								<Badge
 									variant="outline"
-									className="rounded-full border-primary/40 text-primary"
+									className="rounded-full text-[0.6rem] uppercase tracking-[0.3em]"
 								>
-									Orbiting
+									{tasks?.description ?? ""}
 								</Badge>
 							</div>
-							<Tabs defaultValue="live" className="w-full">
-								<div className="flex flex-wrap items-center justify-between gap-4">
-									<TabsList variant="line" className="gap-3">
-										<TabsTrigger value="live">Live</TabsTrigger>
-										<TabsTrigger value="week">7D</TabsTrigger>
-										<TabsTrigger value="month">30D</TabsTrigger>
-									</TabsList>
-									<div className="flex items-center gap-3 text-xs text-muted-foreground">
-										<Radar className="h-4 w-4 text-primary" />
-										<span>API refresh: 15s</span>
-									</div>
-								</div>
-								<TabsContent value="live" className="mt-6">
-									<div className="grid gap-4 md:grid-cols-2">
-										{isLoading
-											? summarySkeletons.map((key) => (
-													<div
-														key={key}
-														className="rounded-xl border border-border/50 bg-background/70 p-4"
-													>
-														<Skeleton className="h-4 w-28" />
-														<Skeleton className="mt-3 h-8 w-24" />
-														<Skeleton className="mt-3 h-3 w-36" />
-													</div>
-												))
-											: summary.map((item) => (
-													<div
-														key={item.label}
-														className="rounded-xl border border-border/60 bg-background/70 p-4 shadow-sm"
-													>
-														<div className="flex items-center justify-between">
-															<p className="text-sm text-muted-foreground">
-																{item.label}
-															</p>
-															<Tooltip>
-																<TooltipTrigger asChild>
-																	<span
-																		className={cn(
-																			"inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
-																			item.trend === "down"
-																				? "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/20 dark:text-emerald-200"
-																				: "bg-primary/15 text-primary",
-																		)}
-																	>
-																		{item.trend === "down" ? (
-																			<ArrowDownRight className="h-3 w-3" />
-																		) : (
-																			<ArrowUpRight className="h-3 w-3" />
-																		)}
-																		{item.delta}
-																	</span>
-																</TooltipTrigger>
-																<TooltipContent side="bottom">
-																	{item.note}
-																</TooltipContent>
-															</Tooltip>
-														</div>
-														<p className="mt-3 font-display text-3xl">
-															{item.value}
-														</p>
-														<p className="mt-2 text-xs text-muted-foreground">
-															{item.note}
-														</p>
-													</div>
-												))}
-									</div>
-								</TabsContent>
-								<TabsContent
-									value="week"
-									className="mt-6 text-sm text-muted-foreground"
-								>
-									Historical snapshots arrive once the archive link is opened.
-								</TabsContent>
-								<TabsContent
-									value="month"
-									className="mt-6 text-sm text-muted-foreground"
-								>
-									Monthly time series will appear after the first sync window.
-								</TabsContent>
-							</Tabs>
 						</CardHeader>
+						<CardContent>
+							{loadingMission ? (
+								<div className="grid gap-3 md:grid-cols-2">
+									{taskSkeletons.map((key) => (
+										<div
+											key={key}
+											className="rounded-xl border border-border/60 bg-background/70 p-4"
+										>
+											<Skeleton className="h-4 w-32" />
+											<Skeleton className="mt-4 h-2 w-full" />
+										</div>
+									))}
+								</div>
+							) : tasksColumns.length === 0 ? (
+								<div className="rounded-xl border border-border/60 bg-background/70 p-4 text-sm text-muted-foreground">
+									No tasks yet. Create them via CLI.
+								</div>
+							) : (
+								<div className="flex gap-4 overflow-x-auto pb-2">
+									{tasksColumns.map((column) => {
+										const columnTasks = tasksByColumn.get(column.id) ?? [];
+										return (
+											<div key={column.id} className="min-w-[220px] flex-1">
+												<div className="flex items-center justify-between">
+													<p className="text-sm font-medium text-foreground">
+														{column.name}
+													</p>
+													<Badge
+														variant="outline"
+														className="rounded-full text-[0.6rem]"
+													>
+														{columnTasks.length}
+													</Badge>
+												</div>
+												<div className="mt-3 flex flex-col gap-3">
+													{columnTasks.length === 0 ? (
+														<div className="rounded-xl border border-border/60 bg-background/70 p-3 text-xs text-muted-foreground">
+															No tasks here.
+														</div>
+													) : (
+														columnTasks.map((task) => {
+															const isBlocked = task.statusNotes
+																.toLowerCase()
+																.startsWith("blocked:");
+															const isActive = task.id === activeTaskId;
+															return (
+																<button
+																	key={task.id}
+																	onClick={() => setActiveTaskId(task.id)}
+																	type="button"
+																	className={cn(
+																		"rounded-xl border border-border/60 bg-background/70 p-3 text-left transition",
+																		isActive &&
+																			"border-primary/60 bg-primary/10",
+																	)}
+																>
+																	<p className="text-sm font-medium text-foreground">
+																		{task.title}
+																	</p>
+																	<p className="mt-1 text-xs text-muted-foreground">
+																		{task.description}
+																	</p>
+																	{task.statusNotes ? (
+																		<div className="mt-3 text-xs text-muted-foreground">
+																			{task.statusNotes}
+																		</div>
+																	) : null}
+																	<div className="mt-3 flex flex-wrap items-center gap-2 text-[0.65rem] uppercase tracking-[0.25em] text-muted-foreground">
+																		<Badge
+																			variant={
+																				isBlocked ? "destructive" : "outline"
+																			}
+																			className="rounded-full"
+																		>
+																			{task.id}
+																		</Badge>
+																		{task.assigneeId ? (
+																			<span>Assigned: {task.assigneeId}</span>
+																		) : (
+																			<span>Unassigned</span>
+																		)}
+																	</div>
+																</button>
+															);
+														})
+													)}
+												</div>
+											</div>
+										);
+									})}
+								</div>
+							)}
+						</CardContent>
+						<CardFooter className="text-xs text-muted-foreground">
+							Tasks are grouped by column; status notes show blockers inline.
+						</CardFooter>
 					</Card>
 
 					<Card className="glass-panel border-border/60 bg-card/80 backdrop-blur">
 						<CardHeader>
 							<CardTitle className="font-display text-xl">
-								Autonomous Crew
+								Task Thread
 							</CardTitle>
 							<CardDescription>
-								Agents calibrated to the live grid.
+								One thread per task, mentions enforced.
 							</CardDescription>
 						</CardHeader>
 						<CardContent className="flex flex-col gap-4">
-							{isLoading
-								? agentSkeletons.map((key) => (
-										<div
-											key={key}
-											className="flex items-center justify-between gap-4"
-										>
-											<div className="flex items-center gap-3">
-												<Skeleton className="h-10 w-10 rounded-full" />
-												<div>
-													<Skeleton className="h-4 w-24" />
-													<Skeleton className="mt-2 h-3 w-28" />
-												</div>
-											</div>
-											<Skeleton className="h-4 w-16" />
-										</div>
-									))
-								: agents.map((agent) => (
-										<div
-											key={agent.id}
-											className="flex items-center justify-between gap-4 rounded-xl border border-border/60 bg-background/70 px-4 py-3"
-										>
-											<div className="flex items-center gap-3">
-												<Avatar className="h-10 w-10 border border-border/60 bg-muted/40">
-													<AvatarFallback className="bg-transparent text-sm">
-														{agent.name.slice(0, 2)}
-													</AvatarFallback>
-												</Avatar>
-												<div>
-													<p className="text-sm font-medium">{agent.name}</p>
-													<p className="text-xs text-muted-foreground">
-														{agent.role}
-													</p>
-												</div>
+							<div className="rounded-xl border border-border/60 bg-background/70 p-4">
+								<p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+									Selected task
+								</p>
+								<p className="mt-2 text-sm font-medium text-foreground">
+									{activeTask?.title ?? "None"}
+								</p>
+								<p className="mt-1 text-xs text-muted-foreground">
+									{activeTask?.description ?? "Pick a task to view its thread."}
+								</p>
+							</div>
+							{loadingThread ? (
+								threadSkeletons.map((key) => (
+									<div
+										key={key}
+										className="rounded-xl border border-border/60 bg-background/70 p-4"
+									>
+										<Skeleton className="h-4 w-40" />
+										<Skeleton className="mt-3 h-3 w-48" />
+									</div>
+								))
+							) : thread?.messages.length ? (
+								thread.messages.map((message) => (
+									<div
+										key={message.id}
+										className="rounded-xl border border-border/60 bg-background/70 p-4"
+									>
+										<div className="flex flex-wrap items-center justify-between gap-3">
+											<div className="flex items-center gap-2 text-xs text-muted-foreground">
+												<MessagesSquare className="h-3.5 w-3.5" />
+												<span>{message.authorId}</span>
+												<span className="rounded-full border border-border/60 px-2 py-0.5">
+													@{message.mentions}
+												</span>
 											</div>
 											<Badge
 												variant="outline"
 												className={cn(
-													"rounded-full px-2 text-[0.65rem] uppercase tracking-[0.22em]",
-													agent.status === "online"
-														? "border-primary/40 text-primary"
-														: "border-border/60 text-muted-foreground",
+													"rounded-full text-[0.6rem] uppercase tracking-[0.3em]",
+													message.resolved
+														? "border-emerald-400/40 text-emerald-600 dark:text-emerald-300"
+														: "border-amber-400/50 text-amber-600 dark:text-amber-300",
 												)}
 											>
-												{agent.status}
+												{message.resolved ? "Resolved" : "Open"}
 											</Badge>
 										</div>
-									))}
-						</CardContent>
-						<CardFooter className="flex items-center justify-between">
-							<p className="text-xs text-muted-foreground">
-								Focus sector: {agents[0]?.focus ?? "Synchronizing"}
-							</p>
-							<Button size="xs" variant="ghost" className="rounded-full">
-								Open roster
-							</Button>
-						</CardFooter>
-					</Card>
-				</section>
-
-				<section className="grid gap-6 lg:grid-cols-[1.35fr_0.65fr]">
-					<Card className="glass-panel border-border/60 bg-card/80 backdrop-blur">
-						<CardHeader className="flex-row items-center justify-between">
-							<div>
-								<CardTitle className="font-display text-xl">
-									Critical Signals
-								</CardTitle>
-								<CardDescription>
-									Live anomalies ranked by risk.
-								</CardDescription>
-							</div>
-							<Button size="xs" variant="secondary" className="rounded-full">
-								Filter
-							</Button>
-						</CardHeader>
-						<CardContent className="flex flex-col gap-4">
-							{isLoading
-								? signalSkeletons.map((key) => (
-										<div
-											key={key}
-											className="rounded-xl border border-border/60 bg-background/70 p-4"
-										>
-											<Skeleton className="h-4 w-40" />
-											<Skeleton className="mt-4 h-2 w-full" />
-										</div>
-									))
-								: signals.map((signal) => (
-										<div
-											key={signal.id}
-											className="rounded-xl border border-border/60 bg-background/70 p-4"
-										>
-											<div className="flex flex-wrap items-center justify-between gap-3">
-												<div>
-													<p className="text-sm font-medium">{signal.name}</p>
-													<p className="text-xs text-muted-foreground">
-														Owner: {signal.owner}
-													</p>
-												</div>
-												<div className="flex items-center gap-2">
-													<Badge
-														variant="outline"
-														className={statusTone[signal.status]}
-													>
-														{statusCopy[signal.status]}
-													</Badge>
-													<span className="text-xs text-muted-foreground">
-														{signal.change}
-													</span>
-												</div>
-											</div>
-											<div className="mt-4 flex items-center gap-3">
-												<Progress
-													value={signal.score}
-													className="h-2 [&>[data-slot=progress-indicator]]:bg-gradient-to-r [&>[data-slot=progress-indicator]]:from-primary [&>[data-slot=progress-indicator]]:via-chart-2 [&>[data-slot=progress-indicator]]:to-chart-1"
-												/>
-												<span className="text-xs font-medium">
-													{signal.score}
+										<p className="mt-3 text-sm text-foreground">
+											{message.content}
+										</p>
+										<div className="mt-3 flex flex-wrap items-center justify-between text-xs text-muted-foreground">
+											<span>{formatDate(message.createdAt)}</span>
+											{message.resolved ? (
+												<span>
+													Resolved by {message.resolvedBy ?? "—"} on{" "}
+													{formatDate(message.resolvedAt)}
 												</span>
-											</div>
+											) : (
+												<span>Awaiting response</span>
+											)}
 										</div>
-									))}
-						</CardContent>
-					</Card>
-
-					<Card className="glass-panel border-border/60 bg-card/80 backdrop-blur">
-						<CardHeader>
-							<CardTitle className="font-display text-xl">
-								Signal Activity
-							</CardTitle>
-							<CardDescription>
-								Latest actions applied to the mesh.
-							</CardDescription>
-						</CardHeader>
-						<CardContent className="flex flex-col gap-4">
-							{isLoading
-								? activitySkeletons.map((key) => (
-										<div key={key}>
-											<Skeleton className="h-4 w-full" />
-											<Skeleton className="mt-2 h-3 w-24" />
-										</div>
-									))
-								: activity.map((item, index) => (
-										<div key={item.id} className="flex flex-col gap-2">
-											<div className="flex items-center justify-between gap-3">
-												<p className="text-sm">{item.title}</p>
-												<Badge
-													variant="outline"
-													className="rounded-full text-[0.6rem] uppercase tracking-[0.3em]"
-												>
-													{item.tag}
-												</Badge>
-											</div>
-											<div className="flex items-center justify-between text-xs text-muted-foreground">
-												<span>{item.actor}</span>
-												<span>{item.time}</span>
-											</div>
-											{index < activity.length - 1 ? (
-												<Separator className="mt-2 bg-border/60" />
-											) : null}
-										</div>
-									))}
-						</CardContent>
-						<CardFooter className="flex items-center justify-between text-xs text-muted-foreground">
-							<span>Latency budget: 140ms</span>
-							<span className="flex items-center gap-2">
-								<Activity className="h-3.5 w-3.5 text-primary" />
-								{data?.updatedAt ? "Synced" : "Connecting"}
-							</span>
-						</CardFooter>
-					</Card>
-				</section>
-
-				<section className="grid gap-6 md:grid-cols-2">
-					<Card className="glass-panel border-border/60 bg-card/80 backdrop-blur">
-						<CardHeader className="flex-row items-center justify-between">
-							<div>
-								<CardTitle className="font-display text-xl">
-									Command Threads
-								</CardTitle>
-								<CardDescription>Read-only routing directives.</CardDescription>
-							</div>
-							<Button size="icon-sm" variant="ghost">
-								<Sparkles className="h-4 w-4" />
-							</Button>
-						</CardHeader>
-						<CardContent className="space-y-4 text-sm text-muted-foreground">
-							<p>
-								Your viewers are connected to the API-verified stream. This
-								panel is read-only by design, with secure write paths disabled.
-							</p>
-							<div className="rounded-xl border border-border/60 bg-background/70 p-4">
-								<p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-									Policy
-								</p>
-								<p className="mt-2 text-sm text-foreground">
-									No mutation endpoints are active in this environment.
-								</p>
-								<p className="mt-2 text-xs text-muted-foreground">
-									Escalation windows open on request only.
-								</p>
-							</div>
-						</CardContent>
-					</Card>
-
-					<Card className="glass-panel border-border/60 bg-card/80 backdrop-blur">
-						<CardHeader>
-							<CardTitle className="font-display text-xl">
-								Signal Integrity
-							</CardTitle>
-							<CardDescription>
-								Rate limiting and gating status.
-							</CardDescription>
-						</CardHeader>
-						<CardContent className="flex flex-col gap-4">
-							<div className="rounded-xl border border-border/60 bg-background/70 p-4">
-								<div className="flex items-center justify-between">
-									<p className="text-sm font-medium">Guardrail saturation</p>
-									<span className="text-xs text-muted-foreground">68%</span>
+									</div>
+								))
+							) : (
+								<div className="rounded-xl border border-border/60 bg-background/70 p-4 text-sm text-muted-foreground">
+									No messages for this task yet.
 								</div>
-								<Progress
-									value={68}
-									className="mt-3 h-2 [&>[data-slot=progress-indicator]]:bg-gradient-to-r [&>[data-slot=progress-indicator]]:from-chart-2 [&>[data-slot=progress-indicator]]:to-chart-4"
-								/>
-							</div>
-							<div className="rounded-xl border border-border/60 bg-background/70 p-4">
-								<div className="flex items-center justify-between">
-									<p className="text-sm font-medium">Inference stability</p>
-									<span className="text-xs text-muted-foreground">92%</span>
-								</div>
-								<Progress
-									value={92}
-									className="mt-3 h-2 [&>[data-slot=progress-indicator]]:bg-gradient-to-r [&>[data-slot=progress-indicator]]:from-primary [&>[data-slot=progress-indicator]]:to-chart-1"
-								/>
-							</div>
+							)}
 						</CardContent>
 						<CardFooter className="text-xs text-muted-foreground">
-							Signal shields are active and verified.
+							Mentions are stored as a single recipient id per message.
+						</CardFooter>
+					</Card>
+				</section>
+
+				<section className="grid gap-6 lg:grid-cols-[0.7fr_1.3fr]">
+					<Card className="glass-panel border-border/60 bg-card/80 backdrop-blur">
+						<CardHeader>
+							<CardTitle className="font-display text-xl">Workers</CardTitle>
+							<CardDescription>
+								From <span className="font-mono">workers.json</span>
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="flex flex-col gap-3">
+							{loadingMission ? (
+								workerSkeletons.map((key) => (
+									<div
+										key={key}
+										className="rounded-xl border border-border/60 bg-background/70 p-4"
+									>
+										<Skeleton className="h-4 w-28" />
+										<Skeleton className="mt-3 h-3 w-36" />
+									</div>
+								))
+							) : workers?.workers.length ? (
+								workers.workers.map((worker) => {
+									const isActive = worker.id === activeWorkerId;
+									return (
+										<button
+											key={worker.id}
+											onClick={() => setActiveWorkerId(worker.id)}
+											type="button"
+											className={cn(
+												"w-full rounded-xl border border-border/60 bg-background/70 p-4 text-left transition",
+												isActive && "border-primary/60 bg-primary/10",
+											)}
+										>
+											<div className="flex items-start justify-between gap-3">
+												<div>
+													<p className="text-sm font-medium text-foreground">
+														{worker.displayName}
+													</p>
+													<p className="mt-1 text-xs text-muted-foreground">
+														{worker.roleDescription}
+													</p>
+												</div>
+												<Badge
+													variant="outline"
+													className="rounded-full text-[0.6rem] uppercase tracking-[0.25em]"
+												>
+													{worker.status}
+												</Badge>
+											</div>
+											<div className="mt-3 text-[0.65rem] uppercase tracking-[0.25em] text-muted-foreground">
+												Role: {worker.systemRole}
+											</div>
+										</button>
+									);
+								})
+							) : (
+								<div className="rounded-xl border border-border/60 bg-background/70 p-4 text-sm text-muted-foreground">
+									No workers yet.
+								</div>
+							)}
+						</CardContent>
+					</Card>
+
+					<Card className="glass-panel border-border/60 bg-card/80 backdrop-blur">
+						<CardHeader>
+							<CardTitle className="font-display text-xl">
+								Worker Signals
+							</CardTitle>
+							<CardDescription>
+								Working memory and logs for the selected worker.
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<Tabs defaultValue="working" className="w-full">
+								<TabsList variant="line" className="gap-3">
+									<TabsTrigger value="working">Working</TabsTrigger>
+									<TabsTrigger value="logs">Logs</TabsTrigger>
+								</TabsList>
+								<TabsContent value="working" className="mt-4">
+									<div className="rounded-xl border border-border/60 bg-background/70 p-4 text-sm text-muted-foreground whitespace-pre-wrap">
+										{loadingWorker
+											? "Loading working memory..."
+											: working || "No working memory file yet."}
+									</div>
+								</TabsContent>
+								<TabsContent value="logs" className="mt-4">
+									<div className="flex flex-col gap-3">
+										{loadingWorker ? (
+											logSkeletons.map((key) => (
+												<div
+													key={key}
+													className="rounded-xl border border-border/60 bg-background/70 p-4"
+												>
+													<Skeleton className="h-3 w-24" />
+													<Skeleton className="mt-2 h-3 w-40" />
+												</div>
+											))
+										) : log?.events.length ? (
+											log.events.map((event) => (
+												<div
+													key={event.id}
+													className="rounded-xl border border-border/60 bg-background/70 p-4"
+												>
+													<div className="flex flex-wrap items-center justify-between gap-3">
+														<div className="flex items-center gap-2 text-xs text-muted-foreground">
+															<Activity className="h-3.5 w-3.5" />
+															<span>{event.type}</span>
+														</div>
+														<Tooltip>
+															<TooltipTrigger asChild>
+																<Badge
+																	variant="outline"
+																	className={cn(
+																		"rounded-full text-[0.6rem] uppercase tracking-[0.3em]",
+																		logLevelTone[event.level],
+																	)}
+																>
+																	{event.level}
+																</Badge>
+															</TooltipTrigger>
+															<TooltipContent side="top">
+																{formatDate(event.timestamp)}
+															</TooltipContent>
+														</Tooltip>
+													</div>
+													<p className="mt-2 text-sm text-foreground">
+														{event.message}
+													</p>
+													<div className="mt-2 text-xs text-muted-foreground">
+														{event.refs?.taskId
+															? `Task ${event.refs.taskId}`
+															: "No task reference"}
+													</div>
+												</div>
+											))
+										) : (
+											<div className="rounded-xl border border-border/60 bg-background/70 p-4 text-sm text-muted-foreground">
+												No logs for this worker yet.
+											</div>
+										)}
+									</div>
+								</TabsContent>
+							</Tabs>
+						</CardContent>
+						<CardFooter className="text-xs text-muted-foreground">
+							Logs are immutable events emitted by the CLI.
 						</CardFooter>
 					</Card>
 				</section>

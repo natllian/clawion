@@ -1,5 +1,7 @@
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { readJson, writeJsonAtomic } from "../fs/json";
+import { pathExists } from "../fs/util";
 import { workerSchema, workersSchema } from "../schemas";
 import { DEFAULT_MANAGER_ROLE_DESCRIPTION } from "./roles";
 
@@ -93,4 +95,15 @@ export function resolveWorkingPath(
 	workerId: string,
 ): string {
 	return join(missionDir, "working", `${workerId}.md`);
+}
+
+export async function readWorkingFile(
+	missionDir: string,
+	workerId: string,
+): Promise<string> {
+	const workingPath = resolveWorkingPath(missionDir, workerId);
+	if (!(await pathExists(workingPath))) {
+		return "";
+	}
+	return readFile(workingPath, "utf8");
 }

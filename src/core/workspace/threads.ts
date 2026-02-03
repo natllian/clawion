@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 import { readJson, writeJsonAtomic } from "../fs/json";
+import { pathExists } from "../fs/util";
 import { threadMessageSchema, threadSchema } from "../schemas";
 import { resolveMissionPath } from "./mission";
 
@@ -120,4 +121,21 @@ export async function unresolveThreadMessage(
 	});
 
 	await writeJsonAtomic(thread.path, nextThread);
+}
+
+export async function getThread(
+	missionsDir: string,
+	missionId: string,
+	taskId: string,
+) {
+	const missionPath = await resolveMissionPath(missionsDir, missionId);
+	const threadPath = join(missionPath, "threads", `${taskId}.json`);
+	if (!(await pathExists(threadPath))) {
+		return threadSchema.parse({
+			schemaVersion: 1,
+			taskId,
+			messages: [],
+		});
+	}
+	return readJson(threadPath, threadSchema);
 }
