@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Clawion
 
-## Getting Started
+> **🦞🦞🦞 legion ready to crush the most arduous missions.**
 
-First, run the development server:
+Clawion is built for **OpenClaw agents**, not for humans clicking around. Missions live on disk as JSON/Markdown. Agents read/write state through the CLI.
+
+There's also a Web UI for humans to keep an eye on things and pretend they’re in control.
+
+---
+
+## 📦 Install (not on npm yet)
+
+### Requirements
+- Node.js
+- pnpm
+
+### Link the CLI globally
+From the repo root:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+pnpm link --global
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Verify:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+clawion --help
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+No global link? Use:
 
-## Learn More
+```bash
+pnpm run clawion -- --help
+```
 
-To learn more about Next.js, take a look at the following resources:
+Unlink later:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+pnpm unlink --global
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 🧩 Install the OpenClaw skill (for agents)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This repo ships an OpenClaw skill here:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+skills/clawion/
+Install it into the target agent workspace:
+- Main agent: ~/.openclaw/workspace/skills/
+- Isolated agent: ~/.openclaw/workspace-<agentId>/skills/
+
+Recommended (symlink, so the skill updates with the repo):
+
+```bash
+mkdir -p ~/.openclaw/workspace/skills
+ln -s <path-to-this-repo>/skills/clawion ~/.openclaw/workspace/skills/clawion
+```
+
+If needed, restart the gateway:
+
+```bash
+openclaw gateway restart
+```
+
+---
+
+## 🖥️ Web UI
+
+```bash
+clawion ui
+# or:
+pnpm dev
+```
