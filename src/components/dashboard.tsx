@@ -1,13 +1,7 @@
 "use client";
 
-import {
-	Activity,
-	AlertTriangle,
-	ClipboardList,
-	MessagesSquare,
-	Sparkles,
-	Users,
-} from "lucide-react";
+import { AlertTriangle, ClipboardList, Sparkles, Users } from "lucide-react";
+import Link from "next/link";
 import * as React from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui/badge";
@@ -15,24 +9,17 @@ import {
 	Card,
 	CardContent,
 	CardDescription,
-	CardFooter,
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
 import type {
 	LogFile,
 	Mission,
 	MissionIndexItem,
 	TasksFile,
-	ThreadFile,
 	WorkersFile,
 } from "@/core/schemas";
 import { cn } from "@/lib/utils";
@@ -69,7 +56,6 @@ const logLevelTone: Record<"info" | "warn" | "error", string> = {
 const missionSkeletons = ["mission-a", "mission-b", "mission-c"];
 const taskSkeletons = ["task-a", "task-b", "task-c", "task-d"];
 const workerSkeletons = ["worker-a", "worker-b", "worker-c"];
-const threadSkeletons = ["thread-a", "thread-b", "thread-c"];
 const logSkeletons = ["log-a", "log-b", "log-c", "log-d"];
 
 function isAbortError(error: unknown) {
@@ -106,13 +92,11 @@ export function Dashboard() {
 	const [activeWorkerId, setActiveWorkerId] = React.useState<string | null>(
 		null,
 	);
-	const [thread, setThread] = React.useState<ThreadFile | null>(null);
 	const [working, setWorking] = React.useState<string>("");
 	const [log, setLog] = React.useState<LogFile | null>(null);
 	const [error, setError] = React.useState<string | null>(null);
 	const [loadingMissions, setLoadingMissions] = React.useState(true);
 	const [loadingMission, setLoadingMission] = React.useState(false);
-	const [loadingThread, setLoadingThread] = React.useState(false);
 	const [loadingWorker, setLoadingWorker] = React.useState(false);
 
 	React.useEffect(() => {
@@ -238,46 +222,6 @@ export function Dashboard() {
 	}, [activeMissionId]);
 
 	React.useEffect(() => {
-		if (!activeMissionId || !activeTaskId) {
-			setThread(null);
-			return;
-		}
-
-		const controller = new AbortController();
-		setLoadingThread(true);
-
-		async function loadThread() {
-			try {
-				const response = await fetch(
-					`/api/missions/${activeMissionId}/threads/${activeTaskId}`,
-					{
-						cache: "no-store",
-						signal: controller.signal,
-					},
-				);
-				if (!response.ok) {
-					throw new Error("Thread not found.");
-				}
-				const payload = (await response.json()) as ThreadFile;
-				setThread(payload);
-			} catch (err) {
-				if (isAbortError(err)) {
-					return;
-				}
-				setThread(null);
-			} finally {
-				setLoadingThread(false);
-			}
-		}
-
-		void loadThread();
-
-		return () => {
-			controller.abort();
-		};
-	}, [activeMissionId, activeTaskId]);
-
-	React.useEffect(() => {
 		if (!activeMissionId || !activeWorkerId) {
 			setWorking("");
 			setLog(null);
@@ -360,247 +304,172 @@ export function Dashboard() {
 		return Math.round((doneCount / tasks.tasks.length) * 100);
 	}, [tasks]);
 
-	const activeTask = tasks?.tasks.find((task) => task.id === activeTaskId);
 	const activeWorker = workers?.workers.find(
 		(worker) => worker.id === activeWorkerId,
 	);
 
 	return (
-		<div className="relative min-h-screen overflow-x-hidden">
-			<div className="pointer-events-none absolute inset-0">
-				<div className="aurora absolute inset-0 opacity-90" />
-				<div className="magic-grid absolute inset-0 opacity-70" />
-				<div className="magic-noise absolute inset-0" />
-				<div className="absolute -left-24 top-24 h-72 w-72 rounded-full bg-chart-4/40 blur-[120px] animate-float" />
-				<div className="absolute right-[-15%] top-[-10%] h-96 w-96 rounded-full bg-chart-2/40 blur-[140px] animate-orbit" />
-				<div className="absolute bottom-[-20%] right-[20%] h-80 w-80 rounded-full bg-chart-1/40 blur-[140px] animate-float" />
-			</div>
-
-			<div className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col gap-6 px-6 py-8">
-				<header className="flex flex-col gap-4">
-					<div className="flex flex-wrap items-center justify-between gap-4">
-						<div className="flex items-center gap-4">
-							<div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30">
-								<Sparkles className="h-5 w-5" />
+		<div className="min-h-screen bg-background text-foreground">
+			<div className="mx-auto grid min-h-screen max-w-7xl grid-cols-1 gap-6 px-6 py-6 lg:grid-cols-[260px_1fr]">
+				<aside className="flex flex-col gap-4">
+					<div className="rounded-2xl border border-border/70 bg-card p-4">
+						<div className="flex items-center gap-3">
+							<div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+								<Sparkles className="h-4 w-4" />
 							</div>
 							<div>
-								<p className="text-[0.65rem] uppercase tracking-[0.4em] text-muted-foreground">
+								<p className="text-[0.6rem] uppercase tracking-[0.4em] text-muted-foreground">
 									Clawion
 								</p>
-								<h1 className="font-display text-3xl text-foreground">
-									Mission Task Board
-								</h1>
+								<p className="text-sm font-semibold">Mission Board</p>
 							</div>
 						</div>
-						<div className="flex flex-wrap items-center gap-3">
-							<div className="rounded-full border border-border/60 bg-card/70 px-4 py-2 text-xs text-muted-foreground shadow-sm backdrop-blur">
-								Workspace:{" "}
-								<span className="font-mono">{missionsDir ?? "—"}</span>
+						<div className="mt-4 text-xs text-muted-foreground">
+							Workspace
+							<div className="mt-1 rounded-lg border border-border/70 bg-background px-2 py-1 font-mono text-[0.65rem]">
+								{missionsDir ?? "—"}
 							</div>
+						</div>
+					</div>
+
+					<Card className="border-border/70">
+						<CardHeader className="pb-2">
+							<CardTitle className="text-sm">Missions</CardTitle>
+							<CardDescription className="text-xs">index.json</CardDescription>
+						</CardHeader>
+						<CardContent className="flex max-h-[240px] flex-col gap-2 overflow-y-auto pr-1">
+							{loadingMissions ? (
+								missionSkeletons.map((key) => (
+									<div
+										key={key}
+										className="rounded-lg border border-border/70 bg-background p-3"
+									>
+										<Skeleton className="h-3 w-24" />
+									</div>
+								))
+							) : missions.length === 0 ? (
+								<div className="rounded-lg border border-border/70 bg-background p-3 text-xs text-muted-foreground">
+									No missions yet.
+								</div>
+							) : (
+								missions.map((item) => {
+									const isActive = item.id === activeMissionId;
+									return (
+										<button
+											key={item.id}
+											onClick={() => setActiveMissionId(item.id)}
+											type="button"
+											className={cn(
+												"rounded-lg border border-border/70 bg-background px-3 py-2 text-left text-xs text-foreground transition",
+												isActive && "border-primary/60 bg-primary/10",
+											)}
+										>
+											<div className="flex items-center justify-between gap-2">
+												<span className="font-medium">{item.name}</span>
+												<span className="text-[0.6rem] uppercase tracking-[0.3em] text-muted-foreground">
+													{item.status}
+												</span>
+											</div>
+											<p className="mt-1 line-clamp-2 text-[0.65rem] text-muted-foreground">
+												{item.description}
+											</p>
+										</button>
+									);
+								})
+							)}
+						</CardContent>
+					</Card>
+
+					<Card className="border-border/70">
+						<CardHeader className="pb-2">
+							<CardTitle className="text-sm">Tasks</CardTitle>
+							<CardDescription className="text-xs">
+								Secondary menu
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="flex max-h-[280px] flex-col gap-2 overflow-y-auto pr-1">
+							{loadingMission ? (
+								taskSkeletons.map((key) => (
+									<div
+										key={key}
+										className="rounded-lg border border-border/70 bg-background p-3"
+									>
+										<Skeleton className="h-3 w-28" />
+									</div>
+								))
+							) : tasks?.tasks.length ? (
+								tasks.tasks.map((task) => {
+									const isActive = task.id === activeTaskId;
+									return (
+										<div
+											key={task.id}
+											className={cn(
+												"rounded-lg border border-border/70 bg-background px-3 py-2",
+												isActive && "border-primary/60 bg-primary/10",
+											)}
+										>
+											<button
+												onClick={() => setActiveTaskId(task.id)}
+												type="button"
+												className="w-full text-left text-xs font-medium text-foreground"
+											>
+												{task.title}
+											</button>
+											{activeMissionId ? (
+												<Link
+													className="mt-1 inline-flex text-[0.65rem] text-primary"
+													href={`/missions/${activeMissionId}/tasks/${task.id}`}
+												>
+													Open thread
+												</Link>
+											) : null}
+										</div>
+									);
+								})
+							) : (
+								<div className="rounded-lg border border-border/70 bg-background p-3 text-xs text-muted-foreground">
+									No tasks yet.
+								</div>
+							)}
+						</CardContent>
+					</Card>
+				</aside>
+
+				<section className="flex flex-col gap-4">
+					<header className="flex flex-wrap items-center justify-between gap-3">
+						<div>
+							<p className="text-[0.65rem] uppercase tracking-[0.4em] text-muted-foreground">
+								Mission Control
+							</p>
+							<h1 className="font-display text-2xl text-foreground">
+								{mission?.name ?? "Select a mission"}
+							</h1>
+						</div>
+						<div className="flex items-center gap-3">
 							<ThemeToggle />
 						</div>
-					</div>
-					<div className="flex items-center gap-3 overflow-x-auto pb-1">
-						{loadingMissions ? (
-							missionSkeletons.map((key) => (
-								<div
-									key={key}
-									className="min-w-[200px] rounded-full border border-border/60 bg-background/70 px-4 py-2"
-								>
-									<Skeleton className="h-3 w-28" />
-								</div>
-							))
-						) : missions.length === 0 ? (
-							<div className="rounded-full border border-border/60 bg-background/70 px-4 py-2 text-xs text-muted-foreground">
-								No missions yet.
-							</div>
-						) : (
-							missions.map((item) => {
-								const isActive = item.id === activeMissionId;
-								return (
-									<button
-										key={item.id}
-										onClick={() => setActiveMissionId(item.id)}
-										type="button"
-										className={cn(
-											"rounded-full border border-border/60 bg-background/70 px-4 py-2 text-left text-xs font-medium text-foreground transition",
-											isActive && "border-primary/60 bg-primary/10",
-										)}
-									>
-										<span>{item.name}</span>
-										<span className="ml-2 text-[0.6rem] uppercase tracking-[0.3em] text-muted-foreground">
-											{item.status}
-										</span>
-									</button>
-								);
-							})
-						)}
-					</div>
-				</header>
+					</header>
 
-				{error ? (
-					<Card className="glass-panel border-destructive/40 bg-destructive/10">
-						<CardContent className="flex items-center gap-3 py-4 text-sm text-destructive">
-							<AlertTriangle className="h-4 w-4" />
-							{error}
-						</CardContent>
-					</Card>
-				) : null}
+					{error ? (
+						<Card className="border-destructive/40 bg-destructive/10">
+							<CardContent className="flex items-center gap-3 py-3 text-sm text-destructive">
+								<AlertTriangle className="h-4 w-4" />
+								{error}
+							</CardContent>
+						</Card>
+					) : null}
 
-				<main className="grid gap-6 lg:grid-cols-[1.7fr_0.9fr]">
-					<Card className="glass-panel flex flex-col border-border/60 bg-card/80 backdrop-blur">
-						<CardHeader className="flex-row items-start justify-between gap-4">
-							<div>
-								<CardTitle className="font-display text-xl">
-									Tasks Board
-								</CardTitle>
-								<CardDescription>
-									From <span className="font-mono">tasks.json</span>
-								</CardDescription>
-							</div>
-							<div className="flex items-center gap-3">
-								<Badge
-									variant="outline"
-									className="rounded-full text-[0.6rem] uppercase tracking-[0.3em]"
-								>
-									{tasks?.description ?? ""}
-								</Badge>
-								<div className="text-right">
-									<p className="text-xs text-muted-foreground">Completion</p>
-									<p className="text-sm font-medium text-foreground">
-										{completion}%
-									</p>
-								</div>
-							</div>
-						</CardHeader>
-						<CardContent className="flex flex-col gap-4">
-							<div className="flex items-center justify-between rounded-xl border border-border/60 bg-background/70 px-4 py-3 text-xs text-muted-foreground">
-								<div className="flex items-center gap-2">
-									<ClipboardList className="h-3.5 w-3.5" />
-									<span>Tasks: {tasks?.tasks.length ?? 0}</span>
-								</div>
-								<Progress
-									value={completion}
-									className="h-2 w-32 [&>[data-slot=progress-indicator]]:bg-gradient-to-r [&>[data-slot=progress-indicator]]:from-primary [&>[data-slot=progress-indicator]]:to-chart-2"
-								/>
-							</div>
-							<div className="overflow-hidden">
-								{loadingMission ? (
-									<div className="grid gap-3 md:grid-cols-2">
-										{taskSkeletons.map((key) => (
-											<div
-												key={key}
-												className="rounded-xl border border-border/60 bg-background/70 p-4"
-											>
-												<Skeleton className="h-4 w-32" />
-												<Skeleton className="mt-4 h-2 w-full" />
-											</div>
-										))}
-									</div>
-								) : tasksColumns.length === 0 ? (
-									<div className="rounded-xl border border-border/60 bg-background/70 p-4 text-sm text-muted-foreground">
-										No tasks yet. Create them via CLI.
-									</div>
-								) : (
-									<div className="flex gap-4 overflow-x-auto pb-2">
-										{tasksColumns.map((column) => {
-											const columnTasks = tasksByColumn.get(column.id) ?? [];
-											return (
-												<div
-													key={column.id}
-													className="flex w-[260px] flex-col gap-3"
-												>
-													<div className="flex items-center justify-between">
-														<p className="text-sm font-medium text-foreground">
-															{column.name}
-														</p>
-														<Badge
-															variant="outline"
-															className="rounded-full text-[0.6rem]"
-														>
-															{columnTasks.length}
-														</Badge>
-													</div>
-													<div className="space-y-3 overflow-y-auto pr-1">
-														{columnTasks.length === 0 ? (
-															<div className="rounded-xl border border-border/60 bg-background/70 p-3 text-xs text-muted-foreground">
-																No tasks here.
-															</div>
-														) : (
-															columnTasks.map((task) => {
-																const isBlocked = task.statusNotes
-																	.toLowerCase()
-																	.startsWith("blocked:");
-																const isActive = task.id === activeTaskId;
-																return (
-																	<button
-																		key={task.id}
-																		onClick={() => setActiveTaskId(task.id)}
-																		type="button"
-																		className={cn(
-																			"w-full rounded-xl border border-border/60 bg-background/70 p-3 text-left transition",
-																			isActive &&
-																				"border-primary/60 bg-primary/10",
-																		)}
-																	>
-																		<p className="text-sm font-medium text-foreground">
-																			{task.title}
-																		</p>
-																		<p className="mt-1 text-xs text-muted-foreground">
-																			{task.description}
-																		</p>
-																		{task.statusNotes ? (
-																			<div className="mt-3 text-xs text-muted-foreground">
-																				{task.statusNotes}
-																			</div>
-																		) : null}
-																		<div className="mt-3 flex flex-wrap items-center gap-2 text-[0.6rem] uppercase tracking-[0.25em] text-muted-foreground">
-																			<Badge
-																				variant={
-																					isBlocked ? "destructive" : "outline"
-																				}
-																				className="rounded-full"
-																			>
-																				{task.id}
-																			</Badge>
-																			{task.assigneeId ? (
-																				<span>Assigned: {task.assigneeId}</span>
-																			) : (
-																				<span>Unassigned</span>
-																			)}
-																		</div>
-																	</button>
-																);
-															})
-														)}
-													</div>
-												</div>
-											);
-										})}
-									</div>
-								)}
-							</div>
-						</CardContent>
-						<CardFooter className="text-xs text-muted-foreground">
-							Status notes are the only blocker surface in this view.
-						</CardFooter>
-					</Card>
-
-					<div className="flex flex-col gap-6">
-						<Card className="glass-panel border-border/60 bg-card/80 backdrop-blur">
-							<CardHeader>
-								<CardTitle className="font-display text-lg">
-									Mission Snapshot
-								</CardTitle>
-								<CardDescription>
-									From <span className="font-mono">mission.json</span> + ROADMAP
+					<div className="grid gap-4 lg:grid-cols-[1.1fr_1.9fr]">
+						<Card className="border-border/70">
+							<CardHeader className="pb-2">
+								<CardTitle className="text-sm">Mission Snapshot</CardTitle>
+								<CardDescription className="text-xs">
+									mission.json + ROADMAP
 								</CardDescription>
 							</CardHeader>
-							<CardContent className="space-y-4">
+							<CardContent className="space-y-3">
 								<div className="flex items-center justify-between">
-									<p className="text-sm font-medium">
-										{mission?.name ?? "No mission selected"}
-									</p>
+									<p className="text-sm font-medium">{mission?.name ?? "—"}</p>
 									<Badge
 										variant="outline"
 										className={cn(
@@ -611,237 +480,267 @@ export function Dashboard() {
 										{mission?.status ?? "—"}
 									</Badge>
 								</div>
-								<p className="text-sm text-muted-foreground">
+								<p className="text-xs text-muted-foreground">
 									{mission?.description ??
 										"Select a mission to view its summary."}
 								</p>
-								<div className="rounded-xl border border-border/60 bg-background/70 p-3 text-xs text-muted-foreground whitespace-pre-wrap">
+								<div className="rounded-lg border border-border/70 bg-background p-2 text-[0.65rem] text-muted-foreground whitespace-pre-wrap">
 									{loadingMission
 										? "Loading ROADMAP.md..."
 										: roadmap || "No roadmap yet."}
 								</div>
-								<div className="text-xs text-muted-foreground">
+								<div className="text-[0.65rem] text-muted-foreground">
 									Created {formatDate(mission?.createdAt)} · Updated{" "}
 									{formatDate(mission?.updatedAt)}
 								</div>
 							</CardContent>
 						</Card>
 
-						<Card className="glass-panel flex flex-col border-border/60 bg-card/80 backdrop-blur">
-							<CardHeader>
-								<CardTitle className="font-display text-lg">
-									Focus Panel
-								</CardTitle>
-								<CardDescription>
-									Threads, working memory, and logs.
+						<Card className="border-border/70">
+							<CardHeader className="pb-2">
+								<CardTitle className="text-sm">Workers & Logs</CardTitle>
+								<CardDescription className="text-xs">
+									workers.json + logs
 								</CardDescription>
 							</CardHeader>
-							<CardContent className="flex flex-col">
-								<Tabs defaultValue="thread" className="flex flex-col">
+							<CardContent className="space-y-3">
+								<div className="flex items-center justify-between">
+									<div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-muted-foreground">
+										<Users className="h-3.5 w-3.5" />
+										Roster
+									</div>
+									<Badge
+										variant="outline"
+										className="rounded-full text-[0.6rem]"
+									>
+										{workers?.workers.length ?? 0}
+									</Badge>
+								</div>
+								<div className="flex flex-wrap gap-2">
+									{loadingMission
+										? workerSkeletons.map((key) => (
+												<div
+													key={key}
+													className="rounded-full border border-border/70 bg-background px-3 py-1"
+												>
+													<Skeleton className="h-3 w-16" />
+												</div>
+											))
+										: workers?.workers.map((worker) => {
+												const isActive = worker.id === activeWorkerId;
+												return (
+													<button
+														key={worker.id}
+														onClick={() => setActiveWorkerId(worker.id)}
+														type="button"
+														className={cn(
+															"rounded-full border border-border/70 bg-background px-3 py-1 text-xs text-foreground",
+															isActive && "border-primary/60 bg-primary/10",
+														)}
+													>
+														{worker.displayName}
+													</button>
+												);
+											})}
+								</div>
+								<div className="rounded-lg border border-border/70 bg-background p-2 text-xs text-muted-foreground">
+									<p className="text-sm font-medium text-foreground">
+										{activeWorker?.displayName ?? "No worker selected"}
+									</p>
+									<p className="mt-1">
+										{activeWorker?.roleDescription ??
+											"Select a worker to view details."}
+									</p>
+									<p className="mt-2 text-[0.6rem] uppercase tracking-[0.3em]">
+										{activeWorker?.systemRole ?? "—"} ·{" "}
+										{activeWorker?.status ?? "—"}
+									</p>
+								</div>
+								<Tabs defaultValue="working" className="mt-2">
 									<TabsList variant="line" className="gap-3">
-										<TabsTrigger value="thread">Thread</TabsTrigger>
-										<TabsTrigger value="worker">Worker</TabsTrigger>
+										<TabsTrigger value="working">Working</TabsTrigger>
+										<TabsTrigger value="logs">Logs</TabsTrigger>
 									</TabsList>
-									<TabsContent value="thread" className="mt-4 flex flex-col">
-										<div className="rounded-xl border border-border/60 bg-background/70 p-3">
-											<p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-												Selected task
-											</p>
-											<p className="mt-2 text-sm font-medium text-foreground">
-												{activeTask?.title ?? "None"}
-											</p>
-											<p className="mt-1 text-xs text-muted-foreground">
-												{activeTask?.description ??
-													"Pick a task to view its thread."}
-											</p>
+									<TabsContent value="working" className="mt-2">
+										<div className="max-h-[140px] overflow-y-auto rounded-lg border border-border/70 bg-background p-2 text-[0.65rem] text-muted-foreground whitespace-pre-wrap">
+											{loadingWorker
+												? "Loading working memory..."
+												: working || "No working memory file yet."}
 										</div>
-										<div className="mt-3 space-y-3 overflow-y-auto pr-1">
-											{loadingThread ? (
-												threadSkeletons.map((key) => (
+									</TabsContent>
+									<TabsContent value="logs" className="mt-2">
+										<div className="flex max-h-[140px] flex-col gap-2 overflow-y-auto pr-1">
+											{loadingWorker ? (
+												logSkeletons.map((key) => (
 													<div
 														key={key}
-														className="rounded-xl border border-border/60 bg-background/70 p-3"
+														className="rounded-lg border border-border/70 bg-background p-2"
 													>
-														<Skeleton className="h-4 w-32" />
-														<Skeleton className="mt-3 h-3 w-40" />
+														<Skeleton className="h-3 w-24" />
 													</div>
 												))
-											) : thread?.messages.length ? (
-												thread.messages.map((message) => (
+											) : log?.events.length ? (
+												log.events.map((event) => (
 													<div
-														key={message.id}
-														className="rounded-xl border border-border/60 bg-background/70 p-3"
+														key={event.id}
+														className="rounded-lg border border-border/70 bg-background p-2"
 													>
-														<div className="flex flex-wrap items-center justify-between gap-2">
-															<div className="flex items-center gap-2 text-xs text-muted-foreground">
-																<MessagesSquare className="h-3.5 w-3.5" />
-																<span>{message.authorId}</span>
-																<span className="rounded-full border border-border/60 px-2 py-0.5">
-																	@{message.mentions}
-																</span>
-															</div>
+														<div className="flex items-center justify-between gap-2 text-[0.65rem] text-muted-foreground">
+															<span>{event.type}</span>
 															<Badge
 																variant="outline"
 																className={cn(
 																	"rounded-full text-[0.6rem] uppercase tracking-[0.3em]",
-																	message.resolved
-																		? "border-emerald-400/40 text-emerald-600 dark:text-emerald-300"
-																		: "border-amber-400/50 text-amber-600 dark:text-amber-300",
+																	logLevelTone[event.level],
 																)}
 															>
-																{message.resolved ? "Resolved" : "Open"}
+																{event.level}
 															</Badge>
 														</div>
-														<p className="mt-2 text-sm text-foreground">
-															{message.content}
+														<p className="mt-1 text-xs text-foreground">
+															{event.message}
 														</p>
-														<div className="mt-2 text-xs text-muted-foreground">
-															{formatDate(message.createdAt)}
-															{message.resolved
-																? ` · Resolved by ${message.resolvedBy ?? "—"}`
-																: " · Awaiting response"}
-														</div>
 													</div>
 												))
 											) : (
-												<div className="rounded-xl border border-border/60 bg-background/70 p-3 text-sm text-muted-foreground">
-													No messages for this task yet.
+												<div className="rounded-lg border border-border/70 bg-background p-2 text-xs text-muted-foreground">
+													No logs for this worker yet.
 												</div>
 											)}
 										</div>
 									</TabsContent>
-									<TabsContent value="worker" className="mt-4 flex flex-col">
-										<div className="flex items-center justify-between">
-											<div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-muted-foreground">
-												<Users className="h-3.5 w-3.5" />
-												Worker roster
-											</div>
-											<Badge
-												variant="outline"
-												className="rounded-full text-[0.6rem]"
-											>
-												{workers?.workers.length ?? 0}
-											</Badge>
-										</div>
-										<div className="mt-3 flex flex-wrap gap-2">
-											{loadingMission
-												? workerSkeletons.map((key) => (
-														<div
-															key={key}
-															className="rounded-full border border-border/60 bg-background/70 px-3 py-1"
-														>
-															<Skeleton className="h-3 w-16" />
-														</div>
-													))
-												: workers?.workers.map((worker) => {
-														const isActive = worker.id === activeWorkerId;
-														return (
-															<button
-																key={worker.id}
-																onClick={() => setActiveWorkerId(worker.id)}
-																type="button"
-																className={cn(
-																	"rounded-full border border-border/60 bg-background/70 px-3 py-1 text-xs text-foreground transition",
-																	isActive && "border-primary/60 bg-primary/10",
-																)}
-															>
-																{worker.displayName}
-															</button>
-														);
-													})}
-										</div>
-										<div className="mt-4 rounded-xl border border-border/60 bg-background/70 p-3 text-xs text-muted-foreground">
-											<p className="text-sm font-medium text-foreground">
-												{activeWorker?.displayName ?? "No worker selected"}
-											</p>
-											<p className="mt-1">
-												{activeWorker?.roleDescription ??
-													"Select a worker to view details."}
-											</p>
-											<p className="mt-2 text-[0.65rem] uppercase tracking-[0.3em]">
-												{activeWorker?.systemRole ?? "—"} ·{" "}
-												{activeWorker?.status ?? "—"}
-											</p>
-										</div>
-										<Tabs defaultValue="working" className="mt-4 flex flex-col">
-											<TabsList variant="line" className="gap-3">
-												<TabsTrigger value="working">Working</TabsTrigger>
-												<TabsTrigger value="logs">Logs</TabsTrigger>
-											</TabsList>
-											<TabsContent value="working" className="mt-3">
-												<div className="max-h-[240px] rounded-xl border border-border/60 bg-background/70 p-3 text-xs text-muted-foreground whitespace-pre-wrap overflow-y-auto">
-													{loadingWorker
-														? "Loading working memory..."
-														: working || "No working memory file yet."}
-												</div>
-											</TabsContent>
-											<TabsContent value="logs" className="mt-3">
-												<div className="flex max-h-[240px] flex-col gap-3 overflow-y-auto pr-1">
-													{loadingWorker ? (
-														logSkeletons.map((key) => (
-															<div
-																key={key}
-																className="rounded-xl border border-border/60 bg-background/70 p-3"
-															>
-																<Skeleton className="h-3 w-24" />
-																<Skeleton className="mt-2 h-3 w-40" />
-															</div>
-														))
-													) : log?.events.length ? (
-														log.events.map((event) => (
-															<div
-																key={event.id}
-																className="rounded-xl border border-border/60 bg-background/70 p-3"
-															>
-																<div className="flex flex-wrap items-center justify-between gap-2">
-																	<div className="flex items-center gap-2 text-xs text-muted-foreground">
-																		<Activity className="h-3.5 w-3.5" />
-																		<span>{event.type}</span>
-																	</div>
-																	<Tooltip>
-																		<TooltipTrigger asChild>
-																			<Badge
-																				variant="outline"
-																				className={cn(
-																					"rounded-full text-[0.6rem] uppercase tracking-[0.3em]",
-																					logLevelTone[event.level],
-																				)}
-																			>
-																				{event.level}
-																			</Badge>
-																		</TooltipTrigger>
-																		<TooltipContent side="top">
-																			{formatDate(event.timestamp)}
-																		</TooltipContent>
-																	</Tooltip>
-																</div>
-																<p className="mt-2 text-sm text-foreground">
-																	{event.message}
-																</p>
-																<div className="mt-2 text-xs text-muted-foreground">
-																	{event.refs?.taskId
-																		? `Task ${event.refs.taskId}`
-																		: "No task reference"}
-																</div>
-															</div>
-														))
-													) : (
-														<div className="rounded-xl border border-border/60 bg-background/70 p-3 text-sm text-muted-foreground">
-															No logs for this worker yet.
-														</div>
-													)}
-												</div>
-											</TabsContent>
-										</Tabs>
-									</TabsContent>
 								</Tabs>
 							</CardContent>
-							<CardFooter className="text-xs text-muted-foreground">
-								Logs are immutable events emitted by the CLI.
-							</CardFooter>
 						</Card>
 					</div>
-				</main>
+
+					<Card className="border-border/70">
+						<CardHeader className="flex-row items-center justify-between gap-4 pb-3">
+							<div>
+								<CardTitle className="text-base">Task Board</CardTitle>
+								<CardDescription className="text-xs">
+									One column per task column.
+								</CardDescription>
+							</div>
+							<div className="flex items-center gap-3 text-xs text-muted-foreground">
+								<ClipboardList className="h-3.5 w-3.5" />
+								<span>{tasks?.tasks.length ?? 0} tasks</span>
+								<Progress
+									value={completion}
+									className="h-2 w-24 [&>[data-slot=progress-indicator]]:bg-primary"
+								/>
+								<span>{completion}%</span>
+							</div>
+						</CardHeader>
+						<CardContent>
+							{loadingMission ? (
+								<div className="grid gap-3 md:grid-cols-2">
+									{taskSkeletons.map((key) => (
+										<div
+											key={key}
+											className="rounded-xl border border-border/70 bg-background p-4"
+										>
+											<Skeleton className="h-4 w-32" />
+											<Skeleton className="mt-4 h-2 w-full" />
+										</div>
+									))}
+								</div>
+							) : tasksColumns.length === 0 ? (
+								<div className="rounded-xl border border-border/70 bg-background p-4 text-sm text-muted-foreground">
+									No tasks yet. Create them via CLI.
+								</div>
+							) : (
+								<div className="flex gap-4 overflow-x-auto pb-2">
+									{tasksColumns.map((column) => {
+										const columnTasks = tasksByColumn.get(column.id) ?? [];
+										return (
+											<div key={column.id} className="w-[280px]">
+												<div className="flex items-center justify-between">
+													<p className="text-sm font-medium text-foreground">
+														{column.name}
+													</p>
+													<Badge
+														variant="outline"
+														className="rounded-full text-[0.6rem]"
+													>
+														{columnTasks.length}
+													</Badge>
+												</div>
+												<div className="mt-3 flex flex-col gap-3">
+													{columnTasks.length === 0 ? (
+														<div className="rounded-xl border border-border/70 bg-background p-3 text-xs text-muted-foreground">
+															No tasks here.
+														</div>
+													) : (
+														columnTasks.map((task) => {
+															const isBlocked = task.statusNotes
+																.toLowerCase()
+																.startsWith("blocked:");
+															const isActive = task.id === activeTaskId;
+															return (
+																<div
+																	key={task.id}
+																	className={cn(
+																		"rounded-xl border border-border/70 bg-background p-3",
+																		isActive &&
+																			"border-primary/60 bg-primary/10",
+																	)}
+																>
+																	<div className="flex items-start justify-between gap-2">
+																		<button
+																			onClick={() => setActiveTaskId(task.id)}
+																			type="button"
+																			className="text-left"
+																		>
+																			<p className="text-sm font-medium text-foreground">
+																				{task.title}
+																			</p>
+																			<p className="mt-1 text-xs text-muted-foreground">
+																				{task.description}
+																			</p>
+																		</button>
+																		{activeMissionId ? (
+																			<Link
+																				className="text-[0.65rem] text-primary"
+																				href={`/missions/${activeMissionId}/tasks/${task.id}`}
+																			>
+																				Thread
+																			</Link>
+																		) : null}
+																	</div>
+																	{task.statusNotes ? (
+																		<p className="mt-2 text-xs text-muted-foreground">
+																			{task.statusNotes}
+																		</p>
+																	) : null}
+																	<div className="mt-3 flex flex-wrap items-center gap-2 text-[0.6rem] uppercase tracking-[0.3em] text-muted-foreground">
+																		<Badge
+																			variant={
+																				isBlocked ? "destructive" : "outline"
+																			}
+																			className="rounded-full"
+																		>
+																			{task.id}
+																		</Badge>
+																		{task.assigneeId ? (
+																			<span>Assigned: {task.assigneeId}</span>
+																		) : (
+																			<span>Unassigned</span>
+																		)}
+																	</div>
+																</div>
+															);
+														})
+													)}
+												</div>
+											</div>
+										);
+									})}
+								</div>
+							)}
+						</CardContent>
+					</Card>
+				</section>
 			</div>
 		</div>
 	);
