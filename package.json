@@ -4,12 +4,15 @@
 	"version": "0.1.0",
 	"license": "MIT",
 	"bin": {
-		"clawion": "bin/clawion"
+		"clawion": "bin/clawion.ts"
 	},
 	"scripts": {
 		"dev": "next dev",
 		"build": "next build",
 		"start": "next start",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"coverage": "vitest run --coverage",
 		"lint": "biome check . --config-path=./biome.json",
 		"lint:fix": "biome check . --write --config-path=./biome.json",
 		"clean": "rm -rf node_modules && rm -rf .next && rm -rf .dist",
@@ -22,9 +25,11 @@
 		]
 	},
 	"dependencies": {
+		"commander": "^12.1.0",
 		"next": "16.1.6",
 		"react": "19.2.3",
-		"react-dom": "19.2.3"
+		"react-dom": "19.2.3",
+		"zod": "^3.23.8"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.3.8",
@@ -32,9 +37,11 @@
 		"@types/node": "^22",
 		"@types/react": "^19",
 		"@types/react-dom": "^19",
+		"@vitest/coverage-v8": "^2.1.8",
 		"husky": "^9.1.7",
 		"lint-staged": "^16.2.7",
 		"tailwindcss": "^4",
+		"vitest": "^2.1.8",
 		"tsx": "^4.21.0",
 		"typescript": "^5"
 	}
