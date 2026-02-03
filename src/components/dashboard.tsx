@@ -366,7 +366,7 @@ export function Dashboard() {
 	);
 
 	return (
-		<div className="relative min-h-screen overflow-hidden">
+		<div className="relative min-h-screen overflow-x-hidden">
 			<div className="pointer-events-none absolute inset-0">
 				<div className="aurora absolute inset-0 opacity-90" />
 				<div className="magic-grid absolute inset-0 opacity-70" />
@@ -376,7 +376,7 @@ export function Dashboard() {
 				<div className="absolute bottom-[-20%] right-[20%] h-80 w-80 rounded-full bg-chart-1/40 blur-[140px] animate-float" />
 			</div>
 
-			<div className="relative z-10 mx-auto flex h-screen max-w-6xl flex-col gap-6 px-6 py-8">
+			<div className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col gap-6 px-6 py-8">
 				<header className="flex flex-col gap-4">
 					<div className="flex flex-wrap items-center justify-between gap-4">
 						<div className="flex items-center gap-4">
@@ -447,8 +447,8 @@ export function Dashboard() {
 					</Card>
 				) : null}
 
-				<main className="grid min-h-0 flex-1 gap-6 lg:grid-cols-[1.7fr_0.9fr]">
-					<Card className="glass-panel flex h-full flex-col border-border/60 bg-card/80 backdrop-blur">
+				<main className="grid gap-6 lg:grid-cols-[1.7fr_0.9fr]">
+					<Card className="glass-panel flex flex-col border-border/60 bg-card/80 backdrop-blur">
 						<CardHeader className="flex-row items-start justify-between gap-4">
 							<div>
 								<CardTitle className="font-display text-xl">
@@ -473,7 +473,7 @@ export function Dashboard() {
 								</div>
 							</div>
 						</CardHeader>
-						<CardContent className="flex min-h-0 flex-1 flex-col gap-4">
+						<CardContent className="flex flex-col gap-4">
 							<div className="flex items-center justify-between rounded-xl border border-border/60 bg-background/70 px-4 py-3 text-xs text-muted-foreground">
 								<div className="flex items-center gap-2">
 									<ClipboardList className="h-3.5 w-3.5" />
@@ -484,7 +484,7 @@ export function Dashboard() {
 									className="h-2 w-32 [&>[data-slot=progress-indicator]]:bg-gradient-to-r [&>[data-slot=progress-indicator]]:from-primary [&>[data-slot=progress-indicator]]:to-chart-2"
 								/>
 							</div>
-							<div className="min-h-0 flex-1 overflow-hidden">
+							<div className="overflow-hidden">
 								{loadingMission ? (
 									<div className="grid gap-3 md:grid-cols-2">
 										{taskSkeletons.map((key) => (
@@ -502,13 +502,13 @@ export function Dashboard() {
 										No tasks yet. Create them via CLI.
 									</div>
 								) : (
-									<div className="flex h-full gap-4 overflow-x-auto pb-2">
+									<div className="flex gap-4 overflow-x-auto pb-2">
 										{tasksColumns.map((column) => {
 											const columnTasks = tasksByColumn.get(column.id) ?? [];
 											return (
 												<div
 													key={column.id}
-													className="flex h-full w-[260px] flex-col gap-3"
+													className="flex w-[260px] flex-col gap-3"
 												>
 													<div className="flex items-center justify-between">
 														<p className="text-sm font-medium text-foreground">
@@ -521,7 +521,7 @@ export function Dashboard() {
 															{columnTasks.length}
 														</Badge>
 													</div>
-													<div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+													<div className="space-y-3 overflow-y-auto pr-1">
 														{columnTasks.length === 0 ? (
 															<div className="rounded-xl border border-border/60 bg-background/70 p-3 text-xs text-muted-foreground">
 																No tasks here.
@@ -586,7 +586,7 @@ export function Dashboard() {
 						</CardFooter>
 					</Card>
 
-					<div className="flex h-full flex-col gap-6">
+					<div className="flex flex-col gap-6">
 						<Card className="glass-panel border-border/60 bg-card/80 backdrop-blur">
 							<CardHeader>
 								<CardTitle className="font-display text-lg">
@@ -627,7 +627,7 @@ export function Dashboard() {
 							</CardContent>
 						</Card>
 
-						<Card className="glass-panel flex min-h-0 flex-1 flex-col border-border/60 bg-card/80 backdrop-blur">
+						<Card className="glass-panel flex flex-col border-border/60 bg-card/80 backdrop-blur">
 							<CardHeader>
 								<CardTitle className="font-display text-lg">
 									Focus Panel
@@ -636,19 +636,13 @@ export function Dashboard() {
 									Threads, working memory, and logs.
 								</CardDescription>
 							</CardHeader>
-							<CardContent className="flex min-h-0 flex-1 flex-col">
-								<Tabs
-									defaultValue="thread"
-									className="flex min-h-0 flex-1 flex-col"
-								>
+							<CardContent className="flex flex-col">
+								<Tabs defaultValue="thread" className="flex flex-col">
 									<TabsList variant="line" className="gap-3">
 										<TabsTrigger value="thread">Thread</TabsTrigger>
 										<TabsTrigger value="worker">Worker</TabsTrigger>
 									</TabsList>
-									<TabsContent
-										value="thread"
-										className="mt-4 flex min-h-0 flex-1 flex-col"
-									>
+									<TabsContent value="thread" className="mt-4 flex flex-col">
 										<div className="rounded-xl border border-border/60 bg-background/70 p-3">
 											<p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
 												Selected task
@@ -661,7 +655,7 @@ export function Dashboard() {
 													"Pick a task to view its thread."}
 											</p>
 										</div>
-										<div className="mt-3 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+										<div className="mt-3 space-y-3 overflow-y-auto pr-1">
 											{loadingThread ? (
 												threadSkeletons.map((key) => (
 													<div
@@ -716,10 +710,7 @@ export function Dashboard() {
 											)}
 										</div>
 									</TabsContent>
-									<TabsContent
-										value="worker"
-										className="mt-4 flex min-h-0 flex-1 flex-col"
-									>
+									<TabsContent value="worker" className="mt-4 flex flex-col">
 										<div className="flex items-center justify-between">
 											<div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-muted-foreground">
 												<Users className="h-3.5 w-3.5" />
@@ -772,26 +763,20 @@ export function Dashboard() {
 												{activeWorker?.status ?? "—"}
 											</p>
 										</div>
-										<Tabs
-											defaultValue="working"
-											className="mt-4 flex min-h-0 flex-1 flex-col"
-										>
+										<Tabs defaultValue="working" className="mt-4 flex flex-col">
 											<TabsList variant="line" className="gap-3">
 												<TabsTrigger value="working">Working</TabsTrigger>
 												<TabsTrigger value="logs">Logs</TabsTrigger>
 											</TabsList>
-											<TabsContent
-												value="working"
-												className="mt-3 min-h-0 flex-1"
-											>
-												<div className="h-full rounded-xl border border-border/60 bg-background/70 p-3 text-xs text-muted-foreground whitespace-pre-wrap overflow-y-auto">
+											<TabsContent value="working" className="mt-3">
+												<div className="max-h-[240px] rounded-xl border border-border/60 bg-background/70 p-3 text-xs text-muted-foreground whitespace-pre-wrap overflow-y-auto">
 													{loadingWorker
 														? "Loading working memory..."
 														: working || "No working memory file yet."}
 												</div>
 											</TabsContent>
-											<TabsContent value="logs" className="mt-3 min-h-0 flex-1">
-												<div className="flex h-full flex-col gap-3 overflow-y-auto pr-1">
+											<TabsContent value="logs" className="mt-3">
+												<div className="flex max-h-[240px] flex-col gap-3 overflow-y-auto pr-1">
 													{loadingWorker ? (
 														logSkeletons.map((key) => (
 															<div
