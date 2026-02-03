@@ -152,6 +152,46 @@ describe("schemas", () => {
 		expect(result.success).toBe(false);
 	});
 
+	it("accepts resolved messages with resolvedAt/resolvedBy", () => {
+		const result = threadSchema.safeParse({
+			schemaVersion: 1,
+			taskId: "t1",
+			messages: [
+				{
+					id: "msg1",
+					createdAt: new Date().toISOString(),
+					authorId: "w1",
+					mentions: "w2",
+					content: "Hello",
+					resolved: true,
+					resolvedAt: new Date().toISOString(),
+					resolvedBy: "w2",
+				},
+			],
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("rejects resolvedAt/resolvedBy when resolved is false", () => {
+		const result = threadSchema.safeParse({
+			schemaVersion: 1,
+			taskId: "t1",
+			messages: [
+				{
+					id: "msg1",
+					createdAt: new Date().toISOString(),
+					authorId: "w1",
+					mentions: "w2",
+					content: "Hello",
+					resolved: false,
+					resolvedAt: new Date().toISOString(),
+					resolvedBy: "w2",
+				},
+			],
+		});
+		expect(result.success).toBe(false);
+	});
+
 	it("accepts valid log file", () => {
 		const result = logSchema.safeParse({
 			schemaVersion: 1,

@@ -78,4 +78,13 @@ describe("missions", () => {
 		);
 		expect(indexAfterComplete.missions[0].status).toBe("completed");
 	});
+
+	it("rejects duplicate mission creation", async () => {
+		const missionsDir = await createWorkspace();
+		await createMissionFixture(missionsDir, "m1");
+
+		await expect(createMissionFixture(missionsDir, "m1")).rejects.toThrow(
+			"Mission directory already exists",
+		);
+	});
 });

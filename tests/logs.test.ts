@@ -19,9 +19,19 @@ describe("logs", () => {
 			message: "Updated task",
 		});
 
+		const secondEventId = await addLogEvent({
+			missionsDir,
+			missionId: "m1",
+			workerId: "worker-1",
+			level: "warn",
+			type: "task:warn",
+			message: "Second event",
+		});
+
 		const logPath = join(missionsDir, "m1", "logs", "worker-1.json");
 		const logFile = await readJson(logPath, logSchema);
-		expect(logFile.events).toHaveLength(1);
+		expect(logFile.events).toHaveLength(2);
 		expect(logFile.events[0].id).toBe(eventId);
+		expect(logFile.events[1].id).toBe(secondEventId);
 	});
 });

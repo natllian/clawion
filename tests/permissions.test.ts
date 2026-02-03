@@ -94,4 +94,25 @@ describe("assertManager", () => {
 			}),
 		).rejects.toThrow("Manager role required");
 	});
+
+	it("rejects unknown workers", async () => {
+		const missionsDir = await mkdtemp(join(tmpdir(), "clawion-perm-"));
+		await setupMission(missionsDir, "m1", [
+			{
+				id: "manager-1",
+				displayName: "Manager",
+				roleDescription: "Lead",
+				systemRole: "manager",
+				status: "active",
+			},
+		]);
+
+		await expect(
+			assertManager({
+				missionsDir,
+				missionId: "m1",
+				workerId: "missing",
+			}),
+		).rejects.toThrow("Worker not found");
+	});
 });

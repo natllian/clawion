@@ -58,6 +58,26 @@ describe("addWorker", () => {
 			}),
 		).rejects.toThrow("roleDescription is required");
 	});
+
+	it("rejects duplicate workers", async () => {
+		const missionDir = await createMissionDir();
+
+		await addWorker(missionDir, {
+			id: "worker-1",
+			displayName: "Worker",
+			roleDescription: "Contributor",
+			systemRole: "worker",
+		});
+
+		await expect(
+			addWorker(missionDir, {
+				id: "worker-1",
+				displayName: "Worker",
+				roleDescription: "Contributor",
+				systemRole: "worker",
+			}),
+		).rejects.toThrow("Worker already exists");
+	});
 });
 
 describe("worker updates", () => {
@@ -72,17 +92,40 @@ describe("worker updates", () => {
 			roleDescription: "Contributor",
 			systemRole: "worker",
 		});
+		await addWorker(missionDir, {
+			id: "worker-2",
+			displayName: "Worker Two",
+			roleDescription: "Contributor",
+			systemRole: "worker",
+		});
 
 		await updateWorker(missionDir, "worker-1", {
 			displayName: "Worker Updated",
 			status: "paused",
 		});
+		await updateWorker(missionDir, "worker-1", {
+			roleDescription: "Updated role",
+		});
 
 		const workersFile = await listWorkers(missionDir);
 		expect(workersFile.workers[0].displayName).toBe("Worker Updated");
 		expect(workersFile.workers[0].status).toBe("paused");
+		expect(workersFile.workers[0].roleDescription).toBe("Updated role");
+		expect(workersFile.workers).toHaveLength(2);
 
 		const workingPath = resolveWorkingPath(missionDir, "worker-1");
 		expect(workingPath).toContain("working/worker-1.md");
+	});
+
+	it("rejects updates for missing workers", async () => {
+		const missionsDir = await createWorkspace();
+		await createMissionFixture(missionsDir, "m1");
+		const missionDir = join(missionsDir, "m1");
+
+		await expect(
+			updateWorker(missionDir, "missing", {
+				displayName: "Nope",
+			}),
+		).rejects.toThrow("Worker not found");
 	});
 });
