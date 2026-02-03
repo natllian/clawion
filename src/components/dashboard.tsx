@@ -3,9 +3,10 @@
 import {
 	Activity,
 	AlertTriangle,
-	FileText,
+	ClipboardList,
 	MessagesSquare,
 	Sparkles,
+	Users,
 } from "lucide-react";
 import * as React from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -360,6 +361,10 @@ export function Dashboard() {
 	}, [tasks]);
 
 	const activeTask = tasks?.tasks.find((task) => task.id === activeTaskId);
+	const activeWorker = workers?.workers.find(
+		(worker) => worker.id === activeWorkerId,
+	);
+
 	return (
 		<div className="relative min-h-screen overflow-hidden">
 			<div className="pointer-events-none absolute inset-0">
@@ -371,9 +376,9 @@ export function Dashboard() {
 				<div className="absolute bottom-[-20%] right-[20%] h-80 w-80 rounded-full bg-chart-1/40 blur-[140px] animate-float" />
 			</div>
 
-			<div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-8 px-6 py-10 lg:py-16">
-				<header className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-					<div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+			<div className="relative z-10 mx-auto flex h-screen max-w-6xl flex-col gap-6 px-6 py-8">
+				<header className="flex flex-col gap-4">
+					<div className="flex flex-wrap items-center justify-between gap-4">
 						<div className="flex items-center gap-4">
 							<div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30">
 								<Sparkles className="h-5 w-5" />
@@ -383,510 +388,475 @@ export function Dashboard() {
 									Clawion
 								</p>
 								<h1 className="font-display text-3xl text-foreground">
-									Mission Control
+									Mission Task Board
 								</h1>
 							</div>
 						</div>
-						<Badge className="w-fit rounded-full bg-secondary/70 px-3 py-1 text-[0.65rem] uppercase tracking-[0.35em]">
-							Read-only
-						</Badge>
-					</div>
-					<div className="flex flex-wrap items-center gap-3">
-						<div className="rounded-full border border-border/60 bg-card/70 px-4 py-2 text-xs text-muted-foreground shadow-sm backdrop-blur">
-							Workspace: <span className="font-mono">{missionsDir ?? "—"}</span>
+						<div className="flex flex-wrap items-center gap-3">
+							<div className="rounded-full border border-border/60 bg-card/70 px-4 py-2 text-xs text-muted-foreground shadow-sm backdrop-blur">
+								Workspace:{" "}
+								<span className="font-mono">{missionsDir ?? "—"}</span>
+							</div>
+							<ThemeToggle />
 						</div>
-						<ThemeToggle />
+					</div>
+					<div className="flex items-center gap-3 overflow-x-auto pb-1">
+						{loadingMissions ? (
+							missionSkeletons.map((key) => (
+								<div
+									key={key}
+									className="min-w-[200px] rounded-full border border-border/60 bg-background/70 px-4 py-2"
+								>
+									<Skeleton className="h-3 w-28" />
+								</div>
+							))
+						) : missions.length === 0 ? (
+							<div className="rounded-full border border-border/60 bg-background/70 px-4 py-2 text-xs text-muted-foreground">
+								No missions yet.
+							</div>
+						) : (
+							missions.map((item) => {
+								const isActive = item.id === activeMissionId;
+								return (
+									<button
+										key={item.id}
+										onClick={() => setActiveMissionId(item.id)}
+										type="button"
+										className={cn(
+											"rounded-full border border-border/60 bg-background/70 px-4 py-2 text-left text-xs font-medium text-foreground transition",
+											isActive && "border-primary/60 bg-primary/10",
+										)}
+									>
+										<span>{item.name}</span>
+										<span className="ml-2 text-[0.6rem] uppercase tracking-[0.3em] text-muted-foreground">
+											{item.status}
+										</span>
+									</button>
+								);
+							})
+						)}
 					</div>
 				</header>
 
 				{error ? (
 					<Card className="glass-panel border-destructive/40 bg-destructive/10">
-						<CardContent className="flex items-center gap-3 py-6 text-sm text-destructive">
+						<CardContent className="flex items-center gap-3 py-4 text-sm text-destructive">
 							<AlertTriangle className="h-4 w-4" />
 							{error}
 						</CardContent>
 					</Card>
 				) : null}
 
-				<section className="grid gap-6 lg:grid-cols-[0.55fr_1.45fr]">
-					<Card className="glass-panel border-border/60 bg-card/80 backdrop-blur">
-						<CardHeader>
-							<CardTitle className="font-display text-xl">Missions</CardTitle>
-							<CardDescription>
-								Index from <span className="font-mono">index.json</span>
-							</CardDescription>
-						</CardHeader>
-						<CardContent className="flex flex-col gap-3">
-							{loadingMissions ? (
-								missionSkeletons.map((key) => (
-									<div
-										key={key}
-										className="rounded-xl border border-border/60 bg-background/70 p-4"
-									>
-										<Skeleton className="h-4 w-32" />
-										<Skeleton className="mt-3 h-3 w-40" />
-									</div>
-								))
-							) : missions.length === 0 ? (
-								<div className="rounded-xl border border-border/60 bg-background/70 p-4 text-sm text-muted-foreground">
-									No missions yet. Run{" "}
-									<span className="font-mono">clawion init</span> and create
-									one.
-								</div>
-							) : (
-								missions.map((item) => {
-									const isActive = item.id === activeMissionId;
-									return (
-										<button
-											key={item.id}
-											onClick={() => setActiveMissionId(item.id)}
-											type="button"
-											className={cn(
-												"w-full rounded-xl border border-border/60 bg-background/70 p-4 text-left transition",
-												isActive &&
-													"border-primary/60 bg-primary/10 shadow-[0_0_0_1px_rgba(0,0,0,0.03)]",
-											)}
-										>
-											<div className="flex items-start justify-between gap-3">
-												<div>
-													<p className="text-sm font-medium text-foreground">
-														{item.name}
-													</p>
-													<p className="mt-1 text-xs text-muted-foreground">
-														{item.description}
-													</p>
-												</div>
-												<Badge
-													variant="outline"
-													className={cn(
-														"rounded-full text-[0.6rem] uppercase tracking-[0.25em]",
-														missionStatusTone[item.status],
-													)}
-												>
-													{item.status}
-												</Badge>
-											</div>
-											<div className="mt-3 text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
-												Updated {formatDate(item.updatedAt)}
-											</div>
-										</button>
-									);
-								})
-							)}
-						</CardContent>
-					</Card>
-
-					<Card className="glass-panel border-border/60 bg-card/80 backdrop-blur">
-						<CardHeader>
-							<CardTitle className="font-display text-2xl">
-								{mission?.name ?? "Mission Overview"}
-							</CardTitle>
-							<CardDescription>
-								{mission?.description ??
-									"Select a mission to inspect its files."}
-							</CardDescription>
-						</CardHeader>
-						<CardContent className="grid gap-6 md:grid-cols-[1.2fr_0.8fr]">
-							<div className="space-y-4 rounded-xl border border-border/60 bg-background/70 p-4">
-								<div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-muted-foreground">
-									<FileText className="h-3.5 w-3.5" />
-									Roadmap snapshot
-								</div>
-								<div className="max-h-40 overflow-hidden text-sm text-muted-foreground whitespace-pre-wrap">
-									{loadingMission
-										? "Loading ROADMAP.md..."
-										: roadmap || "No roadmap yet."}
-								</div>
+				<main className="grid min-h-0 flex-1 gap-6 lg:grid-cols-[1.7fr_0.9fr]">
+					<Card className="glass-panel flex h-full flex-col border-border/60 bg-card/80 backdrop-blur">
+						<CardHeader className="flex-row items-start justify-between gap-4">
+							<div>
+								<CardTitle className="font-display text-xl">
+									Tasks Board
+								</CardTitle>
+								<CardDescription>
+									From <span className="font-mono">tasks.json</span>
+								</CardDescription>
 							</div>
-							<div className="space-y-4">
-								<div className="rounded-xl border border-border/60 bg-background/70 p-4">
-									<p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-										Mission status
-									</p>
-									<p className="mt-2 text-lg font-medium">
-										{mission?.status ?? "—"}
-									</p>
-									<p className="mt-2 text-xs text-muted-foreground">
-										Created {formatDate(mission?.createdAt)}
-									</p>
-									<p className="text-xs text-muted-foreground">
-										Updated {formatDate(mission?.updatedAt)}
-									</p>
-								</div>
-								<div className="rounded-xl border border-border/60 bg-background/70 p-4">
-									<div className="flex items-center justify-between">
-										<p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-											Tasks
-										</p>
-										<span className="text-xs text-muted-foreground">
-											{tasks?.tasks.length ?? 0}
-										</span>
-									</div>
-									<Progress
-										value={completion}
-										className="mt-3 h-2 [&>[data-slot=progress-indicator]]:bg-gradient-to-r [&>[data-slot=progress-indicator]]:from-primary [&>[data-slot=progress-indicator]]:to-chart-2"
-									/>
-								</div>
-							</div>
-						</CardContent>
-						<CardFooter className="text-xs text-muted-foreground">
-							{missionsDir ? "Reading from" : "Workspace"}{" "}
-							<span className="font-mono">{missionsDir ?? "—"}</span>
-						</CardFooter>
-					</Card>
-				</section>
-
-				<section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-					<Card className="glass-panel border-border/60 bg-card/80 backdrop-blur">
-						<CardHeader>
-							<div className="flex items-center justify-between">
-								<div>
-									<CardTitle className="font-display text-xl">
-										Tasks Board
-									</CardTitle>
-									<CardDescription>
-										From <span className="font-mono">tasks.json</span>
-									</CardDescription>
-								</div>
+							<div className="flex items-center gap-3">
 								<Badge
 									variant="outline"
 									className="rounded-full text-[0.6rem] uppercase tracking-[0.3em]"
 								>
 									{tasks?.description ?? ""}
 								</Badge>
+								<div className="text-right">
+									<p className="text-xs text-muted-foreground">Completion</p>
+									<p className="text-sm font-medium text-foreground">
+										{completion}%
+									</p>
+								</div>
 							</div>
 						</CardHeader>
-						<CardContent>
-							{loadingMission ? (
-								<div className="grid gap-3 md:grid-cols-2">
-									{taskSkeletons.map((key) => (
-										<div
-											key={key}
-											className="rounded-xl border border-border/60 bg-background/70 p-4"
-										>
-											<Skeleton className="h-4 w-32" />
-											<Skeleton className="mt-4 h-2 w-full" />
-										</div>
-									))}
+						<CardContent className="flex min-h-0 flex-1 flex-col gap-4">
+							<div className="flex items-center justify-between rounded-xl border border-border/60 bg-background/70 px-4 py-3 text-xs text-muted-foreground">
+								<div className="flex items-center gap-2">
+									<ClipboardList className="h-3.5 w-3.5" />
+									<span>Tasks: {tasks?.tasks.length ?? 0}</span>
 								</div>
-							) : tasksColumns.length === 0 ? (
-								<div className="rounded-xl border border-border/60 bg-background/70 p-4 text-sm text-muted-foreground">
-									No tasks yet. Create them via CLI.
-								</div>
-							) : (
-								<div className="flex gap-4 overflow-x-auto pb-2">
-									{tasksColumns.map((column) => {
-										const columnTasks = tasksByColumn.get(column.id) ?? [];
-										return (
-											<div key={column.id} className="min-w-[220px] flex-1">
-												<div className="flex items-center justify-between">
-													<p className="text-sm font-medium text-foreground">
-														{column.name}
-													</p>
-													<Badge
-														variant="outline"
-														className="rounded-full text-[0.6rem]"
-													>
-														{columnTasks.length}
-													</Badge>
-												</div>
-												<div className="mt-3 flex flex-col gap-3">
-													{columnTasks.length === 0 ? (
-														<div className="rounded-xl border border-border/60 bg-background/70 p-3 text-xs text-muted-foreground">
-															No tasks here.
-														</div>
-													) : (
-														columnTasks.map((task) => {
-															const isBlocked = task.statusNotes
-																.toLowerCase()
-																.startsWith("blocked:");
-															const isActive = task.id === activeTaskId;
-															return (
-																<button
-																	key={task.id}
-																	onClick={() => setActiveTaskId(task.id)}
-																	type="button"
-																	className={cn(
-																		"rounded-xl border border-border/60 bg-background/70 p-3 text-left transition",
-																		isActive &&
-																			"border-primary/60 bg-primary/10",
-																	)}
-																>
-																	<p className="text-sm font-medium text-foreground">
-																		{task.title}
-																	</p>
-																	<p className="mt-1 text-xs text-muted-foreground">
-																		{task.description}
-																	</p>
-																	{task.statusNotes ? (
-																		<div className="mt-3 text-xs text-muted-foreground">
-																			{task.statusNotes}
-																		</div>
-																	) : null}
-																	<div className="mt-3 flex flex-wrap items-center gap-2 text-[0.65rem] uppercase tracking-[0.25em] text-muted-foreground">
-																		<Badge
-																			variant={
-																				isBlocked ? "destructive" : "outline"
-																			}
-																			className="rounded-full"
-																		>
-																			{task.id}
-																		</Badge>
-																		{task.assigneeId ? (
-																			<span>Assigned: {task.assigneeId}</span>
-																		) : (
-																			<span>Unassigned</span>
-																		)}
-																	</div>
-																</button>
-															);
-														})
-													)}
-												</div>
+								<Progress
+									value={completion}
+									className="h-2 w-32 [&>[data-slot=progress-indicator]]:bg-gradient-to-r [&>[data-slot=progress-indicator]]:from-primary [&>[data-slot=progress-indicator]]:to-chart-2"
+								/>
+							</div>
+							<div className="min-h-0 flex-1 overflow-hidden">
+								{loadingMission ? (
+									<div className="grid gap-3 md:grid-cols-2">
+										{taskSkeletons.map((key) => (
+											<div
+												key={key}
+												className="rounded-xl border border-border/60 bg-background/70 p-4"
+											>
+												<Skeleton className="h-4 w-32" />
+												<Skeleton className="mt-4 h-2 w-full" />
 											</div>
-										);
-									})}
-								</div>
-							)}
+										))}
+									</div>
+								) : tasksColumns.length === 0 ? (
+									<div className="rounded-xl border border-border/60 bg-background/70 p-4 text-sm text-muted-foreground">
+										No tasks yet. Create them via CLI.
+									</div>
+								) : (
+									<div className="flex h-full gap-4 overflow-x-auto pb-2">
+										{tasksColumns.map((column) => {
+											const columnTasks = tasksByColumn.get(column.id) ?? [];
+											return (
+												<div
+													key={column.id}
+													className="flex h-full w-[260px] flex-col gap-3"
+												>
+													<div className="flex items-center justify-between">
+														<p className="text-sm font-medium text-foreground">
+															{column.name}
+														</p>
+														<Badge
+															variant="outline"
+															className="rounded-full text-[0.6rem]"
+														>
+															{columnTasks.length}
+														</Badge>
+													</div>
+													<div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+														{columnTasks.length === 0 ? (
+															<div className="rounded-xl border border-border/60 bg-background/70 p-3 text-xs text-muted-foreground">
+																No tasks here.
+															</div>
+														) : (
+															columnTasks.map((task) => {
+																const isBlocked = task.statusNotes
+																	.toLowerCase()
+																	.startsWith("blocked:");
+																const isActive = task.id === activeTaskId;
+																return (
+																	<button
+																		key={task.id}
+																		onClick={() => setActiveTaskId(task.id)}
+																		type="button"
+																		className={cn(
+																			"w-full rounded-xl border border-border/60 bg-background/70 p-3 text-left transition",
+																			isActive &&
+																				"border-primary/60 bg-primary/10",
+																		)}
+																	>
+																		<p className="text-sm font-medium text-foreground">
+																			{task.title}
+																		</p>
+																		<p className="mt-1 text-xs text-muted-foreground">
+																			{task.description}
+																		</p>
+																		{task.statusNotes ? (
+																			<div className="mt-3 text-xs text-muted-foreground">
+																				{task.statusNotes}
+																			</div>
+																		) : null}
+																		<div className="mt-3 flex flex-wrap items-center gap-2 text-[0.6rem] uppercase tracking-[0.25em] text-muted-foreground">
+																			<Badge
+																				variant={
+																					isBlocked ? "destructive" : "outline"
+																				}
+																				className="rounded-full"
+																			>
+																				{task.id}
+																			</Badge>
+																			{task.assigneeId ? (
+																				<span>Assigned: {task.assigneeId}</span>
+																			) : (
+																				<span>Unassigned</span>
+																			)}
+																		</div>
+																	</button>
+																);
+															})
+														)}
+													</div>
+												</div>
+											);
+										})}
+									</div>
+								)}
+							</div>
 						</CardContent>
 						<CardFooter className="text-xs text-muted-foreground">
-							Tasks are grouped by column; status notes show blockers inline.
+							Status notes are the only blocker surface in this view.
 						</CardFooter>
 					</Card>
 
-					<Card className="glass-panel border-border/60 bg-card/80 backdrop-blur">
-						<CardHeader>
-							<CardTitle className="font-display text-xl">
-								Task Thread
-							</CardTitle>
-							<CardDescription>
-								One thread per task, mentions enforced.
-							</CardDescription>
-						</CardHeader>
-						<CardContent className="flex flex-col gap-4">
-							<div className="rounded-xl border border-border/60 bg-background/70 p-4">
-								<p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-									Selected task
-								</p>
-								<p className="mt-2 text-sm font-medium text-foreground">
-									{activeTask?.title ?? "None"}
-								</p>
-								<p className="mt-1 text-xs text-muted-foreground">
-									{activeTask?.description ?? "Pick a task to view its thread."}
-								</p>
-							</div>
-							{loadingThread ? (
-								threadSkeletons.map((key) => (
-									<div
-										key={key}
-										className="rounded-xl border border-border/60 bg-background/70 p-4"
+					<div className="flex h-full flex-col gap-6">
+						<Card className="glass-panel border-border/60 bg-card/80 backdrop-blur">
+							<CardHeader>
+								<CardTitle className="font-display text-lg">
+									Mission Snapshot
+								</CardTitle>
+								<CardDescription>
+									From <span className="font-mono">mission.json</span> + ROADMAP
+								</CardDescription>
+							</CardHeader>
+							<CardContent className="space-y-4">
+								<div className="flex items-center justify-between">
+									<p className="text-sm font-medium">
+										{mission?.name ?? "No mission selected"}
+									</p>
+									<Badge
+										variant="outline"
+										className={cn(
+											"rounded-full text-[0.6rem] uppercase tracking-[0.3em]",
+											mission ? missionStatusTone[mission.status] : "",
+										)}
 									>
-										<Skeleton className="h-4 w-40" />
-										<Skeleton className="mt-3 h-3 w-48" />
-									</div>
-								))
-							) : thread?.messages.length ? (
-								thread.messages.map((message) => (
-									<div
-										key={message.id}
-										className="rounded-xl border border-border/60 bg-background/70 p-4"
+										{mission?.status ?? "—"}
+									</Badge>
+								</div>
+								<p className="text-sm text-muted-foreground">
+									{mission?.description ??
+										"Select a mission to view its summary."}
+								</p>
+								<div className="rounded-xl border border-border/60 bg-background/70 p-3 text-xs text-muted-foreground whitespace-pre-wrap">
+									{loadingMission
+										? "Loading ROADMAP.md..."
+										: roadmap || "No roadmap yet."}
+								</div>
+								<div className="text-xs text-muted-foreground">
+									Created {formatDate(mission?.createdAt)} · Updated{" "}
+									{formatDate(mission?.updatedAt)}
+								</div>
+							</CardContent>
+						</Card>
+
+						<Card className="glass-panel flex min-h-0 flex-1 flex-col border-border/60 bg-card/80 backdrop-blur">
+							<CardHeader>
+								<CardTitle className="font-display text-lg">
+									Focus Panel
+								</CardTitle>
+								<CardDescription>
+									Threads, working memory, and logs.
+								</CardDescription>
+							</CardHeader>
+							<CardContent className="flex min-h-0 flex-1 flex-col">
+								<Tabs
+									defaultValue="thread"
+									className="flex min-h-0 flex-1 flex-col"
+								>
+									<TabsList variant="line" className="gap-3">
+										<TabsTrigger value="thread">Thread</TabsTrigger>
+										<TabsTrigger value="worker">Worker</TabsTrigger>
+									</TabsList>
+									<TabsContent
+										value="thread"
+										className="mt-4 flex min-h-0 flex-1 flex-col"
 									>
-										<div className="flex flex-wrap items-center justify-between gap-3">
-											<div className="flex items-center gap-2 text-xs text-muted-foreground">
-												<MessagesSquare className="h-3.5 w-3.5" />
-												<span>{message.authorId}</span>
-												<span className="rounded-full border border-border/60 px-2 py-0.5">
-													@{message.mentions}
-												</span>
+										<div className="rounded-xl border border-border/60 bg-background/70 p-3">
+											<p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+												Selected task
+											</p>
+											<p className="mt-2 text-sm font-medium text-foreground">
+												{activeTask?.title ?? "None"}
+											</p>
+											<p className="mt-1 text-xs text-muted-foreground">
+												{activeTask?.description ??
+													"Pick a task to view its thread."}
+											</p>
+										</div>
+										<div className="mt-3 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+											{loadingThread ? (
+												threadSkeletons.map((key) => (
+													<div
+														key={key}
+														className="rounded-xl border border-border/60 bg-background/70 p-3"
+													>
+														<Skeleton className="h-4 w-32" />
+														<Skeleton className="mt-3 h-3 w-40" />
+													</div>
+												))
+											) : thread?.messages.length ? (
+												thread.messages.map((message) => (
+													<div
+														key={message.id}
+														className="rounded-xl border border-border/60 bg-background/70 p-3"
+													>
+														<div className="flex flex-wrap items-center justify-between gap-2">
+															<div className="flex items-center gap-2 text-xs text-muted-foreground">
+																<MessagesSquare className="h-3.5 w-3.5" />
+																<span>{message.authorId}</span>
+																<span className="rounded-full border border-border/60 px-2 py-0.5">
+																	@{message.mentions}
+																</span>
+															</div>
+															<Badge
+																variant="outline"
+																className={cn(
+																	"rounded-full text-[0.6rem] uppercase tracking-[0.3em]",
+																	message.resolved
+																		? "border-emerald-400/40 text-emerald-600 dark:text-emerald-300"
+																		: "border-amber-400/50 text-amber-600 dark:text-amber-300",
+																)}
+															>
+																{message.resolved ? "Resolved" : "Open"}
+															</Badge>
+														</div>
+														<p className="mt-2 text-sm text-foreground">
+															{message.content}
+														</p>
+														<div className="mt-2 text-xs text-muted-foreground">
+															{formatDate(message.createdAt)}
+															{message.resolved
+																? ` · Resolved by ${message.resolvedBy ?? "—"}`
+																: " · Awaiting response"}
+														</div>
+													</div>
+												))
+											) : (
+												<div className="rounded-xl border border-border/60 bg-background/70 p-3 text-sm text-muted-foreground">
+													No messages for this task yet.
+												</div>
+											)}
+										</div>
+									</TabsContent>
+									<TabsContent
+										value="worker"
+										className="mt-4 flex min-h-0 flex-1 flex-col"
+									>
+										<div className="flex items-center justify-between">
+											<div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-muted-foreground">
+												<Users className="h-3.5 w-3.5" />
+												Worker roster
 											</div>
 											<Badge
 												variant="outline"
-												className={cn(
-													"rounded-full text-[0.6rem] uppercase tracking-[0.3em]",
-													message.resolved
-														? "border-emerald-400/40 text-emerald-600 dark:text-emerald-300"
-														: "border-amber-400/50 text-amber-600 dark:text-amber-300",
-												)}
+												className="rounded-full text-[0.6rem]"
 											>
-												{message.resolved ? "Resolved" : "Open"}
+												{workers?.workers.length ?? 0}
 											</Badge>
 										</div>
-										<p className="mt-3 text-sm text-foreground">
-											{message.content}
-										</p>
-										<div className="mt-3 flex flex-wrap items-center justify-between text-xs text-muted-foreground">
-											<span>{formatDate(message.createdAt)}</span>
-											{message.resolved ? (
-												<span>
-													Resolved by {message.resolvedBy ?? "—"} on{" "}
-													{formatDate(message.resolvedAt)}
-												</span>
-											) : (
-												<span>Awaiting response</span>
-											)}
-										</div>
-									</div>
-								))
-							) : (
-								<div className="rounded-xl border border-border/60 bg-background/70 p-4 text-sm text-muted-foreground">
-									No messages for this task yet.
-								</div>
-							)}
-						</CardContent>
-						<CardFooter className="text-xs text-muted-foreground">
-							Mentions are stored as a single recipient id per message.
-						</CardFooter>
-					</Card>
-				</section>
-
-				<section className="grid gap-6 lg:grid-cols-[0.7fr_1.3fr]">
-					<Card className="glass-panel border-border/60 bg-card/80 backdrop-blur">
-						<CardHeader>
-							<CardTitle className="font-display text-xl">Workers</CardTitle>
-							<CardDescription>
-								From <span className="font-mono">workers.json</span>
-							</CardDescription>
-						</CardHeader>
-						<CardContent className="flex flex-col gap-3">
-							{loadingMission ? (
-								workerSkeletons.map((key) => (
-									<div
-										key={key}
-										className="rounded-xl border border-border/60 bg-background/70 p-4"
-									>
-										<Skeleton className="h-4 w-28" />
-										<Skeleton className="mt-3 h-3 w-36" />
-									</div>
-								))
-							) : workers?.workers.length ? (
-								workers.workers.map((worker) => {
-									const isActive = worker.id === activeWorkerId;
-									return (
-										<button
-											key={worker.id}
-											onClick={() => setActiveWorkerId(worker.id)}
-											type="button"
-											className={cn(
-												"w-full rounded-xl border border-border/60 bg-background/70 p-4 text-left transition",
-												isActive && "border-primary/60 bg-primary/10",
-											)}
-										>
-											<div className="flex items-start justify-between gap-3">
-												<div>
-													<p className="text-sm font-medium text-foreground">
-														{worker.displayName}
-													</p>
-													<p className="mt-1 text-xs text-muted-foreground">
-														{worker.roleDescription}
-													</p>
-												</div>
-												<Badge
-													variant="outline"
-													className="rounded-full text-[0.6rem] uppercase tracking-[0.25em]"
-												>
-													{worker.status}
-												</Badge>
-											</div>
-											<div className="mt-3 text-[0.65rem] uppercase tracking-[0.25em] text-muted-foreground">
-												Role: {worker.systemRole}
-											</div>
-										</button>
-									);
-								})
-							) : (
-								<div className="rounded-xl border border-border/60 bg-background/70 p-4 text-sm text-muted-foreground">
-									No workers yet.
-								</div>
-							)}
-						</CardContent>
-					</Card>
-
-					<Card className="glass-panel border-border/60 bg-card/80 backdrop-blur">
-						<CardHeader>
-							<CardTitle className="font-display text-xl">
-								Worker Signals
-							</CardTitle>
-							<CardDescription>
-								Working memory and logs for the selected worker.
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<Tabs defaultValue="working" className="w-full">
-								<TabsList variant="line" className="gap-3">
-									<TabsTrigger value="working">Working</TabsTrigger>
-									<TabsTrigger value="logs">Logs</TabsTrigger>
-								</TabsList>
-								<TabsContent value="working" className="mt-4">
-									<div className="rounded-xl border border-border/60 bg-background/70 p-4 text-sm text-muted-foreground whitespace-pre-wrap">
-										{loadingWorker
-											? "Loading working memory..."
-											: working || "No working memory file yet."}
-									</div>
-								</TabsContent>
-								<TabsContent value="logs" className="mt-4">
-									<div className="flex flex-col gap-3">
-										{loadingWorker ? (
-											logSkeletons.map((key) => (
-												<div
-													key={key}
-													className="rounded-xl border border-border/60 bg-background/70 p-4"
-												>
-													<Skeleton className="h-3 w-24" />
-													<Skeleton className="mt-2 h-3 w-40" />
-												</div>
-											))
-										) : log?.events.length ? (
-											log.events.map((event) => (
-												<div
-													key={event.id}
-													className="rounded-xl border border-border/60 bg-background/70 p-4"
-												>
-													<div className="flex flex-wrap items-center justify-between gap-3">
-														<div className="flex items-center gap-2 text-xs text-muted-foreground">
-															<Activity className="h-3.5 w-3.5" />
-															<span>{event.type}</span>
+										<div className="mt-3 flex flex-wrap gap-2">
+											{loadingMission
+												? workerSkeletons.map((key) => (
+														<div
+															key={key}
+															className="rounded-full border border-border/60 bg-background/70 px-3 py-1"
+														>
+															<Skeleton className="h-3 w-16" />
 														</div>
-														<Tooltip>
-															<TooltipTrigger asChild>
-																<Badge
-																	variant="outline"
-																	className={cn(
-																		"rounded-full text-[0.6rem] uppercase tracking-[0.3em]",
-																		logLevelTone[event.level],
-																	)}
-																>
-																	{event.level}
-																</Badge>
-															</TooltipTrigger>
-															<TooltipContent side="top">
-																{formatDate(event.timestamp)}
-															</TooltipContent>
-														</Tooltip>
-													</div>
-													<p className="mt-2 text-sm text-foreground">
-														{event.message}
-													</p>
-													<div className="mt-2 text-xs text-muted-foreground">
-														{event.refs?.taskId
-															? `Task ${event.refs.taskId}`
-															: "No task reference"}
-													</div>
+													))
+												: workers?.workers.map((worker) => {
+														const isActive = worker.id === activeWorkerId;
+														return (
+															<button
+																key={worker.id}
+																onClick={() => setActiveWorkerId(worker.id)}
+																type="button"
+																className={cn(
+																	"rounded-full border border-border/60 bg-background/70 px-3 py-1 text-xs text-foreground transition",
+																	isActive && "border-primary/60 bg-primary/10",
+																)}
+															>
+																{worker.displayName}
+															</button>
+														);
+													})}
+										</div>
+										<div className="mt-4 rounded-xl border border-border/60 bg-background/70 p-3 text-xs text-muted-foreground">
+											<p className="text-sm font-medium text-foreground">
+												{activeWorker?.displayName ?? "No worker selected"}
+											</p>
+											<p className="mt-1">
+												{activeWorker?.roleDescription ??
+													"Select a worker to view details."}
+											</p>
+											<p className="mt-2 text-[0.65rem] uppercase tracking-[0.3em]">
+												{activeWorker?.systemRole ?? "—"} ·{" "}
+												{activeWorker?.status ?? "—"}
+											</p>
+										</div>
+										<Tabs
+											defaultValue="working"
+											className="mt-4 flex min-h-0 flex-1 flex-col"
+										>
+											<TabsList variant="line" className="gap-3">
+												<TabsTrigger value="working">Working</TabsTrigger>
+												<TabsTrigger value="logs">Logs</TabsTrigger>
+											</TabsList>
+											<TabsContent
+												value="working"
+												className="mt-3 min-h-0 flex-1"
+											>
+												<div className="h-full rounded-xl border border-border/60 bg-background/70 p-3 text-xs text-muted-foreground whitespace-pre-wrap overflow-y-auto">
+													{loadingWorker
+														? "Loading working memory..."
+														: working || "No working memory file yet."}
 												</div>
-											))
-										) : (
-											<div className="rounded-xl border border-border/60 bg-background/70 p-4 text-sm text-muted-foreground">
-												No logs for this worker yet.
-											</div>
-										)}
-									</div>
-								</TabsContent>
-							</Tabs>
-						</CardContent>
-						<CardFooter className="text-xs text-muted-foreground">
-							Logs are immutable events emitted by the CLI.
-						</CardFooter>
-					</Card>
-				</section>
+											</TabsContent>
+											<TabsContent value="logs" className="mt-3 min-h-0 flex-1">
+												<div className="flex h-full flex-col gap-3 overflow-y-auto pr-1">
+													{loadingWorker ? (
+														logSkeletons.map((key) => (
+															<div
+																key={key}
+																className="rounded-xl border border-border/60 bg-background/70 p-3"
+															>
+																<Skeleton className="h-3 w-24" />
+																<Skeleton className="mt-2 h-3 w-40" />
+															</div>
+														))
+													) : log?.events.length ? (
+														log.events.map((event) => (
+															<div
+																key={event.id}
+																className="rounded-xl border border-border/60 bg-background/70 p-3"
+															>
+																<div className="flex flex-wrap items-center justify-between gap-2">
+																	<div className="flex items-center gap-2 text-xs text-muted-foreground">
+																		<Activity className="h-3.5 w-3.5" />
+																		<span>{event.type}</span>
+																	</div>
+																	<Tooltip>
+																		<TooltipTrigger asChild>
+																			<Badge
+																				variant="outline"
+																				className={cn(
+																					"rounded-full text-[0.6rem] uppercase tracking-[0.3em]",
+																					logLevelTone[event.level],
+																				)}
+																			>
+																				{event.level}
+																			</Badge>
+																		</TooltipTrigger>
+																		<TooltipContent side="top">
+																			{formatDate(event.timestamp)}
+																		</TooltipContent>
+																	</Tooltip>
+																</div>
+																<p className="mt-2 text-sm text-foreground">
+																	{event.message}
+																</p>
+																<div className="mt-2 text-xs text-muted-foreground">
+																	{event.refs?.taskId
+																		? `Task ${event.refs.taskId}`
+																		: "No task reference"}
+																</div>
+															</div>
+														))
+													) : (
+														<div className="rounded-xl border border-border/60 bg-background/70 p-3 text-sm text-muted-foreground">
+															No logs for this worker yet.
+														</div>
+													)}
+												</div>
+											</TabsContent>
+										</Tabs>
+									</TabsContent>
+								</Tabs>
+							</CardContent>
+							<CardFooter className="text-xs text-muted-foreground">
+								Logs are immutable events emitted by the CLI.
+							</CardFooter>
+						</Card>
+					</div>
+				</main>
 			</div>
 		</div>
 	);
