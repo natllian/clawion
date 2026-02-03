@@ -82,12 +82,29 @@ describe("schemas", () => {
 				{
 					id: "w1",
 					displayName: "Worker One",
-					missionRole: "Lead",
+					roleDescription: "Lead",
+					systemRole: "manager",
 					status: "active",
 				},
 			],
 		});
 		expect(result.success).toBe(true);
+	});
+
+	it("rejects workers file without a manager", () => {
+		const result = workersSchema.safeParse({
+			schemaVersion: 1,
+			workers: [
+				{
+					id: "w1",
+					displayName: "Worker One",
+					roleDescription: "Contributor",
+					systemRole: "worker",
+					status: "active",
+				},
+			],
+		});
+		expect(result.success).toBe(false);
 	});
 
 	it("requires mentions to be a string", () => {

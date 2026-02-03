@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 import { Command } from "commander";
 import { ensureWorkspace } from "../src/core/workspace/init";
 import { resolveMissionsDir } from "../src/core/workspace/paths";
+import { assertManager } from "../src/core/workspace/permissions";
 
 type CliContext = {
 	missionsDir: string;
@@ -57,45 +58,91 @@ program
 		});
 	});
 
-program
-	.command("mission <action>")
-	.description("Mission management commands (planned)")
-	.action((action) => {
-		console.error(`mission ${action} is not implemented yet.`);
+function resolveWorkerId(command: Command): string | null {
+	const options = command.optsWithGlobals() as { worker?: string };
+	const workerId = options.worker?.trim();
+	return workerId && workerId.length > 0 ? workerId : null;
+}
+
+async function requireManager(
+	command: Command,
+	missionId: string,
+): Promise<boolean> {
+	const workerId = resolveWorkerId(command);
+	if (!workerId) {
+		console.error("Manager-only command requires --worker <id>.");
+		process.exitCode = 1;
+		return false;
+	}
+
+	try {
+		await assertManager({
+			missionsDir: context.missionsDir,
+			missionId,
+			workerId,
+		});
+		return true;
+	} catch (error) {
+		console.error(error instanceof Error ? error.message : String(error));
+		process.exitCode = 1;
+		return false;
+	}
+}
+
+const mission = program.command("mission").description("Mission management");
+
+mission
+	.command("complete")
+	.description("Mark a mission as complete (manager only)")
+	.requiredOption("--mission <id>", "Mission ID")
+	.action(async (options, command) => {
+		const allowed = await requireManager(command, options.mission);
+		if (!allowed) {
+			return;
+		}
+		console.error("mission complete is not implemented yet.");
 		process.exitCode = 1;
 	});
 
-program
-	.command("task <action>")
-	.description("Task management commands (planned)")
-	.action((action) => {
-		console.error(`task ${action} is not implemented yet.`);
+mission.action(() => {
+	mission.help();
+});
+
+const task = program.command("task").description("Task management");
+
+task
+	.command("assign")
+	.description("Assign a task to a worker (manager only)")
+	.requiredOption("--mission <id>", "Mission ID")
+	.requiredOption("--task <id>", "Task ID")
+	.requiredOption("--to <workerId>", "Assignee worker ID")
+	.action(async (options, command) => {
+		const allowed = await requireManager(command, options.mission);
+		if (!allowed) {
+			return;
+		}
+		console.error("task assign is not implemented yet.");
 		process.exitCode = 1;
 	});
 
-program
-	.command("worker <action>")
-	.description("Worker management commands (planned)")
-	.action((action) => {
-		console.error(`worker ${action} is not implemented yet.`);
-		process.exitCode = 1;
-	});
+task.action(() => {
+	task.help();
+});
 
-program
-	.command("thread <action>")
-	.description("Thread management commands (planned)")
-	.action((action) => {
-		console.error(`thread ${action} is not implemented yet.`);
-		process.exitCode = 1;
-	});
+const worker = program.command("worker").description("Worker management");
+worker.action(() => {
+	worker.help();
+});
 
-program
-	.command("log <action>")
-	.description("Log management commands (planned)")
-	.action((action) => {
-		console.error(`log ${action} is not implemented yet.`);
-		process.exitCode = 1;
-	});
+const thread = program.command("thread").description("Thread management");
+thread.action(() => {
+	thread.help();
+});
+
+const log = program.command("log").description("Log management");
+log.action(() => {
+	log.help();
+});
 
 await program.parseAsync(process.argv);
 
