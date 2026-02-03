@@ -5,7 +5,13 @@ import { describe, expect, it } from "vitest";
 import { readJson, writeJsonAtomic } from "../src/core/fs/json";
 import { workersSchema } from "../src/core/schemas";
 import { DEFAULT_MANAGER_ROLE_DESCRIPTION } from "../src/core/workspace/roles";
-import { addWorker } from "../src/core/workspace/workers";
+import {
+	addWorker,
+	listWorkers,
+	resolveWorkingPath,
+	updateWorker,
+} from "../src/core/workspace/workers";
+import { createMissionFixture, createWorkspace } from "./helpers";
 
 async function createMissionDir(): Promise<string> {
 	const root = await mkdtemp(join(tmpdir(), "clawion-workers-"));
@@ -51,5 +57,32 @@ describe("addWorker", () => {
 				systemRole: "worker",
 			}),
 		).rejects.toThrow("roleDescription is required");
+	});
+});
+
+describe("worker updates", () => {
+	it("updates worker data and lists workers", async () => {
+		const missionsDir = await createWorkspace();
+		await createMissionFixture(missionsDir, "m1");
+		const missionDir = join(missionsDir, "m1");
+
+		await addWorker(missionDir, {
+			id: "worker-1",
+			displayName: "Worker",
+			roleDescription: "Contributor",
+			systemRole: "worker",
+		});
+
+		await updateWorker(missionDir, "worker-1", {
+			displayName: "Worker Updated",
+			status: "paused",
+		});
+
+		const workersFile = await listWorkers(missionDir);
+		expect(workersFile.workers[0].displayName).toBe("Worker Updated");
+		expect(workersFile.workers[0].status).toBe("paused");
+
+		const workingPath = resolveWorkingPath(missionDir, "worker-1");
+		expect(workingPath).toContain("working/worker-1.md");
 	});
 });

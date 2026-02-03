@@ -53,3 +53,44 @@ function normalizeRoleDescription(worker: WorkerInput): string {
 
 	throw new Error("roleDescription is required for non-manager workers.");
 }
+
+export async function updateWorker(
+	missionDir: string,
+	workerId: string,
+	updates: Partial<Omit<WorkerInput, "id" | "systemRole">>,
+): Promise<void> {
+	const workersPath = join(missionDir, "workers.json");
+	const workersFile = await readJson(workersPath, workersSchema);
+	const worker = workersFile.workers.find((entry) => entry.id === workerId);
+
+	if (!worker) {
+		throw new Error(`Worker not found: ${workerId}`);
+	}
+
+	const nextWorker = workerSchema.parse({
+		...worker,
+		displayName: updates.displayName ?? worker.displayName,
+		roleDescription: updates.roleDescription ?? worker.roleDescription,
+		status: updates.status ?? worker.status,
+	});
+
+	const nextFile = workersSchema.parse({
+		...workersFile,
+		workers: workersFile.workers.map((entry) =>
+			entry.id === workerId ? nextWorker : entry,
+		),
+	});
+
+	await writeJsonAtomic(workersPath, nextFile);
+}
+
+export async function listWorkers(missionDir: string) {
+	return readJson(join(missionDir, "workers.json"), workersSchema);
+}
+
+export function resolveWorkingPath(
+	missionDir: string,
+	workerId: string,
+): string {
+	return join(missionDir, "working", `${workerId}.md`);
+}

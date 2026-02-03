@@ -46,6 +46,7 @@ describe("schemas", () => {
 					description: "Do something",
 					columnId: "todo",
 					statusNotes: "",
+					assigneeId: "w1",
 					createdAt: new Date().toISOString(),
 					updatedAt: new Date().toISOString(),
 				},
@@ -181,11 +182,24 @@ describe("schemas", () => {
 					name: "Mission 1",
 					description: "Desc",
 					path: "/tmp/m1",
-					status: "active",
+					status: "completed",
 					createdAt: new Date().toISOString(),
 					updatedAt: new Date().toISOString(),
 				},
 			],
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("accepts completed mission status", () => {
+		const result = missionSchema.safeParse({
+			schemaVersion: 1,
+			id: "m1",
+			name: "Test Mission",
+			description: "A mission",
+			status: "completed",
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
 		});
 		expect(result.success).toBe(true);
 	});

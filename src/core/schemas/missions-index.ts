@@ -12,7 +12,7 @@ export const missionIndexItemSchema = z
 		name: nonEmptyTextSchema,
 		description: nonEmptyTextSchema,
 		path: nonEmptyTextSchema,
-		status: z.enum(["active", "paused", "archived"]),
+		status: z.enum(["active", "paused", "archived", "completed"]),
 		createdAt: isoDateSchema,
 		updatedAt: isoDateSchema,
 	})

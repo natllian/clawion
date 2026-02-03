@@ -12,7 +12,7 @@ export const missionSchema = z
 		id: idSchema,
 		name: nonEmptyTextSchema,
 		description: nonEmptyTextSchema,
-		status: z.enum(["active", "paused", "archived"]),
+		status: z.enum(["active", "paused", "archived", "completed"]),
 		createdAt: isoDateSchema,
 		updatedAt: isoDateSchema,
 	})

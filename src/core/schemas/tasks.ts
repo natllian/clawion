@@ -21,6 +21,7 @@ export const taskItemSchema = z
 		description: nonEmptyTextSchema,
 		columnId: idSchema,
 		statusNotes: z.string(),
+		assigneeId: idSchema.optional(),
 		createdAt: isoDateSchema,
 		updatedAt: isoDateSchema,
 	})
