@@ -170,18 +170,39 @@ export function Dashboard({
 				if (!missionResponse.ok) {
 					throw new Error("Mission not found.");
 				}
+				if (!tasksResponse.ok) {
+					throw new Error("Failed to load tasks.");
+				}
+				if (!threadsResponse.ok) {
+					throw new Error("Failed to load threads.");
+				}
 
 				const missionPayload =
 					(await missionResponse.json()) as MissionResponse;
 				const tasksPayload = (await tasksResponse.json()) as TasksFile;
-				const agentsPayload = (await agentsResponse.json()) as AgentsFile;
 				const threadsPayload = (await threadsResponse.json()) as ThreadFile[];
+
+				let agentsPayload: AgentsFile = { schemaVersion: 1, agents: [] };
+				let agentsWarning: string | null = null;
+
+				if (!agentsResponse.ok) {
+					agentsWarning = "Unable to load agents. Verify agents.json exists.";
+				} else {
+					const raw = (await agentsResponse.json()) as Partial<AgentsFile>;
+					agentsPayload = {
+						schemaVersion: raw.schemaVersion ?? 1,
+						agents: Array.isArray(raw.agents) ? raw.agents : [],
+					};
+				}
 
 				setMission(missionPayload.mission);
 				setRoadmap(missionPayload.roadmap);
 				setTasks(tasksPayload);
 				setThreads(threadsPayload);
 				setAgents(agentsPayload);
+				if (agentsWarning) {
+					setError(agentsWarning);
+				}
 
 				setActiveTaskId((current) => {
 					if (
@@ -195,11 +216,11 @@ export function Dashboard({
 				setActiveAgentId((current) => {
 					if (
 						current &&
-						agentsPayload.agents.some((agent) => agent.id === current)
+						(agentsPayload.agents ?? []).some((agent) => agent.id === current)
 					) {
 						return current;
 					}
-					return agentsPayload.agents[0]?.id ?? null;
+					return agentsPayload.agents?.[0]?.id ?? null;
 				});
 			} catch (err) {
 				if (isAbortError(err)) return;
@@ -244,6 +265,13 @@ export function Dashboard({
 						signal: controller.signal,
 					}),
 				]);
+
+				if (!workingResponse.ok || !logResponse.ok) {
+					setWorking("");
+					setLog(null);
+					return;
+				}
+
 				const workingPayload =
 					(await workingResponse.json()) as WorkingResponse;
 				const logPayload = (await logResponse.json()) as LogFile;
