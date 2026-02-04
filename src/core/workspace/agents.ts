@@ -87,7 +87,19 @@ export async function updateAgent(
 }
 
 export async function listAgents(missionDir: string) {
-	return readJson(join(missionDir, "agents.json"), agentsSchema);
+	const agentsPath = join(missionDir, "agents.json");
+	try {
+		return await readJson(agentsPath, agentsSchema);
+	} catch (error) {
+		if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+			throw new Error(
+				`Agents file not found: ${agentsPath}. Is the mission initialized?`,
+			);
+		}
+		throw new Error(
+			`Failed to read agents file: ${error instanceof Error ? error.message : String(error)}`,
+		);
+	}
 }
 
 export function resolveWorkingPath(

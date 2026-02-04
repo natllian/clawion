@@ -1,6 +1,7 @@
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import type { ZodSchema } from "zod";
+import { ZodError } from "zod";
 
 export async function readJson<T>(
 	filePath: string,
@@ -8,7 +9,20 @@ export async function readJson<T>(
 ): Promise<T> {
 	const raw = await readFile(filePath, "utf8");
 	const data = JSON.parse(raw) as T;
-	return schema ? schema.parse(data) : data;
+	if (!schema) {
+		return data;
+	}
+	try {
+		return schema.parse(data);
+	} catch (error) {
+		if (error instanceof ZodError) {
+			const issues = error.issues
+				.map((issue) => `  - ${issue.path.join(".")}: ${issue.message}`)
+				.join("\n");
+			throw new Error(`Validation failed for ${filePath}:\n${issues}`);
+		}
+		throw error;
+	}
 }
 
 export async function writeJsonAtomic(
