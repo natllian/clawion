@@ -75,16 +75,16 @@ describe("ThreadsList", () => {
 		render(<ThreadsList {...defaultProps} />);
 		const openBadge = screen.getByText("open");
 		expect(openBadge).toBeInTheDocument();
-		// Open should have blue styling
-		expect(openBadge.closest("span")).toHaveClass("border-blue-400/50");
+		// Open should have emerald styling
+		expect(openBadge).toHaveClass("border-emerald-500/40");
 	});
 
 	it("shows resolved status badge", () => {
 		render(<ThreadsList {...defaultProps} />);
 		const resolvedBadge = screen.getByText("resolved");
 		expect(resolvedBadge).toBeInTheDocument();
-		// Resolved should have green styling
-		expect(resolvedBadge.closest("span")).toHaveClass("border-emerald-400/40");
+		// Resolved should have muted styling
+		expect(resolvedBadge.closest("a")).toHaveClass("border-border/70");
 	});
 
 	it("shows loading skeletons when loading", () => {

@@ -28,7 +28,11 @@ export function ThreadsList({
 						key={key}
 						className="rounded-lg border border-border/70 bg-background p-3"
 					>
-						<Skeleton className="h-3 w-28" />
+						<div className="flex items-center justify-between gap-2">
+							<Skeleton className="h-3 w-24" />
+							<Skeleton className="h-4 w-12" />
+						</div>
+						<Skeleton className="mt-2 h-3 w-20" />
 					</div>
 				))}
 			</>
@@ -49,31 +53,29 @@ export function ThreadsList({
 				const creatorName = workerMap.get(thread.creator) ?? thread.creator;
 
 				return (
-					<div
+					<Link
 						key={thread.taskId}
-						className="rounded-lg border border-border/70 bg-background px-3 py-2"
+						href={`/missions/${activeMissionId}/tasks/${thread.taskId}`}
+						className="block rounded-lg border border-border/70 bg-background px-3 py-2 transition hover:border-primary/40 hover:bg-primary/5"
 					>
 						<div className="flex items-start justify-between gap-2">
-							<Link
-								href={`/missions/${activeMissionId}/tasks/${thread.taskId}`}
-								className="w-full text-left text-xs font-medium text-foreground"
-							>
+							<span className="line-clamp-1 text-xs font-medium text-foreground">
 								{thread.title}
-							</Link>
+							</span>
 							<Badge
 								variant="outline"
 								className={cn(
-									"rounded-full text-[0.6rem] uppercase tracking-wide",
+									"shrink-0 rounded-full text-[0.6rem] uppercase tracking-wide",
 									threadStatusTone[thread.status],
 								)}
 							>
 								{thread.status}
 							</Badge>
 						</div>
-						<p className="mt-1 text-[0.65rem] text-muted-foreground">
+						<p className="mt-1 line-clamp-1 text-[0.65rem] text-muted-foreground">
 							by {creatorName}
 						</p>
-					</div>
+					</Link>
 				);
 			})}
 		</>
