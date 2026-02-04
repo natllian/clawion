@@ -22,7 +22,7 @@ export const logEventSchema = z
 		type: nonEmptyTextSchema,
 		message: nonEmptyTextSchema,
 		refs: logRefSchema.optional(),
-		payload: z.record(z.unknown()).optional(),
+		payload: z.record(z.string(), z.unknown()).optional(),
 	})
 	.strict();
 

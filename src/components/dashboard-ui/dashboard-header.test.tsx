@@ -21,7 +21,7 @@ vi.mock("./snapshot-dropdown", () => ({
 
 describe("DashboardHeader", () => {
 	const mockMission: Mission = {
-		schemaVersion: "1.0.0",
+		schemaVersion: 1,
 		id: "mission-1",
 		name: "Test Mission",
 		description: "A test mission",

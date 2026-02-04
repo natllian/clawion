@@ -1,5 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { WorkersFile } from "@/core/schemas";
 
 // Dynamic import to apply mocks before testing
 const { WorkerDropdown: TestedWorkerDropdown } = await import(
@@ -8,8 +9,8 @@ const { WorkerDropdown: TestedWorkerDropdown } = await import(
 
 // Test LogEvent separately in its own test file for isolation
 describe("WorkerDropdown - rendering", () => {
-	const mockWorkers = {
-		schemaVersion: "1.0.0",
+	const mockWorkers: WorkersFile = {
+		schemaVersion: 1,
 		workers: [
 			{
 				id: "w1",
@@ -56,9 +57,10 @@ describe("WorkerDropdown - rendering", () => {
 	});
 
 	it("shows empty state when no workers", () => {
+		const emptyWorkers: WorkersFile = { schemaVersion: 1, workers: [] };
 		const props = {
 			...defaultProps,
-			workers: { schemaVersion: "1.0.0", workers: [] },
+			workers: emptyWorkers,
 		};
 		render(<TestedWorkerDropdown {...props} />);
 		expect(screen.getByText("No workers yet.")).toBeInTheDocument();

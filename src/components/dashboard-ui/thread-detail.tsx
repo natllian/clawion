@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Mission } from "@/core/schemas";
+import type { Mission, ThreadFile, ThreadMessage } from "@/core/schemas";
 import { missionStatusTone, threadStatusTone } from "@/lib/status-tones";
 import { cn } from "@/lib/utils";
 
@@ -151,7 +151,7 @@ export function ThreadDetail({
 		: "Unassigned";
 
 	const participants = new Set<string>();
-	thread.messages.forEach((message) => {
+	thread.messages.forEach((message: ThreadMessage) => {
 		participants.add(message.authorId);
 		participants.add(message.mentions ?? "");
 	});
@@ -249,7 +249,7 @@ export function ThreadDetail({
 									No thread messages yet.
 								</div>
 							) : (
-								thread.messages.map((message) => {
+								thread.messages.map((message: ThreadMessage) => {
 									const authorLabel =
 										workerMap.get(message.authorId) ?? message.authorId;
 									const mentionsLabel =
