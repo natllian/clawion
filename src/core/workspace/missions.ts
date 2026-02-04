@@ -1,4 +1,4 @@
-import { cp, readFile } from "node:fs/promises";
+import { cp, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { readJson, writeJsonAtomic } from "../fs/json";
 import { pathExists } from "../fs/util";
@@ -21,6 +21,12 @@ type MissionUpdateInput = {
 	missionsDir: string;
 	id: string;
 	description: string;
+};
+
+type MissionRoadmapUpdateInput = {
+	missionsDir: string;
+	id: string;
+	roadmap: string;
 };
 
 function nowIso(): string {
@@ -104,6 +110,27 @@ export async function updateMission(input: MissionUpdateInput) {
 	await updateMissionIndexEntry(input.missionsDir, input.id, {
 		description: input.description,
 		updatedAt: nextMission.updatedAt,
+	});
+}
+
+export async function updateMissionRoadmap(input: MissionRoadmapUpdateInput) {
+	const missionPath = await resolveMissionPath(input.missionsDir, input.id);
+	const mission = await readJson(
+		join(missionPath, "mission.json"),
+		missionSchema,
+	);
+	const updatedAt = nowIso();
+
+	await writeFile(join(missionPath, "ROADMAP.md"), input.roadmap, "utf8");
+
+	const nextMission = missionSchema.parse({
+		...mission,
+		updatedAt,
+	});
+
+	await writeJsonAtomic(join(missionPath, "mission.json"), nextMission);
+	await updateMissionIndexEntry(input.missionsDir, input.id, {
+		updatedAt,
 	});
 }
 

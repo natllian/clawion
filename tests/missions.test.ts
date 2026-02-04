@@ -7,6 +7,7 @@ import {
 	listMissions,
 	showMission,
 	updateMission,
+	updateMissionRoadmap,
 } from "../src/core/workspace/missions";
 import { createMissionFixture, createWorkspace } from "./helpers";
 
@@ -77,6 +78,21 @@ describe("missions", () => {
 			missionsIndexSchema,
 		);
 		expect(indexAfterComplete.missions[0].status).toBe("completed");
+	});
+
+	it("updates mission roadmap", async () => {
+		const missionsDir = await createWorkspace();
+		await createMissionFixture(missionsDir, "m1");
+
+		await updateMissionRoadmap({
+			missionsDir,
+			id: "m1",
+			roadmap: "# New Roadmap\n\n- Item A\n",
+		});
+
+		const details = await showMission(missionsDir, "m1");
+		expect(details.roadmap).toContain("New Roadmap");
+		expect(details.roadmap).toContain("Item A");
 	});
 
 	it("rejects duplicate mission creation", async () => {

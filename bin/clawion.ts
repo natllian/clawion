@@ -1,5 +1,6 @@
 #!/usr/bin/env tsx
 import { spawn } from "node:child_process";
+import { readFile } from "node:fs/promises";
 import { Command } from "commander";
 import {
 	resolveStatusForColumn,
@@ -19,6 +20,7 @@ import {
 	createMission,
 	showMission,
 	updateMission,
+	updateMissionRoadmap,
 } from "../src/core/workspace/missions";
 import { resolveMissionsDir } from "../src/core/workspace/paths";
 import { assertManager } from "../src/core/workspace/permissions";
@@ -96,6 +98,19 @@ const HELP_ENTRIES: HelpEntry[] = [
 		purpose: "Show mission metadata and roadmap.",
 		params: ["--id <id>"],
 		example: "clawion mission show --id m1",
+	},
+	{
+		command: "mission roadmap",
+		purpose:
+			"Show the mission roadmap, or replace it (manager only for updates).",
+		params: [
+			"--id <id>",
+			"--set <markdown> (optional)",
+			"--file <path> (optional)",
+			"--agent <agentId> (required for updates)",
+		],
+		example:
+			"clawion mission roadmap --id m1 --set '# Roadmap\\n\\n- Item' --agent manager-1",
 	},
 	{
 		command: "mission update",
@@ -367,6 +382,47 @@ mission
 		try {
 			const data = await showMission(context.missionsDir, options.id);
 			console.log(JSON.stringify(data, null, 2));
+		} catch (error) {
+			console.error(error instanceof Error ? error.message : String(error));
+			process.exitCode = 1;
+		}
+	});
+
+mission
+	.command("roadmap")
+	.description("Show or update mission roadmap (manager only for updates)")
+	.requiredOption("--id <id>", "Mission ID")
+	.option("--set <markdown>", "Replace roadmap contents")
+	.option("--file <path>", "Replace roadmap contents from a local file")
+	.action(async (options, command) => {
+		try {
+			if (!options.set && !options.file) {
+				const data = await showMission(context.missionsDir, options.id);
+				console.log(data.roadmap);
+				return;
+			}
+
+			if (options.set && options.file) {
+				console.error("Provide only one of --set or --file.");
+				process.exitCode = 1;
+				return;
+			}
+
+			const allowed = await requireManager(command, options.id);
+			if (!allowed) {
+				return;
+			}
+
+			const roadmap = options.file
+				? await readFile(options.file, "utf8")
+				: String(options.set);
+
+			await updateMissionRoadmap({
+				missionsDir: context.missionsDir,
+				id: options.id,
+				roadmap,
+			});
+			console.log(`Mission roadmap updated: ${options.id}`);
 		} catch (error) {
 			console.error(error instanceof Error ? error.message : String(error));
 			process.exitCode = 1;
