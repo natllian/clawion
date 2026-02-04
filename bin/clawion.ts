@@ -829,6 +829,14 @@ thread
 			return;
 		}
 
+		if (mentionsId === authorAgentId) {
+			console.error(
+				`Error: You cannot mention yourself. The --mentions agent must be different from --agent (author).`,
+			);
+			process.exitCode = 1;
+			return;
+		}
+
 		try {
 			const missionPath = await resolveMissionPath(
 				context.missionsDir,
