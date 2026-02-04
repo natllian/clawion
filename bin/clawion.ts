@@ -198,7 +198,7 @@ const HELP_ENTRIES: HelpEntry[] = [
 			"--id <agentId>",
 			"--name <displayName>",
 			"--system-role <manager|worker>",
-			"--role-description <text> (optional for manager)",
+			"--role-description <text>",
 			"--status <active|paused> (optional)",
 			"--agent <agentId>",
 		],
@@ -630,7 +630,7 @@ agent
 	.requiredOption("--id <agentId>", "Agent ID")
 	.requiredOption("--name <displayName>", "Display name")
 	.requiredOption("--system-role <role>", "System role (manager|worker)")
-	.option("--role-description <text>", "Role description for the agent")
+	.requiredOption("--role-description <text>", "Role description for the agent")
 	.option("--status <status>", "Status (active|paused)", "active")
 	.action(async (options, command) => {
 		const actingAgentId = requireAgentId(command);
