@@ -94,20 +94,12 @@ describe("TaskCard", () => {
 	it("applies active styling when selected", () => {
 		const props = { ...defaultProps, activeTaskId: "1" };
 		render(<TaskCard {...props} />);
-		const card = screen
-			.getByRole("button", { name: /test task/i })
-			.closest("div");
-		expect(card).not.toBeNull();
-		expect(card).toHaveClass("bg-primary/10");
+		expect(screen.getByTestId("task-card")).toHaveClass("bg-primary/10");
 	});
 
 	it("does not apply active styling when not selected", () => {
 		render(<TaskCard {...defaultProps} />);
-		const card = screen
-			.getByRole("button", { name: /test task/i })
-			.closest("div");
-		expect(card).not.toBeNull();
-		expect(card).not.toHaveClass("bg-primary/10");
+		expect(screen.getByTestId("task-card")).not.toHaveClass("bg-primary/10");
 	});
 
 	it("shows Blocked badge when statusNotes starts with blocked:", () => {

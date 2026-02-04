@@ -34,19 +34,42 @@ export function TaskCard({
 				isBlocked && "before:bg-destructive/60",
 				isActive && "border-primary/60 bg-primary/10 before:bg-primary/70",
 			)}
+			data-testid="task-card"
 		>
+			<div className="flex items-start justify-between gap-2">
+				<button
+					type="button"
+					onClick={() => onTaskSelect(task.id)}
+					className={cn(
+						"min-w-0 flex-1 text-left",
+						"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+					)}
+				>
+					<p className="truncate text-sm font-semibold leading-snug text-foreground">
+						{task.title}
+					</p>
+				</button>
+
+				{activeMissionId ? (
+					<Link
+						href={`/missions/${activeMissionId}/threads/${task.id}`}
+						className="shrink-0 inline-flex items-center gap-1 rounded-full border border-border/80 bg-muted/70 px-2.5 py-1 text-[0.65rem] font-medium text-foreground/80 shadow-sm transition hover:border-primary/40 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+					>
+						<MessageSquare className="h-3 w-3" />
+						Thread
+					</Link>
+				) : null}
+			</div>
+
 			<button
 				type="button"
 				onClick={() => onTaskSelect(task.id)}
 				className={cn(
-					"w-full text-left pr-16",
+					"mt-1 w-full text-left",
 					"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
 				)}
 			>
-				<p className="text-sm font-semibold leading-snug text-foreground">
-					{task.title}
-				</p>
-				<div className="relative mt-1 h-20 overflow-y-auto pr-2 scrollbar-none overscroll-contain">
+				<div className="relative h-20 overflow-y-auto pr-2 scrollbar-none overscroll-contain">
 					<div className="markdown">
 						<ReactMarkdown remarkPlugins={[remarkGfm]}>
 							{task.description}
@@ -55,19 +78,6 @@ export function TaskCard({
 					<div className="pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-gradient-to-t from-background to-transparent opacity-90" />
 				</div>
 			</button>
-
-			{activeMissionId ? (
-				<Link
-					href={`/missions/${activeMissionId}/threads/${task.id}`}
-					className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-border/80 bg-muted/70 px-2.5 py-1 text-[0.65rem] font-medium text-foreground/80 shadow-sm transition hover:border-primary/40 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-					onClick={(event) => {
-						event.stopPropagation();
-					}}
-				>
-					<MessageSquare className="h-3 w-3" />
-					Thread
-				</Link>
-			) : null}
 
 			{statusNotes ? (
 				<p className="mt-2 rounded-lg border border-border/50 bg-muted/40 px-2 py-1 text-xs leading-snug text-muted-foreground">
