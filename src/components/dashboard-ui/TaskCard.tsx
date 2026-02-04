@@ -31,7 +31,7 @@ export function TaskCard({
 	return (
 		<div
 			className={cn(
-				"group relative w-full overflow-hidden rounded-xl border border-border/70 bg-background p-3 shadow-sm transition will-change-transform hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md",
+				"group relative w-full overflow-hidden rounded-xl border border-border/70 bg-background p-3 shadow-sm transition will-change-transform hover:-translate-y-0.5 hover:shadow-md",
 				"before:absolute before:left-0 before:top-0 before:h-full before:w-1 before:bg-border/60 before:content-['']",
 				isBlocked && "before:bg-destructive/60",
 				isActive && "border-primary/60 bg-primary/10 before:bg-primary/70",
@@ -55,7 +55,7 @@ export function TaskCard({
 				{activeMissionId && hasThread ? (
 					<Link
 						href={`/missions/${activeMissionId}/threads/${task.id}`}
-						className="shrink-0 inline-flex items-center gap-1 rounded-full border border-border/80 bg-muted/70 px-2.5 py-1 text-[0.65rem] font-medium text-foreground/80 shadow-sm transition hover:border-primary/40 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+						className="shrink-0 inline-flex items-center gap-1 rounded-full border border-border/80 bg-muted/70 px-2.5 py-1 text-[0.65rem] font-medium text-foreground/80 shadow-sm transition hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
 					>
 						<MessageSquare className="h-3 w-3" />
 						Thread
@@ -71,13 +71,13 @@ export function TaskCard({
 					"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
 				)}
 			>
-				<div className="relative h-20 overflow-y-auto pr-2 scrollbar-none overscroll-contain">
+				<div className="relative h-30 overflow-y-auto pr-2 scrollbar-none overscroll-contain">
 					<div className="markdown">
 						<ReactMarkdown remarkPlugins={[remarkGfm]}>
 							{task.description}
 						</ReactMarkdown>
 					</div>
-					<div className="pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-gradient-to-t from-background to-transparent opacity-90" />
+					<div className="pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-linear-to-t from-background to-transparent opacity-90" />
 				</div>
 			</button>
 
