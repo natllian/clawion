@@ -800,8 +800,16 @@ export function Dashboard() {
 														<span>{worker.displayName}</span>
 													</button>
 												</TooltipTrigger>
-												<TooltipContent side="bottom">
-													{worker.roleDescription || "No description provided."}
+												<TooltipContent
+													side="bottom"
+													className="max-w-xs text-left"
+												>
+													<div className="markdown text-xs text-background">
+														<ReactMarkdown remarkPlugins={[remarkGfm]}>
+															{worker.roleDescription ||
+																"No description provided."}
+														</ReactMarkdown>
+													</div>
 												</TooltipContent>
 											</Tooltip>
 										))
