@@ -7,38 +7,37 @@ const { WorkerDropdown: TestedWorkerDropdown } = await import(
 	"./worker-dropdown"
 );
 
-// Test LogEvent separately in its own test file for isolation
+const mockWorkers: WorkersFile = {
+	schemaVersion: 1,
+	workers: [
+		{
+			id: "w1",
+			displayName: "Alice",
+			systemRole: "worker",
+			status: "active",
+			roleDescription: "Frontend developer",
+		},
+		{
+			id: "manager-1",
+			displayName: "Bob",
+			systemRole: "manager",
+			status: "active",
+			roleDescription: "Project manager",
+		},
+	],
+};
+
+const defaultProps = {
+	workers: mockWorkers,
+	loadingMission: false,
+	activeWorkerId: null as string | null,
+	onWorkerSelect: vi.fn(),
+	working: "",
+	log: null,
+	loadingWorker: false,
+};
+
 describe("WorkerDropdown - rendering", () => {
-	const mockWorkers: WorkersFile = {
-		schemaVersion: 1,
-		workers: [
-			{
-				id: "w1",
-				displayName: "Alice",
-				systemRole: "worker",
-				status: "active",
-				roleDescription: "Frontend developer",
-			},
-			{
-				id: "manager-1",
-				displayName: "Bob",
-				systemRole: "manager",
-				status: "active",
-				roleDescription: "Project manager",
-			},
-		],
-	};
-
-	const defaultProps = {
-		workers: mockWorkers,
-		loadingMission: false,
-		activeWorkerId: null as string | null,
-		onWorkerSelect: vi.fn(),
-		working: "",
-		log: null,
-		loadingWorker: false,
-	};
-
 	afterEach(() => {
 		cleanup();
 	});
@@ -76,5 +75,39 @@ describe("WorkerDropdown - rendering", () => {
 		render(<TestedWorkerDropdown {...defaultProps} />);
 		const buttons = document.querySelectorAll("button[type='button']");
 		expect(buttons.length).toBeGreaterThanOrEqual(2);
+	});
+
+	it("calls onWorkerSelect when clicking worker button", () => {
+		const onWorkerSelect = vi.fn();
+		const props = {
+			...defaultProps,
+			onWorkerSelect,
+		};
+		render(<TestedWorkerDropdown {...props} />);
+		const buttons = document.querySelectorAll("button[type='button']");
+		const bobButton = Array.from(buttons).find((btn) =>
+			btn.textContent?.includes("Bob"),
+		) as HTMLButtonElement | undefined;
+		bobButton?.click();
+		expect(onWorkerSelect).toHaveBeenCalledWith("manager-1");
+	});
+
+	it("shows initials for each worker", () => {
+		render(<TestedWorkerDropdown {...defaultProps} />);
+		// Avatars show initials
+		const avatars = document.querySelectorAll("[data-slot='avatar-fallback']");
+		expect(avatars).toHaveLength(2);
+		// First avatar shows "A" for Alice
+		expect(avatars[0]).toHaveTextContent("A");
+		// Second avatar shows "B" for Bob
+		expect(avatars[1]).toHaveTextContent("B");
+	});
+
+	it("renders worker buttons with correct roles", () => {
+		render(<TestedWorkerDropdown {...defaultProps} />);
+		const buttons = document.querySelectorAll(
+			"[data-slot='dropdown-menu-trigger']",
+		);
+		expect(buttons).toHaveLength(2);
 	});
 });

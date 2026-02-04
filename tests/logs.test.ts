@@ -2,7 +2,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { readJson } from "../src/core/fs/json";
 import { logSchema } from "../src/core/schemas";
-import { addLogEvent } from "../src/core/workspace/logs";
+import { addLogEvent, getLog } from "../src/core/workspace/logs";
 import { createMissionFixture, createWorkspace } from "./helpers";
 
 describe("logs", () => {
@@ -33,5 +33,14 @@ describe("logs", () => {
 		expect(logFile.events).toHaveLength(2);
 		expect(logFile.events[0].id).toBe(eventId);
 		expect(logFile.events[1].id).toBe(secondEventId);
+	});
+
+	it("gets log for non-existent worker", async () => {
+		const missionsDir = await createWorkspace();
+		await createMissionFixture(missionsDir, "m1");
+
+		const log = await getLog(missionsDir, "m1", "non-existent-worker");
+		expect(log.workerId).toBe("non-existent-worker");
+		expect(log.events).toEqual([]);
 	});
 });

@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp } from "node:fs/promises";
+import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -8,6 +8,7 @@ import { DEFAULT_MANAGER_ROLE_DESCRIPTION } from "../src/core/workspace/roles";
 import {
 	addWorker,
 	listWorkers,
+	readWorkingFile,
 	resolveWorkingPath,
 	updateWorker,
 } from "../src/core/workspace/workers";
@@ -127,5 +128,32 @@ describe("worker updates", () => {
 				displayName: "Nope",
 			}),
 		).rejects.toThrow("Worker not found");
+	});
+
+	it("reads working file content", async () => {
+		const missionsDir = await createWorkspace();
+		await createMissionFixture(missionsDir, "m1");
+		const missionDir = join(missionsDir, "m1");
+
+		const workingPath = join(missionDir, "working", "worker-1.md");
+		await mkdir(join(missionDir, "working"), { recursive: true });
+		await writeFile(
+			workingPath,
+			"# Working Memory\n\nTask progress: 50%",
+			"utf8",
+		);
+
+		const content = await readWorkingFile(missionDir, "worker-1");
+		expect(content).toContain("Working Memory");
+		expect(content).toContain("Task progress: 50%");
+	});
+
+	it("returns empty string for non-existent working file", async () => {
+		const missionsDir = await createWorkspace();
+		await createMissionFixture(missionsDir, "m1");
+		const missionDir = join(missionsDir, "m1");
+
+		const content = await readWorkingFile(missionDir, "ghost-worker");
+		expect(content).toBe("");
 	});
 });
