@@ -114,9 +114,9 @@ function getInitials(value: string) {
 
 function MarkdownBlock({ content }: { content: string }) {
 	return (
-		<ReactMarkdown className="markdown" remarkPlugins={[remarkGfm]}>
-			{content}
-		</ReactMarkdown>
+		<div className="markdown">
+			<ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+		</div>
 	);
 }
 
