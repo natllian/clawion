@@ -62,20 +62,6 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
 });
 
 program
-	.command("where")
-	.description("Print the missions directory")
-	.action(() => {
-		console.log(context.missionsDir);
-	});
-
-program
-	.command("init")
-	.description("Initialize the workspace")
-	.action(() => {
-		console.log(`Workspace ready: ${context.missionsDir}`);
-	});
-
-program
 	.command("ui")
 	.description("Start the web UI dev server")
 	.action(() => {
@@ -96,18 +82,6 @@ type HelpEntry = {
 };
 
 const HELP_ENTRIES: HelpEntry[] = [
-	{
-		command: "where",
-		purpose: "Print the active missions directory.",
-		params: ["(no params)"],
-		example: "clawion where",
-	},
-	{
-		command: "init",
-		purpose: "Initialize the workspace layout if missing.",
-		params: ["(no params)"],
-		example: "clawion init",
-	},
 	{
 		command: "ui",
 		purpose: "Start the web UI dev server.",
