@@ -18,7 +18,7 @@ export function ProgressStats({ tasks, completion }: ProgressStatsProps) {
 			<span>{tasks?.tasks.length ?? 0} tasks</span>
 			<Progress
 				value={completion}
-				className="h-2 w-24 [&>[data-slot=progress-indicator]]:bg-primary"
+				className="h-2 w-24 *:data-[slot=progress-indicator]:bg-primary"
 			/>
 			<span>{completion}%</span>
 		</div>
