@@ -4,13 +4,8 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ThreadFile } from "@/core/schemas";
+import { threadStatusTone } from "@/lib/status-tones";
 import { cn } from "@/lib/utils";
-
-const threadStatusTone: Record<ThreadFile["status"], string> = {
-	open: "border-blue-400/50 text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/30",
-	resolved:
-		"border-emerald-400/40 text-emerald-600 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/30",
-};
 
 interface ThreadsListProps {
 	threads: ThreadFile[];

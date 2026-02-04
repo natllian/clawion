@@ -6,15 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { readJson } from "@/core/fs/json";
-import {
-	type Mission,
-	missionSchema,
-	tasksSchema,
-	workersSchema,
-} from "@/core/schemas";
+import { missionSchema, tasksSchema, workersSchema } from "@/core/schemas";
 import { resolveMissionPath } from "@/core/workspace/mission";
 import { resolveMissionsDir } from "@/core/workspace/paths";
 import { getThread } from "@/core/workspace/threads";
+import { missionStatusTone, threadStatusTone } from "@/lib/status-tones";
 import { cn } from "@/lib/utils";
 
 function formatDate(value?: string) {
@@ -41,19 +37,6 @@ function getInitials(value: string) {
 		.slice(0, 2)
 		.toUpperCase();
 }
-
-const missionStatusTone: Record<Mission["status"], string> = {
-	active: "border-primary/50 text-primary",
-	paused: "border-amber-400/50 text-amber-600 dark:text-amber-300",
-	archived: "border-border/60 text-muted-foreground",
-	completed: "border-emerald-400/40 text-emerald-600 dark:text-emerald-300",
-};
-
-const threadStatusTone: Record<"open" | "resolved", string> = {
-	open: "border-blue-400/50 text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/30",
-	resolved:
-		"border-emerald-400/40 text-emerald-600 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/30",
-};
 
 type RouteParams = {
 	missionId: string;

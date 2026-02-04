@@ -3,15 +3,9 @@
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import type { Mission } from "@/core/schemas";
+import { missionStatusTone } from "@/lib/status-tones";
 import { cn } from "@/lib/utils";
 import { SnapshotDropdown } from "./snapshot-dropdown";
-
-const missionStatusTone: Record<Mission["status"], string> = {
-	active: "border-primary/50 text-primary",
-	paused: "border-amber-400/50 text-amber-600 dark:text-amber-300",
-	archived: "border-border/60 text-muted-foreground",
-	completed: "border-emerald-400/40 text-emerald-600 dark:text-emerald-300",
-};
 
 interface DashboardHeaderProps {
 	mission: Mission | null;
