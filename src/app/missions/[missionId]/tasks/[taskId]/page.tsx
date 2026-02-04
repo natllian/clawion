@@ -1,14 +1,9 @@
 import { join } from "node:path";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { readJson } from "@/core/fs/json";
 import { missionSchema, tasksSchema, workersSchema } from "@/core/schemas";
@@ -30,6 +25,15 @@ function formatDate(value?: string) {
 		dateStyle: "medium",
 		timeStyle: "short",
 	}).format(date);
+}
+
+function getInitials(value: string) {
+	return value
+		.split(/\s+/)
+		.map((word) => word.charAt(0))
+		.join("")
+		.slice(0, 2)
+		.toUpperCase();
 }
 
 type RouteParams = {
@@ -59,10 +63,15 @@ export default async function TaskThreadPage({
 	}
 
 	const column = tasksFile.columns.find((entry) => entry.id === task.columnId);
-	const isBlocked = task.statusNotes.toLowerCase().startsWith("blocked:");
+	const statusNotes = task.statusNotes ?? "";
+	const isBlocked = statusNotes.toLowerCase().startsWith("blocked:");
 	const workerMap = new Map(
 		workersFile.workers.map((worker) => [worker.id, worker.displayName]),
 	);
+	const assigneeLabel = task.assigneeId
+		? (workerMap.get(task.assigneeId) ?? task.assigneeId)
+		: "Unassigned";
+	const threadOpen = thread.messages.some((message) => !message.resolved);
 
 	const participants = new Set<string>();
 	thread.messages.forEach((message) => {
@@ -72,7 +81,7 @@ export default async function TaskThreadPage({
 
 	return (
 		<div className="min-h-screen bg-background text-foreground">
-			<div className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-8">
+			<div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-8">
 				<nav className="text-xs text-muted-foreground">
 					<Link href="/" className="hover:text-foreground">
 						Missions
@@ -81,15 +90,27 @@ export default async function TaskThreadPage({
 					<span className="font-medium text-foreground">{mission.name}</span>
 				</nav>
 
-				<section className="flex flex-col gap-4">
+				<section className="rounded-2xl border border-border/70 bg-card p-5">
 					<div className="flex flex-wrap items-start justify-between gap-4">
-						<div>
-							<h1 className="text-2xl font-semibold text-foreground">
-								{task.title}
-								<span className="ml-2 text-sm text-muted-foreground">
+						<div className="min-w-0">
+							<div className="flex flex-wrap items-center gap-3">
+								<h1 className="text-2xl font-semibold text-foreground">
+									{task.title}
+								</h1>
+								<span className="text-sm text-muted-foreground">
 									#{task.id}
 								</span>
-							</h1>
+								<Badge
+									variant="outline"
+									className={
+										threadOpen
+											? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600"
+											: "border-border/70 text-muted-foreground"
+									}
+								>
+									{threadOpen ? "Open" : "Resolved"}
+								</Badge>
+							</div>
 							<p className="mt-2 text-sm text-muted-foreground">
 								{task.description}
 							</p>
@@ -97,96 +118,100 @@ export default async function TaskThreadPage({
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge
 								variant="outline"
-								className="rounded-full text-[0.6rem] uppercase tracking-[0.3em]"
+								className="rounded-full text-[0.65rem] uppercase tracking-[0.3em]"
 							>
 								{column?.name ?? task.columnId}
 							</Badge>
-							<Badge
-								variant={isBlocked ? "destructive" : "outline"}
-								className="rounded-full text-[0.6rem] uppercase tracking-[0.3em]"
-							>
-								{isBlocked ? "Blocked" : "Active"}
-							</Badge>
+							{isBlocked ? (
+								<Badge
+									variant="destructive"
+									className="rounded-full text-[0.65rem] uppercase tracking-[0.3em]"
+								>
+									Blocked
+								</Badge>
+							) : null}
 						</div>
 					</div>
 
-					<div className="rounded-xl border border-border/70 bg-background p-4 text-sm text-muted-foreground">
-						<div className="flex flex-wrap items-center gap-3">
-							<span>Created {formatDate(task.createdAt)}</span>
-							<span>Updated {formatDate(task.updatedAt)}</span>
-							<span>Assignee: {task.assigneeId ?? "Unassigned"}</span>
-						</div>
-						{task.statusNotes ? (
-							<p className="mt-2 text-sm text-muted-foreground">
-								{task.statusNotes}
-							</p>
-						) : null}
+					<Separator className="my-4" />
+
+					<div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+						<span>Created {formatDate(task.createdAt)}</span>
+						<span>Updated {formatDate(task.updatedAt)}</span>
+						<span>Assignee: {assigneeLabel}</span>
 					</div>
+					{statusNotes ? (
+						<p className="mt-2 text-sm text-muted-foreground">{statusNotes}</p>
+					) : null}
 				</section>
 
-				<div className="grid gap-6 lg:grid-cols-[1.6fr_0.6fr]">
-					<main className="flex flex-col gap-4">
-						<Card className="border-border/70">
-							<CardHeader className="pb-3">
-								<CardTitle className="text-base">Thread</CardTitle>
-								<CardDescription className="text-xs">
-									One message per recipient. Mentions are required.
-								</CardDescription>
-							</CardHeader>
-							<CardContent className="flex flex-col gap-4">
+				<div className="grid gap-6 lg:grid-cols-[1.8fr_0.7fr]">
+					<main className="space-y-4">
+						<div className="flex items-center justify-between">
+							<h2 className="text-sm font-semibold">Thread</h2>
+							<span className="text-xs text-muted-foreground">
+								{thread.messages.length} messages
+							</span>
+						</div>
+						<div className="relative">
+							<div className="absolute left-4 top-0 h-full w-px bg-border" />
+							<div className="flex flex-col gap-4">
 								{thread.messages.length === 0 ? (
-									<div className="rounded-lg border border-border/70 bg-background p-4 text-sm text-muted-foreground">
+									<div className="rounded-xl border border-border/70 bg-card p-4 text-sm text-muted-foreground">
 										No thread messages yet.
 									</div>
 								) : (
-									thread.messages.map((message) => (
-										<div
-											key={message.id}
-											className="rounded-lg border border-border/70 bg-background p-4"
-										>
-											<div className="flex flex-wrap items-center justify-between gap-3">
-												<div className="text-xs text-muted-foreground">
-													<span className="font-medium text-foreground">
-														{workerMap.get(message.authorId) ??
-															message.authorId}
-													</span>
-													<span className="ml-2 rounded-full border border-border/70 px-2 py-0.5">
-														@
-														{workerMap.get(message.mentions) ??
-															message.mentions}
-													</span>
+									thread.messages.map((message) => {
+										const authorLabel =
+											workerMap.get(message.authorId) ?? message.authorId;
+										const mentionsLabel =
+											workerMap.get(message.mentions) ?? message.mentions;
+										return (
+											<div key={message.id} className="relative flex gap-3">
+												<Avatar className="z-10 mt-1">
+													<AvatarFallback>
+														{getInitials(authorLabel)}
+													</AvatarFallback>
+												</Avatar>
+												<div className="flex-1 rounded-xl border border-border/70 bg-card">
+													<div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/70 px-3 py-2 text-xs">
+														<div className="flex flex-wrap items-center gap-2">
+															<span className="font-medium text-foreground">
+																{authorLabel}
+															</span>
+															<span className="text-muted-foreground">
+																to @{mentionsLabel}
+															</span>
+														</div>
+														<Badge
+															variant="outline"
+															className="rounded-full text-[0.6rem] uppercase tracking-[0.3em]"
+														>
+															{message.resolved ? "Resolved" : "Open"}
+														</Badge>
+													</div>
+													<div className="px-3 py-3 text-sm text-foreground">
+														{message.content}
+													</div>
+													<div className="border-t border-border/70 px-3 py-2 text-[0.65rem] text-muted-foreground">
+														{formatDate(message.createdAt)}
+														{message.resolved
+															? ` · Resolved by ${message.resolvedBy ?? "—"} on ${formatDate(message.resolvedAt)}`
+															: " · Awaiting resolution"}
+													</div>
 												</div>
-												<Badge
-													variant="outline"
-													className="rounded-full text-[0.6rem] uppercase tracking-[0.3em]"
-												>
-													{message.resolved ? "Resolved" : "Open"}
-												</Badge>
 											</div>
-											<p className="mt-3 text-sm text-foreground">
-												{message.content}
-											</p>
-											<Separator className="my-3" />
-											<div className="text-xs text-muted-foreground">
-												{formatDate(message.createdAt)}
-												{message.resolved
-													? ` · Resolved by ${message.resolvedBy ?? "—"} on ${formatDate(message.resolvedAt)}`
-													: " · Awaiting resolution"}
-											</div>
-										</div>
-									))
+										);
+									})
 								)}
-							</CardContent>
-						</Card>
+							</div>
+						</div>
 					</main>
 
-					<aside className="flex flex-col gap-4">
+					<aside className="space-y-4">
 						<Card className="border-border/70">
 							<CardHeader className="pb-3">
-								<CardTitle className="text-base">Mission</CardTitle>
-								<CardDescription className="text-xs">
-									{mission.id}
-								</CardDescription>
+								<CardTitle className="text-sm">Mission</CardTitle>
 							</CardHeader>
 							<CardContent className="space-y-2 text-sm text-muted-foreground">
 								<p className="font-medium text-foreground">{mission.name}</p>
@@ -202,10 +227,16 @@ export default async function TaskThreadPage({
 
 						<Card className="border-border/70">
 							<CardHeader className="pb-3">
-								<CardTitle className="text-base">Participants</CardTitle>
-								<CardDescription className="text-xs">
-									Unique authors and mentions
-								</CardDescription>
+								<CardTitle className="text-sm">Assignee</CardTitle>
+							</CardHeader>
+							<CardContent className="text-sm text-muted-foreground">
+								{assigneeLabel}
+							</CardContent>
+						</Card>
+
+						<Card className="border-border/70">
+							<CardHeader className="pb-3">
+								<CardTitle className="text-sm">Participants</CardTitle>
 							</CardHeader>
 							<CardContent className="flex flex-wrap gap-2">
 								{participants.size === 0 ? (
