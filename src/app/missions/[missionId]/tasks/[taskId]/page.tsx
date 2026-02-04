@@ -216,7 +216,7 @@ export default async function TaskThreadPage({
 					</main>
 
 					<aside className="space-y-4">
-						<Card className="border-border/70">
+						<Card className="border-border/70 gap-0">
 							<CardHeader className="pb-3">
 								<CardTitle className="text-sm">Mission</CardTitle>
 							</CardHeader>
@@ -232,7 +232,7 @@ export default async function TaskThreadPage({
 							</CardContent>
 						</Card>
 
-						<Card className="border-border/70">
+						<Card className="border-border/70 gap-0">
 							<CardHeader className="pb-3">
 								<CardTitle className="text-sm">Assignee</CardTitle>
 							</CardHeader>
@@ -252,7 +252,7 @@ export default async function TaskThreadPage({
 							</CardContent>
 						</Card>
 
-						<Card className="border-border/70">
+						<Card className="border-border/70 gap-0">
 							<CardHeader className="pb-3">
 								<CardTitle className="text-sm">Participants</CardTitle>
 							</CardHeader>

@@ -418,7 +418,7 @@ export function Dashboard() {
 						<div className="space-y-2">
 							<div className="flex items-center justify-between">
 								{!sidebarCollapsed ? (
-									<p className="text-[0.6rem] uppercase tracking-[0.3em] text-muted-foreground">
+									<p className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">
 										Missions
 									</p>
 								) : null}
@@ -465,7 +465,7 @@ export function Dashboard() {
 													<div>
 														<div className="flex items-center justify-between gap-2">
 															<span className="font-medium">{item.name}</span>
-															<span className="text-[0.6rem] uppercase tracking-[0.3em] text-muted-foreground">
+															<span className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">
 																{item.status}
 															</span>
 														</div>
@@ -494,7 +494,7 @@ export function Dashboard() {
 
 						{!sidebarCollapsed ? (
 							<div className="space-y-2">
-								<p className="text-[0.6rem] uppercase tracking-[0.3em] text-muted-foreground">
+								<p className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">
 									Threads
 								</p>
 								<div className="flex max-h-[320px] flex-col gap-2 overflow-y-auto pr-1">
@@ -553,7 +553,7 @@ export function Dashboard() {
 				<section className="flex min-h-screen flex-1 flex-col">
 					<header className="flex flex-wrap items-start justify-between gap-4 border-b border-border/70 bg-background/95 px-6 py-4">
 						<div className="min-w-0">
-							<p className="text-[0.6rem] uppercase tracking-[0.4em] text-muted-foreground">
+							<p className="text-[0.6rem] uppercase tracking-widest text-muted-foreground">
 								Mission Overview
 							</p>
 							<div className="flex flex-wrap items-center gap-3">
@@ -564,7 +564,7 @@ export function Dashboard() {
 									<Badge
 										variant="outline"
 										className={cn(
-											"rounded-full text-[0.6rem] uppercase tracking-[0.3em]",
+											"rounded-full text-[0.6rem] uppercase tracking-wide",
 											missionStatusTone[mission.status],
 										)}
 									>
@@ -586,7 +586,7 @@ export function Dashboard() {
 									</Button>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent className="w-[380px] p-3" sideOffset={8}>
-									<DropdownMenuLabel className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+									<DropdownMenuLabel className="text-xs uppercase tracking-wide text-muted-foreground">
 										Mission Snapshot
 									</DropdownMenuLabel>
 									<DropdownMenuSeparator />
@@ -598,7 +598,7 @@ export function Dashboard() {
 											<Badge
 												variant="outline"
 												className={cn(
-													"rounded-full text-[0.6rem] uppercase tracking-[0.3em]",
+													"rounded-full text-[0.6rem] uppercase tracking-wide",
 													mission ? missionStatusTone[mission.status] : "",
 												)}
 											>
@@ -636,7 +636,7 @@ export function Dashboard() {
 						<section className="rounded-2xl border border-border/70 bg-card p-5 shadow-sm">
 							<div className="flex flex-wrap items-center justify-between gap-4">
 								<div>
-									<div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-muted-foreground">
+									<div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
 										<LayoutGrid className="h-3.5 w-3.5" />
 										Task Board
 									</div>
@@ -656,7 +656,7 @@ export function Dashboard() {
 							</div>
 
 							<div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-								<div className="flex items-center gap-2 text-[0.65rem] uppercase tracking-[0.3em]">
+								<div className="flex items-center gap-2 text-[0.65rem] uppercase tracking-wide">
 									<Users className="h-3.5 w-3.5" />
 									Workers
 								</div>
@@ -697,7 +697,7 @@ export function Dashboard() {
 														className="w-[420px] p-3"
 														sideOffset={8}
 													>
-														<DropdownMenuLabel className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+														<DropdownMenuLabel className="text-xs uppercase tracking-wide text-muted-foreground">
 															Worker Snapshot
 														</DropdownMenuLabel>
 														<DropdownMenuSeparator />
@@ -714,7 +714,7 @@ export function Dashboard() {
 																		</ReactMarkdown>
 																	</div>
 																</div>
-																<p className="mt-2 text-[0.6rem] uppercase tracking-[0.3em] text-muted-foreground">
+																<p className="mt-2 text-[0.6rem] uppercase tracking-wide text-muted-foreground">
 																	{worker.systemRole ?? "—"} ·{" "}
 																	{worker.status ?? "—"}
 																</p>
@@ -760,7 +760,7 @@ export function Dashboard() {
 																						<Badge
 																							variant="outline"
 																							className={cn(
-																								"rounded-full text-[0.6rem] uppercase tracking-[0.3em]",
+																								"rounded-full text-[0.6rem] uppercase tracking-wide",
 																								logLevelTone[event.level],
 																							)}
 																						>
@@ -893,8 +893,10 @@ export function Dashboard() {
 																				)}
 																			>
 																				{task.assigneeId
-																					? (workerMap.get(task.assigneeId) ??
-																						task.assigneeId)
+																					? `@${
+																							workerMap.get(task.assigneeId) ??
+																							task.assigneeId
+																						}`
 																					: "Unassigned"}
 																			</span>
 																		</div>
