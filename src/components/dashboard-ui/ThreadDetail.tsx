@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Mission, ThreadFile, ThreadMessage } from "@/core/schemas";
 import { missionStatusTone, threadStatusTone } from "@/lib/status-tones";
 import { cn } from "@/lib/utils";
+import { MarkdownBlock } from "./MarkdownBlock";
 
 interface ThreadDetailProps {
 	missionId: string;
@@ -279,8 +280,8 @@ export function ThreadDetail({
 														{message.resolved ? "Resolved" : "Open"}
 													</Badge>
 												</div>
-												<div className="px-3 py-3 text-sm text-foreground">
-													{message.content}
+												<div className="px-3 py-3">
+													<MarkdownBlock content={message.content} />
 												</div>
 												<div className="border-t border-border/70 px-3 py-2 text-[0.65rem] text-muted-foreground">
 													{formatDate(message.createdAt)}
