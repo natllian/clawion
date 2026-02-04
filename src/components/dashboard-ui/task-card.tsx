@@ -1,5 +1,7 @@
 "use client";
 
+import { MessageSquare } from "lucide-react";
+import Link from "next/link";
 import type { TaskItem } from "@/core/schemas";
 import { cn } from "@/lib/utils";
 
@@ -40,7 +42,7 @@ export function TaskCard({
 
 			{activeMissionId ? (
 				<Link
-					href={`/missions/${activeMissionId}/tasks/${task.id}`}
+					href={`/missions/${activeMissionId}/threads/${task.id}`}
 					className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-border/80 bg-muted/70 px-2.5 py-1 text-[0.65rem] font-medium text-foreground/80 shadow-sm transition hover:border-primary/40 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
 				>
 					<MessageSquare className="h-3 w-3" />
@@ -64,6 +66,9 @@ export function TaskCard({
 			</div>
 
 			<div className="mt-2 flex items-center gap-2 text-[0.65rem] text-muted-foreground">
+				<span className="text-[0.55rem] uppercase tracking-wide text-muted-foreground/80">
+					Assigned
+				</span>
 				<span
 					className={cn(
 						"inline-flex items-center rounded-full border border-border/70 bg-background px-2 py-0.5 text-[0.6rem] font-medium text-foreground",
@@ -71,13 +76,10 @@ export function TaskCard({
 					)}
 				>
 					{task.assigneeId
-						? `@${workerMap.get(task.assigneeId) ?? task.assigneeId}`
+						? (workerMap.get(task.assigneeId) ?? task.assigneeId)
 						: "Unassigned"}
 				</span>
 			</div>
 		</div>
 	);
 }
-
-import { MessageSquare } from "lucide-react";
-import Link from "next/link";

@@ -8,7 +8,9 @@ export async function GET(
 ) {
 	const { missionId } = await params;
 	const { searchParams } = new URL(request.url);
-	const missionsDir = resolveMissionsDir(searchParams.get("missionsDir"));
+	const missionsDir = resolveMissionsDir(
+		searchParams.get("missionsDir") ?? undefined,
+	);
 
 	try {
 		const threads = await listThreads(missionsDir, missionId);

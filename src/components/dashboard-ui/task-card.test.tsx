@@ -73,7 +73,7 @@ describe("TaskCard", () => {
 			workerMap: new Map([["worker-1", "alice"]]),
 		};
 		render(<TaskCard {...props} />);
-		expect(screen.getByText("@alice")).toBeInTheDocument();
+		expect(screen.getByText("alice")).toBeInTheDocument();
 	});
 
 	it("calls onTaskSelect when clicked", () => {

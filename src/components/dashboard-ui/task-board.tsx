@@ -1,50 +1,9 @@
 "use client";
 
-import { ClipboardList, LayoutGrid, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import type * as React from "react";
-import { Progress } from "@/components/ui/progress";
 import type { TaskItem, TasksFile } from "@/core/schemas";
 import { TaskBoardSkeleton, TaskColumn } from "./task-column";
-
-interface ProgressStatsProps {
-	tasks: TasksFile | null;
-	completion: number;
-}
-
-export function ProgressStats({ tasks, completion }: ProgressStatsProps) {
-	return (
-		<div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-			<ClipboardList className="h-3.5 w-3.5" />
-			<span>{tasks?.tasks.length ?? 0} tasks</span>
-			<Progress
-				value={completion}
-				className="h-2 w-24 *:data-[slot=progress-indicator]:bg-primary"
-			/>
-			<span>{completion}%</span>
-		</div>
-	);
-}
-
-interface TaskBoardHeaderProps {
-	children?: React.ReactNode;
-}
-
-export function TaskBoardHeader({ children }: TaskBoardHeaderProps) {
-	return (
-		<div className="flex flex-wrap items-center justify-between gap-4">
-			<div>
-				<div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
-					<LayoutGrid className="h-3.5 w-3.5" />
-					Task Board
-				</div>
-				<p className="mt-2 text-sm text-muted-foreground">
-					Dragless, CLI-driven. One column per status.
-				</p>
-			</div>
-			{children}
-		</div>
-	);
-}
 
 interface TaskBoardSectionProps {
 	children: React.ReactNode;

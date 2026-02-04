@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { TaskItem, TasksFile } from "@/core/schemas";
-import { ProgressStats, TaskBoardHeader, TaskBoardSection } from "./task-board";
+import { TaskBoardSection } from "./task-board";
 
 vi.mock("next/link", () => ({
 	default: ({
@@ -100,69 +100,6 @@ describe("TaskBoardSection", () => {
 		expect(container.textContent).toContain("Workers");
 		expect(container.textContent).toContain("To Do");
 		expect(container.textContent).toContain("Done");
-	});
-});
-
-describe("TaskBoardHeader", () => {
-	afterEach(() => {
-		cleanup();
-	});
-
-	it("renders header with children", () => {
-		render(
-			<TaskBoardHeader>
-				<p>Custom content</p>
-			</TaskBoardHeader>,
-		);
-		expect(screen.getByText("Custom content")).toBeInTheDocument();
-	});
-
-	it("renders default description", () => {
-		const { container } = render(<TaskBoardHeader />);
-		expect(container.textContent).toContain("Dragless");
-	});
-});
-
-describe("ProgressStats", () => {
-	afterEach(() => {
-		cleanup();
-	});
-
-	it("shows task count", () => {
-		const tasksFile: TasksFile = {
-			schemaVersion: 1,
-			description: "Test",
-			columns: [{ id: "todo", name: "Todo", order: 1 }],
-			tasks: [
-				{
-					id: "t1",
-					title: "Task 1",
-					description: "Desc",
-					columnId: "todo",
-					statusNotes: "",
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString(),
-				},
-			],
-		};
-		render(<ProgressStats tasks={tasksFile} completion={50} />);
-		expect(screen.getByText("1 tasks")).toBeInTheDocument();
-	});
-
-	it("shows completion percentage", () => {
-		const tasksFile: TasksFile = {
-			schemaVersion: 1,
-			description: "Test",
-			columns: [{ id: "todo", name: "Todo", order: 1 }],
-			tasks: [],
-		};
-		render(<ProgressStats tasks={tasksFile} completion={75} />);
-		expect(screen.getByText("75%")).toBeInTheDocument();
-	});
-
-	it("handles null tasks", () => {
-		const { container } = render(<ProgressStats tasks={null} completion={0} />);
-		expect(container.textContent).toContain("0 tasks");
 	});
 });
 
