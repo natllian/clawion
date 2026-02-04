@@ -42,4 +42,5 @@ next-env.d.ts
 
 .vscode
 .codex
+.cursor
 .claude
