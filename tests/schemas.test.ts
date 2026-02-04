@@ -255,4 +255,96 @@ describe("schemas", () => {
 		});
 		expect(result.success).toBe(true);
 	});
+
+	it("rejects reopenedAt without reopenedBy when resolved is false", () => {
+		const result = threadSchema.safeParse({
+			schemaVersion: 1,
+			taskId: "t1",
+			title: "Test Thread",
+			creatorAgentId: "a1",
+			status: "open",
+			messages: [
+				{
+					id: "msg1",
+					createdAt: new Date().toISOString(),
+					authorAgentId: "a1",
+					mentionsAgentId: "a2",
+					content: "Hello",
+					resolved: false,
+					reopenedAt: new Date().toISOString(),
+				},
+			],
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("rejects reopenedBy without reopenedAt when resolved is false", () => {
+		const result = threadSchema.safeParse({
+			schemaVersion: 1,
+			taskId: "t1",
+			title: "Test Thread",
+			creatorAgentId: "a1",
+			status: "open",
+			messages: [
+				{
+					id: "msg1",
+					createdAt: new Date().toISOString(),
+					authorAgentId: "a1",
+					mentionsAgentId: "a2",
+					content: "Hello",
+					resolved: false,
+					reopenedByAgentId: "a2",
+				},
+			],
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("accepts reopened messages with reopenedAt and reopenedBy", () => {
+		const result = threadSchema.safeParse({
+			schemaVersion: 1,
+			taskId: "t1",
+			title: "Test Thread",
+			creatorAgentId: "a1",
+			status: "open",
+			messages: [
+				{
+					id: "msg1",
+					createdAt: new Date().toISOString(),
+					authorAgentId: "a1",
+					mentionsAgentId: "a2",
+					content: "Hello",
+					resolved: false,
+					reopenedAt: new Date().toISOString(),
+					reopenedByAgentId: "a2",
+				},
+			],
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("rejects reopenedAt/reopenedBy when resolved is true", () => {
+		const result = threadSchema.safeParse({
+			schemaVersion: 1,
+			taskId: "t1",
+			title: "Test Thread",
+			creatorAgentId: "a1",
+			status: "resolved",
+			messages: [
+				{
+					id: "msg1",
+					createdAt: new Date().toISOString(),
+					authorAgentId: "a1",
+					mentionsAgentId: "a2",
+					content: "Hello",
+					resolved: true,
+					resolvedAt: new Date().toISOString(),
+					resolvedByAgentId: "a2",
+					reopenedAt: new Date().toISOString(),
+					reopenedByAgentId: "a3",
+				},
+			],
+		});
+		expect(result.success).toBe(false);
+	});
 });
