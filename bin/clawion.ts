@@ -510,46 +510,18 @@ task
 
 task
 	.command("update")
-	.description("Update task status or notes (assignee or manager)")
+	.description("Update task status or notes (manager only)")
 	.requiredOption("--mission <id>", "Mission ID")
 	.requiredOption("--id <taskId>", "Task ID")
 	.option("--status-notes <text>", "Status notes")
 	.option("--status <status>", "Status (pending|ongoing|blocked|completed)")
 	.action(async (options, command) => {
-		const agentId = requireAgentId(command);
-		if (!agentId) {
+		const allowed = await requireManager(command, options.mission);
+		if (!allowed) {
 			return;
 		}
 
 		try {
-			const tasksFile = await listTasks(context.missionsDir, options.mission);
-			const taskItem = tasksFile.tasks.find((entry) => entry.id === options.id);
-			if (!taskItem) {
-				throw new Error(`Task not found: ${options.id}`);
-			}
-
-			let manager = false;
-			try {
-				await assertManager({
-					missionsDir: context.missionsDir,
-					missionId: options.mission,
-					agentId,
-				});
-				manager = true;
-			} catch (error) {
-				const message = error instanceof Error ? error.message : String(error);
-				if (message.toLowerCase().includes("not found")) {
-					throw error;
-				}
-				manager = false;
-			}
-
-			if (!manager && taskItem.assigneeAgentId !== agentId) {
-				throw new Error(
-					`Permission denied. Only the assignee or a manager can update task ${options.id}.`,
-				);
-			}
-
 			const rawStatus = (options.status as string | undefined)?.trim();
 			const status = rawStatus ? (rawStatus as TaskStatus) : undefined;
 			if (
