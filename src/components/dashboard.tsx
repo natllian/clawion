@@ -707,7 +707,7 @@ export function Dashboard() {
 																<p className="text-sm font-medium text-foreground">
 																	{worker.displayName}
 																</p>
-																<div className="mt-1">
+																<div className="mt-1 max-h-[120px] overflow-y-auto">
 																	<div className="markdown text-xs text-muted-foreground">
 																		<ReactMarkdown remarkPlugins={[remarkGfm]}>
 																			{worker.roleDescription ||
@@ -729,7 +729,7 @@ export function Dashboard() {
 																	<TabsTrigger value="logs">Logs</TabsTrigger>
 																</TabsList>
 																<TabsContent value="working" className="mt-2">
-																	<div className="max-h-[160px] overflow-y-auto rounded-lg border border-border/70 bg-background p-2">
+																	<div className="h-[160px] overflow-y-auto rounded-lg border border-border/70 bg-background p-2">
 																		<MarkdownBlock
 																			content={
 																				isActive
@@ -740,7 +740,7 @@ export function Dashboard() {
 																	</div>
 																</TabsContent>
 																<TabsContent value="logs" className="mt-2">
-																	<div className="flex max-h-[160px] flex-col gap-2 overflow-y-auto pr-1">
+																	<div className="flex h-[160px] flex-col gap-2 overflow-y-auto pr-1">
 																		{loadingWorker ? (
 																			logSkeletons.map((key) => (
 																				<div
