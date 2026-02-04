@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 import { loadMissionsIndex } from "@/core/workspace/index-file";
+import { resolveMissionsDir } from "@/core/workspace/paths";
 
 export default async function Home() {
-	const missionsIndex = await loadMissionsIndex();
+	const missionsDir = resolveMissionsDir();
+	const missionsIndex = await loadMissionsIndex(missionsDir);
 
 	if (missionsIndex.missions.length > 0) {
 		redirect(`/missions/${missionsIndex.missions[0].id}`);
