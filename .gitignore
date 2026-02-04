@@ -44,3 +44,5 @@ next-env.d.ts
 .codex
 .cursor
 .claude
+CLAUDE.md
+AGENTS.md
