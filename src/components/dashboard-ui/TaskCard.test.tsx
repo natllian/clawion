@@ -100,7 +100,9 @@ describe("TaskCard", () => {
 
 	it("calls onTaskSelect when clicked", () => {
 		render(<TaskCard {...defaultProps} />);
-		fireEvent.click(screen.getByRole("button", { name: /test task/i }));
+		fireEvent.click(
+			screen.getByRole("button", { name: /select task: test task/i }),
+		);
 		expect(defaultProps.onTaskSelect).toHaveBeenCalledWith("1");
 	});
 

@@ -145,7 +145,9 @@ describe("TaskColumn", () => {
 	it("calls onTaskSelect when task is clicked", () => {
 		const onSelect = vi.fn();
 		render(<TaskColumn {...defaultProps} onTaskSelect={onSelect} />);
-		fireEvent.click(screen.getByRole("button", { name: /test task/i }));
+		fireEvent.click(
+			screen.getByRole("button", { name: /select task: test task/i }),
+		);
 		expect(onSelect).toHaveBeenCalledWith("t1");
 	});
 });
