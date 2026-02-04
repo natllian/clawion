@@ -130,6 +130,64 @@
 		font-family: var(--font-display);
 	}
 
+	.markdown {
+		color: var(--muted-foreground);
+		font-size: 0.75rem;
+		line-height: 1.7;
+	}
+
+	.markdown h1,
+	.markdown h2,
+	.markdown h3,
+	.markdown h4 {
+		color: var(--foreground);
+		font-weight: 600;
+		margin-top: 0.75rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.markdown p {
+		margin: 0.35rem 0;
+	}
+
+	.markdown ul,
+	.markdown ol {
+		padding-left: 1.25rem;
+		margin: 0.5rem 0;
+	}
+
+	.markdown li {
+		margin: 0.25rem 0;
+	}
+
+	.markdown code {
+		font-family: var(--font-mono);
+		background: color-mix(in srgb, var(--muted) 70%, transparent);
+		padding: 0.1rem 0.35rem;
+		border-radius: 0.35rem;
+		font-size: 0.72rem;
+	}
+
+	.markdown pre {
+		background: color-mix(in srgb, var(--muted) 70%, transparent);
+		padding: 0.75rem;
+		border-radius: 0.75rem;
+		overflow-x: auto;
+	}
+
+	.markdown a {
+		color: var(--primary);
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+
+	.markdown blockquote {
+		border-left: 2px solid var(--border);
+		padding-left: 0.75rem;
+		color: var(--muted-foreground);
+		margin: 0.5rem 0;
+	}
+
 	.magic-grid {
 		background-image:
 			linear-gradient(
