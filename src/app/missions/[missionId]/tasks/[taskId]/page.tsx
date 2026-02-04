@@ -49,6 +49,12 @@ const missionStatusTone: Record<Mission["status"], string> = {
 	completed: "border-emerald-400/40 text-emerald-600 dark:text-emerald-300",
 };
 
+const threadStatusTone: Record<"open" | "resolved", string> = {
+	open: "border-blue-400/50 text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/30",
+	resolved:
+		"border-emerald-400/40 text-emerald-600 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/30",
+};
+
 type RouteParams = {
 	missionId: string;
 	taskId: string;
@@ -117,9 +123,7 @@ export default async function TaskThreadPage({
 									variant="outline"
 									className={cn(
 										"rounded-full px-2 py-0.5 text-[0.65rem] font-medium",
-										threadOpen
-											? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600"
-											: "border-border/70 text-muted-foreground",
+										threadStatusTone[threadOpen ? "open" : "resolved"],
 									)}
 								>
 									{threadOpen ? "Open" : "Resolved"}
