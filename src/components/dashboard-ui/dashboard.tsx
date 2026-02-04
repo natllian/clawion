@@ -1,0 +1,385 @@
+"use client";
+
+import { Sparkles } from "lucide-react";
+import * as React from "react";
+import type {
+	LogFile,
+	Mission,
+	MissionIndexItem,
+	TasksFile,
+	WorkersFile,
+} from "@/core/schemas";
+import { cn } from "@/lib/utils";
+import {
+	DashboardHeader,
+	ErrorBanner,
+	MissionList,
+	Sidebar,
+	TaskBoardSection,
+	ThreadsList,
+	WorkerDropdown,
+} from "./index";
+
+type MissionsResponse = {
+	missionsDir: string;
+	updatedAt: string;
+	missions: MissionIndexItem[];
+};
+
+type MissionResponse = {
+	mission: Mission;
+	roadmap: string;
+};
+
+type WorkingResponse = {
+	workerId: string;
+	content: string;
+};
+
+function isAbortError(error: unknown) {
+	return error instanceof DOMException && error.name === "AbortError";
+}
+
+export function Dashboard() {
+	const [missionsDir, setMissionsDir] = React.useState<string | null>(null);
+	const [missions, setMissions] = React.useState<MissionIndexItem[]>([]);
+	const [activeMissionId, setActiveMissionId] = React.useState<string | null>(
+		null,
+	);
+	const [mission, setMission] = React.useState<Mission | null>(null);
+	const [roadmap, setRoadmap] = React.useState<string>("");
+	const [tasks, setTasks] = React.useState<TasksFile | null>(null);
+	const [workers, setWorkers] = React.useState<WorkersFile | null>(null);
+	const [activeTaskId, setActiveTaskId] = React.useState<string | null>(null);
+	const [activeWorkerId, setActiveWorkerId] = React.useState<string | null>(
+		null,
+	);
+	const [working, setWorking] = React.useState<string>("");
+	const [log, setLog] = React.useState<LogFile | null>(null);
+	const [error, setError] = React.useState<string | null>(null);
+	const [loadingMissions, setLoadingMissions] = React.useState(true);
+	const [loadingMission, setLoadingMission] = React.useState(false);
+	const [loadingWorker, setLoadingWorker] = React.useState(false);
+	const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+
+	// Mission loading
+	React.useEffect(() => {
+		const controller = new AbortController();
+
+		async function loadMissions() {
+			setLoadingMissions(true);
+			setError(null);
+			try {
+				const response = await fetch("/api/missions", {
+					cache: "no-store",
+					signal: controller.signal,
+				});
+				if (!response.ok) {
+					throw new Error("Failed to load missions index.");
+				}
+				const payload = (await response.json()) as MissionsResponse;
+				setMissionsDir(payload.missionsDir);
+				setMissions(payload.missions);
+				setActiveMissionId((current) => {
+					if (current && payload.missions.some((item) => item.id === current)) {
+						return current;
+					}
+					return payload.missions[0]?.id ?? null;
+				});
+			} catch (err) {
+				if (isAbortError(err)) return;
+				setError("Unable to read missions index. Run clawion init first.");
+			} finally {
+				setLoadingMissions(false);
+			}
+		}
+
+		void loadMissions();
+
+		return () => {
+			controller.abort();
+		};
+	}, []);
+
+	// Mission data loading
+	React.useEffect(() => {
+		if (!activeMissionId) {
+			setMission(null);
+			setRoadmap("");
+			setTasks(null);
+			setWorkers(null);
+			setActiveTaskId(null);
+			setActiveWorkerId(null);
+			return;
+		}
+
+		const controller = new AbortController();
+		setLoadingMission(true);
+		setError(null);
+
+		async function loadMission() {
+			try {
+				const [missionResponse, tasksResponse, workersResponse] =
+					await Promise.all([
+						fetch(`/api/missions/${activeMissionId}`, {
+							cache: "no-store",
+							signal: controller.signal,
+						}),
+						fetch(`/api/missions/${activeMissionId}/tasks`, {
+							cache: "no-store",
+							signal: controller.signal,
+						}),
+						fetch(`/api/missions/${activeMissionId}/workers`, {
+							cache: "no-store",
+							signal: controller.signal,
+						}),
+					]);
+
+				if (!missionResponse.ok) {
+					throw new Error("Mission not found.");
+				}
+
+				const missionPayload =
+					(await missionResponse.json()) as MissionResponse;
+				const tasksPayload = (await tasksResponse.json()) as TasksFile;
+				const workersPayload = (await workersResponse.json()) as WorkersFile;
+
+				setMission(missionPayload.mission);
+				setRoadmap(missionPayload.roadmap);
+				setTasks(tasksPayload);
+				setWorkers(workersPayload);
+
+				setActiveTaskId((current) => {
+					if (
+						current &&
+						tasksPayload.tasks.some((task) => task.id === current)
+					) {
+						return current;
+					}
+					return null;
+				});
+				setActiveWorkerId((current) => {
+					if (
+						current &&
+						workersPayload.workers.some((worker) => worker.id === current)
+					) {
+						return current;
+					}
+					return workersPayload.workers[0]?.id ?? null;
+				});
+			} catch (err) {
+				if (isAbortError(err)) return;
+				setError("Unable to load mission data. Verify the workspace files.");
+			} finally {
+				setLoadingMission(false);
+			}
+		}
+
+		void loadMission();
+
+		return () => {
+			controller.abort();
+		};
+	}, [activeMissionId]);
+
+	// Worker data loading
+	React.useEffect(() => {
+		if (!activeMissionId || !activeWorkerId) {
+			setWorking("");
+			setLog(null);
+			return;
+		}
+
+		const controller = new AbortController();
+		setLoadingWorker(true);
+
+		async function loadWorker() {
+			try {
+				const [workingResponse, logResponse] = await Promise.all([
+					fetch(`/api/missions/${activeMissionId}/working/${activeWorkerId}`, {
+						cache: "no-store",
+						signal: controller.signal,
+					}),
+					fetch(`/api/missions/${activeMissionId}/logs/${activeWorkerId}`, {
+						cache: "no-store",
+						signal: controller.signal,
+					}),
+				]);
+				const workingPayload =
+					(await workingResponse.json()) as WorkingResponse;
+				const logPayload = (await logResponse.json()) as LogFile;
+				setWorking(workingPayload.content);
+				setLog(logPayload);
+			} catch (err) {
+				if (isAbortError(err)) return;
+				setWorking("");
+				setLog(null);
+			} finally {
+				setLoadingWorker(false);
+			}
+		}
+
+		void loadWorker();
+
+		return () => {
+			controller.abort();
+		};
+	}, [activeMissionId, activeWorkerId]);
+
+	// Derived state
+	const tasksColumns = React.useMemo(
+		() =>
+			tasks?.columns
+				? [...tasks.columns].sort((a, b) => a.order - b.order)
+				: [],
+		[tasks],
+	);
+
+	const workerMap = React.useMemo(
+		() =>
+			new Map(
+				workers?.workers.map((worker) => [worker.id, worker.displayName]) ?? [],
+			),
+		[workers],
+	);
+
+	const completion = React.useMemo(() => {
+		if (!tasks || tasks.tasks.length === 0) return 0;
+
+		const doneColumn =
+			tasks.columns.find((column) => column.id.toLowerCase() === "done") ??
+			tasks.columns.find((column) =>
+				column.name.toLowerCase().includes("done"),
+			) ??
+			tasks.columns[tasks.columns.length - 1];
+
+		const doneCount = tasks.tasks.filter(
+			(task) => task.columnId === doneColumn?.id,
+		).length;
+
+		return Math.round((doneCount / tasks.tasks.length) * 100);
+	}, [tasks]);
+
+	return (
+		<div className="min-h-screen bg-background text-foreground">
+			<div className="flex min-h-screen">
+				<Sidebar
+					missionsDir={missionsDir}
+					sidebarCollapsed={sidebarCollapsed}
+					onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
+				>
+					{/* Missions Section */}
+					<div className="space-y-2">
+						<div className="flex items-center justify-between">
+							{!sidebarCollapsed && (
+								<p className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">
+									Missions
+								</p>
+							)}
+						</div>
+						<div
+							className={cn(
+								"flex flex-col gap-2",
+								sidebarCollapsed && "items-center",
+							)}
+						>
+							<MissionList
+								missions={missions}
+								activeMissionId={activeMissionId}
+								loadingMissions={loadingMissions}
+								onMissionSelect={setActiveMissionId}
+								sidebarCollapsed={sidebarCollapsed}
+							/>
+						</div>
+					</div>
+
+					{/* Threads Section */}
+					{!sidebarCollapsed ? (
+						<div className="space-y-2">
+							<p className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">
+								Threads
+							</p>
+							<div className="flex max-h-[320px] flex-col gap-2 overflow-y-auto pr-1">
+								<ThreadsList
+									tasks={tasks}
+									loadingMission={loadingMission}
+									activeMissionId={activeMissionId}
+								/>
+							</div>
+						</div>
+					) : (
+						<div className="flex flex-col items-center gap-2 text-[0.65rem] text-muted-foreground">
+							<Sparkles className="h-4 w-4" />
+							<span>{tasks?.tasks.length ?? 0} threads</span>
+						</div>
+					)}
+				</Sidebar>
+
+				<section className="flex min-h-screen flex-1 flex-col">
+					<DashboardHeader
+						mission={mission}
+						roadmap={roadmap}
+						loadingMission={loadingMission}
+					/>
+
+					<main className="flex flex-1 flex-col gap-6 px-6 py-6">
+						<ErrorBanner error={error} />
+
+						<TaskBoardSection
+							loadingMission={loadingMission}
+							tasksColumns={tasksColumns}
+							tasksFile={tasks}
+							activeTaskId={activeTaskId}
+							activeMissionId={activeMissionId}
+							workerMap={workerMap}
+							onTaskSelect={setActiveTaskId}
+						>
+							{/* Progress stats with worker panel */}
+							<div className="flex flex-wrap items-center justify-between gap-4">
+								<div>
+									<div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+										<Sparkles className="h-3.5 w-3.5" />
+										Task Board
+									</div>
+									<p className="mt-2 text-sm text-muted-foreground">
+										Dragless, CLI-driven. One column per status.
+									</p>
+								</div>
+								<div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+									<span>{tasks?.tasks.length ?? 0} tasks</span>
+									<div
+										className={cn(
+											"flex h-2 w-24 overflow-hidden rounded-full bg-muted",
+										)}
+									>
+										<div
+											className="h-full bg-primary transition-all"
+											style={{ width: `${completion}%` }}
+										/>
+									</div>
+									<span>{completion}%</span>
+								</div>
+							</div>
+
+							{/* Worker panel */}
+							<div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+								<div className="flex items-center gap-2 text-[0.65rem] uppercase tracking-wide">
+									<span>Workers</span>
+								</div>
+								<WorkerDropdown
+									workers={workers}
+									loadingMission={loadingMission}
+									activeWorkerId={activeWorkerId}
+									onWorkerSelect={setActiveWorkerId}
+									working={working}
+									log={log}
+									loadingWorker={loadingWorker}
+								/>
+							</div>
+						</TaskBoardSection>
+					</main>
+				</section>
+			</div>
+		</div>
+	);
+}
