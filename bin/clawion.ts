@@ -90,7 +90,7 @@ const HELP_ENTRIES: HelpEntry[] = [
 	{
 		command: "mission create",
 		purpose: "Create a new mission from the template.",
-		params: ["--id <id>", "--name <name>", "--description <text>"],
+		params: ["--id <id>", "--name <name>", "--description <markdown>"],
 		example:
 			"clawion mission create --id m1 --name 'Alpha' --description 'Build MVP'",
 	},
@@ -115,7 +115,7 @@ const HELP_ENTRIES: HelpEntry[] = [
 	{
 		command: "mission update",
 		purpose: "Update a mission description (manager only).",
-		params: ["--id <id>", "--description <text>", "--agent <agentId>"],
+		params: ["--id <id>", "--description <markdown>", "--agent <agentId>"],
 		example:
 			"clawion mission update --id m1 --description 'New scope' --agent manager-1",
 	},
@@ -132,7 +132,7 @@ const HELP_ENTRIES: HelpEntry[] = [
 			"--mission <id>",
 			"--id <taskId>",
 			"--title <title>",
-			"--description <text>",
+			"--description <markdown>",
 			"--agent <agentId>",
 		],
 		example:
@@ -183,7 +183,7 @@ const HELP_ENTRIES: HelpEntry[] = [
 			"--id <agentId>",
 			"--name <displayName>",
 			"--system-role <manager|worker>",
-			"--role-description <text>",
+			"--role-description <markdown>",
 			"--status <active|paused> (optional)",
 			"--agent <agentId>",
 		],
@@ -197,7 +197,7 @@ const HELP_ENTRIES: HelpEntry[] = [
 			"--mission <id>",
 			"--id <agentId>",
 			"--name <displayName> (optional)",
-			"--role-description <text> (optional)",
+			"--role-description <markdown> (optional)",
 			"--status <active|paused> (optional)",
 			"--agent <agentId>",
 		],
@@ -223,7 +223,7 @@ const HELP_ENTRIES: HelpEntry[] = [
 			"--mission <id>",
 			"--task <taskId>",
 			"--title <text>",
-			"--content <text>",
+			"--content <markdown>",
 			"--mentions <agentId>",
 			"--agent <agentId>",
 		],
@@ -268,7 +268,7 @@ const HELP_ENTRIES: HelpEntry[] = [
 			"--agent <agentId>",
 			"--level <info|warn|error>",
 			"--type <type>",
-			"--message <text>",
+			"--message <markdown>",
 			"--task <taskId> (optional)",
 			"--thread <threadId> (optional)",
 		],
@@ -358,7 +358,7 @@ mission
 	.description("Create a mission from the template")
 	.requiredOption("--id <id>", "Mission ID")
 	.requiredOption("--name <name>", "Mission name")
-	.requiredOption("--description <text>", "Mission description")
+	.requiredOption("--description <markdown>", "Mission description")
 	.action(async (options) => {
 		try {
 			await createMission({
@@ -424,7 +424,7 @@ mission
 	.command("update")
 	.description("Update a mission description (manager only)")
 	.requiredOption("--id <id>", "Mission ID")
-	.requiredOption("--description <text>", "New description")
+	.requiredOption("--description <markdown>", "New description")
 	.action(async (options, command) => {
 		const allowed = await requireManager(command, options.id);
 		if (!allowed) {
@@ -473,7 +473,7 @@ task
 	.requiredOption("--mission <id>", "Mission ID")
 	.requiredOption("--id <taskId>", "Task ID")
 	.requiredOption("--title <title>", "Task title")
-	.requiredOption("--description <text>", "Task description")
+	.requiredOption("--description <markdown>", "Task description")
 	.action(async (options, command) => {
 		const allowed = await requireManager(command, options.mission);
 		if (!allowed) {
@@ -647,7 +647,10 @@ agent
 	.requiredOption("--id <agentId>", "Agent ID")
 	.requiredOption("--name <displayName>", "Display name")
 	.requiredOption("--system-role <role>", "System role (manager|worker)")
-	.requiredOption("--role-description <text>", "Role description for the agent")
+	.requiredOption(
+		"--role-description <markdown>",
+		"Role description for the agent",
+	)
 	.option("--status <status>", "Status (active|paused)", "active")
 	.action(async (options, command) => {
 		const actingAgentId = requireAgentId(command);
@@ -707,7 +710,7 @@ agent
 	.requiredOption("--mission <id>", "Mission ID")
 	.requiredOption("--id <agentId>", "Agent ID")
 	.option("--name <displayName>", "Display name")
-	.option("--role-description <text>", "Role description")
+	.option("--role-description <markdown>", "Role description")
 	.option("--status <status>", "Status (active|paused)")
 	.action(async (options, command) => {
 		const allowed = await requireManager(command, options.mission);
@@ -811,7 +814,7 @@ thread
 	.requiredOption("--mission <id>", "Mission ID")
 	.requiredOption("--task <taskId>", "Task ID")
 	.requiredOption("--title <text>", "Thread title")
-	.requiredOption("--content <text>", "Message content")
+	.requiredOption("--content <markdown>", "Message content")
 	.requiredOption("--mentions <agentId>", "Mentioned agent ID")
 	.action(async (options, command) => {
 		const authorAgentId = requireAgentId(command);
@@ -972,7 +975,7 @@ log
 	.requiredOption("--mission <id>", "Mission ID")
 	.requiredOption("--level <level>", "Level (info|warn|error)")
 	.requiredOption("--type <type>", "Event type")
-	.requiredOption("--message <text>", "Message")
+	.requiredOption("--message <markdown>", "Message")
 	.option("--task <taskId>", "Task ID")
 	.option("--thread <threadId>", "Thread message ID")
 	.action(async (options, command) => {
