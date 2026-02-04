@@ -11,6 +11,7 @@ import {
 	readWorkingFile,
 	updateAgent,
 } from "../src/core/workspace/agents";
+import { appendCliInvocation } from "../src/core/workspace/cli-invocations";
 import { ensureWorkspace } from "../src/core/workspace/init";
 import { addLogEvent, getLog } from "../src/core/workspace/logs";
 import { resolveMissionPath } from "../src/core/workspace/mission";
@@ -56,6 +57,7 @@ program.hook("preAction", async (_thisCommand, _actionCommand) => {
 	const missionsDir = resolveMissionsDir();
 	context.missionsDir = missionsDir;
 	await ensureWorkspace({ missionsDir });
+	await appendCliInvocation(missionsDir, process.argv.slice(2));
 });
 
 program
