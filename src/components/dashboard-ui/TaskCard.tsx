@@ -29,22 +29,30 @@ export function TaskCard({
 	return (
 		<div
 			className={cn(
-				"relative rounded-xl border border-border/70 bg-background p-3 transition hover:border-primary/40",
-				isActive && "border-primary/60 bg-primary/10",
+				"group relative w-full overflow-hidden rounded-xl border border-border/70 bg-background p-3 shadow-sm transition will-change-transform hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md",
+				"before:absolute before:left-0 before:top-0 before:h-full before:w-1 before:bg-border/60 before:content-['']",
+				isBlocked && "before:bg-destructive/60",
+				isActive && "border-primary/60 bg-primary/10 before:bg-primary/70",
 			)}
 		>
 			<button
 				type="button"
 				onClick={() => onTaskSelect(task.id)}
-				className="w-full text-left pr-16 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+				className={cn(
+					"w-full text-left pr-16",
+					"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+				)}
 			>
-				<p className="text-sm font-semibold text-foreground">{task.title}</p>
-				<div className="mt-1 h-16 overflow-y-auto pr-2">
+				<p className="text-sm font-semibold leading-snug text-foreground">
+					{task.title}
+				</p>
+				<div className="relative mt-1 h-20 overflow-y-auto pr-2 scrollbar-none overscroll-contain">
 					<div className="markdown">
 						<ReactMarkdown remarkPlugins={[remarkGfm]}>
 							{task.description}
 						</ReactMarkdown>
 					</div>
+					<div className="pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-gradient-to-t from-background to-transparent opacity-90" />
 				</div>
 			</button>
 
@@ -62,7 +70,9 @@ export function TaskCard({
 			) : null}
 
 			{statusNotes ? (
-				<p className="mt-2 text-xs text-muted-foreground">{statusNotes}</p>
+				<p className="mt-2 rounded-lg border border-border/50 bg-muted/40 px-2 py-1 text-xs leading-snug text-muted-foreground">
+					{statusNotes}
+				</p>
 			) : null}
 
 			<div className="mt-3 flex flex-wrap items-center gap-2 text-[0.65rem] text-muted-foreground">
