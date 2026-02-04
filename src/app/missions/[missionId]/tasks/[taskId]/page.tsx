@@ -6,7 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { readJson } from "@/core/fs/json";
-import { missionSchema, tasksSchema, workersSchema } from "@/core/schemas";
+import {
+	type Mission,
+	missionSchema,
+	tasksSchema,
+	workersSchema,
+} from "@/core/schemas";
 import { resolveMissionPath } from "@/core/workspace/mission";
 import { resolveMissionsDir } from "@/core/workspace/paths";
 import { getThread } from "@/core/workspace/threads";
@@ -36,6 +41,13 @@ function getInitials(value: string) {
 		.slice(0, 2)
 		.toUpperCase();
 }
+
+const missionStatusTone: Record<Mission["status"], string> = {
+	active: "border-primary/50 text-primary",
+	paused: "border-amber-400/50 text-amber-600 dark:text-amber-300",
+	archived: "border-border/60 text-muted-foreground",
+	completed: "border-emerald-400/40 text-emerald-600 dark:text-emerald-300",
+};
 
 type RouteParams = {
 	missionId: string;
@@ -225,7 +237,10 @@ export default async function TaskThreadPage({
 								<p>{mission.description}</p>
 								<Badge
 									variant="outline"
-									className="rounded-full border-border/70 bg-muted/60 px-2 py-0.5 text-[0.65rem] font-medium text-foreground/80"
+									className={cn(
+										"rounded-full border-border/70 bg-muted/60 px-2 py-0.5 text-[0.65rem] font-medium",
+										missionStatusTone[mission.status],
+									)}
 								>
 									{mission.status}
 								</Badge>
