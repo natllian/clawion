@@ -131,7 +131,7 @@ export function WorkerDropdown({
 									<p className="text-sm font-medium text-foreground">
 										{worker.displayName}
 									</p>
-									<div className="mt-1 max-h-[120px] overflow-y-auto">
+									<div className="mt-1 max-h-[120px] overflow-y-auto scrollbar-dropdown">
 										<div className="markdown text-xs text-muted-foreground">
 											<ReactMarkdown remarkPlugins={[remarkGfm]}>
 												{worker.roleDescription || "No description provided."}
@@ -150,7 +150,7 @@ export function WorkerDropdown({
 									</TabsList>
 
 									<TabsContent value="working" className="mt-2">
-										<div className="h-[160px] overflow-y-auto rounded-lg border border-border/70 bg-background p-2">
+										<div className="h-[160px] overflow-y-auto rounded-lg border border-border/70 bg-background p-2 scrollbar-dropdown">
 											<MarkdownBlock
 												content={
 													isActive
@@ -162,7 +162,7 @@ export function WorkerDropdown({
 									</TabsContent>
 
 									<TabsContent value="logs" className="mt-2">
-										<div className="flex h-[160px] flex-col gap-2 overflow-y-auto pr-1">
+										<div className="flex h-[160px] flex-col gap-2 overflow-y-auto scrollbar-dropdown pr-1">
 											{loadingWorker ? (
 												logSkeletons.map((key) => (
 													<div

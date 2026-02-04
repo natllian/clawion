@@ -312,7 +312,7 @@ export function Dashboard() {
 							<p className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">
 								Threads
 							</p>
-							<div className="flex max-h-[320px] flex-col gap-2 overflow-y-auto pr-1">
+							<div className="flex max-h-[320px] flex-col gap-2 overflow-y-auto scrollbar-thin pr-1">
 								<ThreadsList
 									threads={threads}
 									workerMap={workerMap}

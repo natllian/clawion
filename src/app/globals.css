@@ -244,6 +244,60 @@
 	.animate-orbit {
 		animation: orbit 22s ease-in-out infinite;
 	}
+
+	/* Custom scrollbar - thin, elegant, auto-hiding */
+	.scrollbar-thin {
+		scrollbar-width: thin;
+		scrollbar-color: var(--muted-foreground) transparent;
+	}
+
+	.scrollbar-thin::-webkit-scrollbar {
+		width: 6px;
+		height: 6px;
+	}
+
+	.scrollbar-thin::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.scrollbar-thin::-webkit-scrollbar-thumb {
+		background-color: var(--muted-foreground);
+		border-radius: 3px;
+		opacity: 0;
+		transition: opacity 0.2s ease;
+	}
+
+	.scrollbar-thin:hover::-webkit-scrollbar-thumb,
+	.scrollbar-thin:focus::-webkit-scrollbar-thumb,
+	.scrollbar-thin:active::-webkit-scrollbar-thumb {
+		opacity: 0.4;
+	}
+
+	/* Scrollbar always visible for dropdowns */
+	.scrollbar-dropdown {
+		scrollbar-width: thin;
+		scrollbar-color: var(--muted-foreground) transparent;
+	}
+
+	.scrollbar-dropdown::-webkit-scrollbar {
+		width: 6px;
+		height: 6px;
+	}
+
+	.scrollbar-dropdown::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.scrollbar-dropdown::-webkit-scrollbar-thumb {
+		background-color: var(--muted-foreground);
+		border-radius: 3px;
+		opacity: 0.3;
+		transition: opacity 0.2s ease;
+	}
+
+	.scrollbar-dropdown:hover::-webkit-scrollbar-thumb {
+		opacity: 0.6;
+	}
 }
 
 @keyframes float {
