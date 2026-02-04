@@ -7,6 +7,7 @@ import {
 	ChevronRight,
 	ClipboardList,
 	LayoutGrid,
+	MessageSquare,
 	Sparkles,
 	Users,
 } from "lucide-react";
@@ -15,6 +16,7 @@ import * as React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -357,14 +359,14 @@ export function Dashboard() {
 			<div className="flex min-h-screen">
 				<aside
 					className={cn(
-						"flex flex-col border-r border-border/70 bg-card/40 transition-all",
+						"relative z-20 flex flex-col border-r border-border/70 bg-card/40 transition-all",
 						sidebarCollapsed ? "w-16" : "w-[280px]",
 					)}
 				>
-					<div className="flex items-center justify-between px-4 py-4">
+					<div className="grid grid-cols-[1fr_auto] items-center gap-2 px-4 py-4">
 						<div
 							className={cn(
-								"flex items-center gap-3",
+								"flex min-w-0 items-center gap-3",
 								sidebarCollapsed && "justify-center",
 							)}
 						>
@@ -383,7 +385,7 @@ export function Dashboard() {
 						<Button
 							variant="ghost"
 							size="icon-sm"
-							className="text-muted-foreground"
+							className="shrink-0 text-muted-foreground"
 							onClick={() => setSidebarCollapsed((current) => !current)}
 							aria-label="Toggle sidebar"
 						>
@@ -487,7 +489,7 @@ export function Dashboard() {
 						{!sidebarCollapsed ? (
 							<div className="space-y-2">
 								<p className="text-[0.6rem] uppercase tracking-[0.3em] text-muted-foreground">
-									Tasks
+									Threads
 								</p>
 								<div className="flex max-h-[320px] flex-col gap-2 overflow-y-auto pr-1">
 									{loadingMission ? (
@@ -510,38 +512,40 @@ export function Dashboard() {
 														isActive && "border-primary/60 bg-primary/10",
 													)}
 												>
-													<button
-														onClick={() => setActiveTaskId(task.id)}
-														type="button"
-														className="w-full text-left text-xs font-medium text-foreground"
-													>
-														{task.title}
-													</button>
-													<div className="mt-1 flex items-center justify-between text-[0.65rem] text-muted-foreground">
-														<span>{task.columnId}</span>
+													<div className="flex items-start justify-between gap-2">
+														<button
+															onClick={() => setActiveTaskId(task.id)}
+															type="button"
+															className="w-full text-left text-xs font-medium text-foreground"
+														>
+															{task.title}
+														</button>
 														{activeMissionId ? (
 															<Link
-																className="text-primary"
+																className="text-[0.65rem] text-primary"
 																href={`/missions/${activeMissionId}/tasks/${task.id}`}
 															>
 																Thread
 															</Link>
 														) : null}
 													</div>
+													<p className="mt-1 text-[0.65rem] text-muted-foreground">
+														{task.columnId}
+													</p>
 												</div>
 											);
 										})
 									) : (
 										<div className="rounded-lg border border-border/70 bg-background p-3 text-xs text-muted-foreground">
-											No tasks yet.
+											No threads yet.
 										</div>
 									)}
 								</div>
 							</div>
 						) : (
 							<div className="flex flex-col items-center gap-2 text-[0.65rem] text-muted-foreground">
-								<LayoutGrid className="h-4 w-4" />
-								<span>{tasks?.tasks.length ?? 0} tasks</span>
+								<MessageSquare className="h-4 w-4" />
+								<span>{tasks?.tasks.length ?? 0} threads</span>
 							</div>
 						)}
 					</div>
@@ -575,7 +579,7 @@ export function Dashboard() {
 							</p>
 						</div>
 						<div className="flex flex-wrap items-center gap-2">
-							<DropdownMenu>
+							<DropdownMenu modal={false}>
 								<DropdownMenuTrigger asChild>
 									<Button variant="outline" size="sm">
 										<BookOpen className="h-4 w-4" />
@@ -616,7 +620,7 @@ export function Dashboard() {
 								</DropdownMenuContent>
 							</DropdownMenu>
 
-							<DropdownMenu>
+							<DropdownMenu modal={false}>
 								<DropdownMenuTrigger asChild>
 									<Button variant="outline" size="sm">
 										<Users className="h-4 w-4" />
@@ -760,6 +764,49 @@ export function Dashboard() {
 								</div>
 							</div>
 
+							<div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+								<div className="flex items-center gap-2 text-[0.65rem] uppercase tracking-[0.3em]">
+									<Users className="h-3.5 w-3.5" />
+									Workers
+								</div>
+								<div className="flex flex-wrap items-center gap-2">
+									{loadingMission ? (
+										workerSkeletons.map((key) => (
+											<div
+												key={key}
+												className="flex items-center gap-2 rounded-full border border-border/70 bg-background px-2 py-1"
+											>
+												<Skeleton className="h-4 w-4 rounded-full" />
+												<Skeleton className="h-3 w-12" />
+											</div>
+										))
+									) : workers?.workers.length ? (
+										workers.workers.map((worker) => (
+											<Tooltip key={worker.id}>
+												<TooltipTrigger asChild>
+													<button
+														type="button"
+														className="flex items-center gap-2 rounded-full border border-border/70 bg-background px-2 py-1 text-xs text-foreground transition hover:border-primary/40 hover:bg-primary/5"
+													>
+														<Avatar size="sm">
+															<AvatarFallback>
+																{getInitials(worker.displayName)}
+															</AvatarFallback>
+														</Avatar>
+														<span>{worker.displayName}</span>
+													</button>
+												</TooltipTrigger>
+												<TooltipContent side="bottom">
+													{worker.roleDescription || "No description provided."}
+												</TooltipContent>
+											</Tooltip>
+										))
+									) : (
+										<span>No workers yet.</span>
+									)}
+								</div>
+							</div>
+
 							<div className="mt-5">
 								{loadingMission ? (
 									<div className="grid gap-3 md:grid-cols-2">
@@ -810,16 +857,16 @@ export function Dashboard() {
 																	<div
 																		key={task.id}
 																		className={cn(
-																			"rounded-xl border border-border/70 bg-background p-3 transition hover:border-primary/40",
+																			"rounded-xl border border-border/70 bg-background p-3 transition hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/40",
 																			isActive &&
 																				"border-primary/60 bg-primary/10",
 																		)}
 																	>
 																		<div className="flex items-start justify-between gap-2">
 																			<button
-																				onClick={() => setActiveTaskId(task.id)}
 																				type="button"
-																				className="text-left"
+																				onClick={() => setActiveTaskId(task.id)}
+																				className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
 																			>
 																				<p className="text-sm font-semibold text-foreground">
 																					{task.title}
@@ -829,12 +876,19 @@ export function Dashboard() {
 																				</p>
 																			</button>
 																			{activeMissionId ? (
-																				<Link
-																					className="text-[0.65rem] text-primary"
-																					href={`/missions/${activeMissionId}/tasks/${task.id}`}
+																				<Button
+																					asChild
+																					variant="outline"
+																					size="xs"
+																					className="rounded-full border-primary/40 bg-primary/10 text-primary hover:bg-primary/20"
 																				>
-																					Thread
-																				</Link>
+																					<Link
+																						href={`/missions/${activeMissionId}/tasks/${task.id}`}
+																					>
+																						<MessageSquare className="h-3 w-3" />
+																						Thread
+																					</Link>
+																				</Button>
 																			) : null}
 																		</div>
 																		{task.statusNotes ? (
