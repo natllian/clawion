@@ -8,5 +8,6 @@ export { SnapshotDropdown } from "./snapshot-dropdown";
 export { ProgressStats, TaskBoardHeader, TaskBoardSection } from "./task-board";
 export { TaskCard } from "./task-card";
 export { TaskBoardSkeleton, TaskColumn } from "./task-column";
+export { ThreadDetail } from "./thread-detail";
 export { ThreadsList } from "./threads-list";
 export { WorkerDropdown } from "./worker-dropdown";

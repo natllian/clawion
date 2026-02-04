@@ -12,6 +12,7 @@ interface ThreadsListProps {
 	workerMap: Map<string, string>;
 	loadingMission: boolean;
 	activeMissionId: string | null;
+	activeThreadId?: string | null;
 }
 
 export function ThreadsList({
@@ -19,6 +20,7 @@ export function ThreadsList({
 	workerMap,
 	loadingMission,
 	activeMissionId,
+	activeThreadId,
 }: ThreadsListProps) {
 	if (loadingMission) {
 		return (
@@ -55,8 +57,12 @@ export function ThreadsList({
 				return (
 					<Link
 						key={thread.taskId}
-						href={`/missions/${activeMissionId}/tasks/${thread.taskId}`}
-						className="block rounded-lg border border-border/70 bg-background px-3 py-2 transition hover:border-primary/40 hover:bg-primary/5"
+						href={`/missions/${activeMissionId}/threads/${thread.taskId}`}
+						className={cn(
+							"block rounded-lg border border-border/70 bg-background px-3 py-2 transition hover:border-primary/40 hover:bg-primary/5",
+							activeThreadId === thread.taskId &&
+								"border-primary/60 bg-primary/10",
+						)}
 					>
 						<div className="flex items-start justify-between gap-2">
 							<span className="line-clamp-1 text-xs font-medium text-foreground">

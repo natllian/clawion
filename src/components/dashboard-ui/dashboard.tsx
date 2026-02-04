@@ -17,6 +17,7 @@ import {
 	MissionList,
 	Sidebar,
 	TaskBoardSection,
+	ThreadDetail,
 	ThreadsList,
 	WorkerDropdown,
 } from "./index";
@@ -41,10 +42,21 @@ function isAbortError(error: unknown) {
 	return error instanceof DOMException && error.name === "AbortError";
 }
 
-export function Dashboard() {
+type DashboardProps = {
+	missionId?: string;
+	threadId?: string;
+};
+
+export function Dashboard({
+	missionId: initialMissionId,
+	threadId: initialThreadId,
+}: DashboardProps) {
 	const [missionsDir, setMissionsDir] = React.useState<string | null>(null);
 	const [missions, setMissions] = React.useState<MissionIndexItem[]>([]);
 	const [activeMissionId, setActiveMissionId] = React.useState<string | null>(
+		null,
+	);
+	const [activeThreadId, setActiveThreadId] = React.useState<string | null>(
 		null,
 	);
 	const [mission, setMission] = React.useState<Mission | null>(null);
@@ -82,12 +94,24 @@ export function Dashboard() {
 				const payload = (await response.json()) as MissionsResponse;
 				setMissionsDir(payload.missionsDir);
 				setMissions(payload.missions);
-				setActiveMissionId((current) => {
-					if (current && payload.missions.some((item) => item.id === current)) {
-						return current;
-					}
-					return payload.missions[0]?.id ?? null;
-				});
+
+				// Use initialMissionId from props if available, otherwise use first or current
+				if (
+					initialMissionId &&
+					payload.missions.some((item) => item.id === initialMissionId)
+				) {
+					setActiveMissionId(initialMissionId);
+				} else {
+					setActiveMissionId((current) => {
+						if (
+							current &&
+							payload.missions.some((item) => item.id === current)
+						) {
+							return current;
+						}
+						return payload.missions[0]?.id ?? null;
+					});
+				}
 			} catch (err) {
 				if (isAbortError(err)) return;
 				setError("Unable to read missions index. Run clawion init first.");
@@ -101,7 +125,7 @@ export function Dashboard() {
 		return () => {
 			controller.abort();
 		};
-	}, []);
+	}, [initialMissionId]);
 
 	// Mission data loading
 	React.useEffect(() => {
@@ -194,6 +218,13 @@ export function Dashboard() {
 			controller.abort();
 		};
 	}, [activeMissionId]);
+
+	// Sync activeThreadId with initialThreadId prop
+	React.useEffect(() => {
+		if (initialThreadId) {
+			setActiveThreadId(initialThreadId);
+		}
+	}, [initialThreadId]);
 
 	// Worker data loading
 	React.useEffect(() => {
@@ -318,7 +349,6 @@ export function Dashboard() {
 								missions={missions}
 								activeMissionId={activeMissionId}
 								loadingMissions={loadingMissions}
-								onMissionSelect={setActiveMissionId}
 								sidebarCollapsed={sidebarCollapsed}
 							/>
 						</div>
@@ -336,6 +366,7 @@ export function Dashboard() {
 									workerMap={workerMap}
 									loadingMission={loadingMission}
 									activeMissionId={activeMissionId}
+									activeThreadId={activeThreadId}
 								/>
 							</div>
 						</div>
@@ -357,58 +388,67 @@ export function Dashboard() {
 					<main className="flex flex-1 flex-col gap-6 px-6 py-6">
 						<ErrorBanner error={error} />
 
-						<TaskBoardSection
-							loadingMission={loadingMission}
-							tasksColumns={tasksColumns}
-							tasksFile={tasks}
-							activeTaskId={activeTaskId}
-							activeMissionId={activeMissionId}
-							workerMap={workerMap}
-							onTaskSelect={setActiveTaskId}
-						>
-							{/* Progress stats with worker panel */}
-							<div className="flex flex-wrap items-center justify-between gap-4">
-								<div>
-									<div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
-										<Sparkles className="h-3.5 w-3.5" />
-										Task Board
+						{activeThreadId && mission ? (
+							<ThreadDetail
+								missionId={activeMissionId ?? ""}
+								threadId={activeThreadId}
+								mission={mission}
+								workerMap={workerMap}
+							/>
+						) : (
+							<TaskBoardSection
+								loadingMission={loadingMission}
+								tasksColumns={tasksColumns}
+								tasksFile={tasks}
+								activeTaskId={activeTaskId}
+								activeMissionId={activeMissionId}
+								workerMap={workerMap}
+								onTaskSelect={setActiveTaskId}
+							>
+								{/* Progress stats with worker panel */}
+								<div className="flex flex-wrap items-center justify-between gap-4">
+									<div>
+										<div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+											<Sparkles className="h-3.5 w-3.5" />
+											Task Board
+										</div>
+										<p className="mt-2 text-sm text-muted-foreground">
+											Dragless, CLI-driven. One column per status.
+										</p>
 									</div>
-									<p className="mt-2 text-sm text-muted-foreground">
-										Dragless, CLI-driven. One column per status.
-									</p>
-								</div>
-								<div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-									<span>{tasks?.tasks.length ?? 0} tasks</span>
-									<div
-										className={cn(
-											"flex h-2 w-24 overflow-hidden rounded-full bg-muted",
-										)}
-									>
+									<div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+										<span>{tasks?.tasks.length ?? 0} tasks</span>
 										<div
-											className="h-full bg-primary transition-all"
-											style={{ width: `${completion}%` }}
-										/>
+											className={cn(
+												"flex h-2 w-24 overflow-hidden rounded-full bg-muted",
+											)}
+										>
+											<div
+												className="h-full bg-primary transition-all"
+												style={{ width: `${completion}%` }}
+											/>
+										</div>
+										<span>{completion}%</span>
 									</div>
-									<span>{completion}%</span>
 								</div>
-							</div>
 
-							{/* Worker panel */}
-							<div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-								<div className="flex items-center gap-2 text-[0.65rem] uppercase tracking-wide">
-									<span>Workers</span>
+								{/* Worker panel */}
+								<div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+									<div className="flex items-center gap-2 text-[0.65rem] uppercase tracking-wide">
+										<span>Workers</span>
+									</div>
+									<WorkerDropdown
+										workers={workers}
+										loadingMission={loadingMission}
+										activeWorkerId={activeWorkerId}
+										onWorkerSelect={setActiveWorkerId}
+										working={working}
+										log={log}
+										loadingWorker={loadingWorker}
+									/>
 								</div>
-								<WorkerDropdown
-									workers={workers}
-									loadingMission={loadingMission}
-									activeWorkerId={activeWorkerId}
-									onWorkerSelect={setActiveWorkerId}
-									working={working}
-									log={log}
-									loadingWorker={loadingWorker}
-								/>
-							</div>
-						</TaskBoardSection>
+							</TaskBoardSection>
+						)}
 					</main>
 				</section>
 			</div>

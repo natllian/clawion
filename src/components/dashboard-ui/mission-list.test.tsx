@@ -1,5 +1,5 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 import type { MissionIndexItem } from "@/core/schemas";
 import { MissionList } from "./mission-list";
 
@@ -29,7 +29,6 @@ describe("MissionList", () => {
 		missions: mockMissions,
 		activeMissionId: null as string | null,
 		loadingMissions: false,
-		onMissionSelect: vi.fn(),
 		sidebarCollapsed: false,
 	};
 
@@ -49,17 +48,16 @@ describe("MissionList", () => {
 		expect(screen.getByText("completed")).toBeInTheDocument();
 	});
 
-	it("calls onMissionSelect when clicked", () => {
-		const onSelect = vi.fn();
-		render(<MissionList {...defaultProps} onMissionSelect={onSelect} />);
-		fireEvent.click(screen.getByText("Alpha Mission"));
-		expect(onSelect).toHaveBeenCalledWith("m1");
+	it("navigates to mission page when clicked", () => {
+		render(<MissionList {...defaultProps} />);
+		const link = screen.getByRole("link", { name: /alpha mission/i });
+		expect(link).toHaveAttribute("href", "/missions/m1");
 	});
 
 	it("applies active styling to selected mission", () => {
 		const props = { ...defaultProps, activeMissionId: "m1" };
 		render(<MissionList {...props} />);
-		const activeCard = screen.getByText("Alpha Mission").closest("button");
+		const activeCard = screen.getByRole("link", { name: /alpha mission/i });
 		expect(activeCard).toHaveClass("border-primary/60");
 	});
 

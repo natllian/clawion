@@ -100,10 +100,10 @@ describe("ThreadsList", () => {
 		expect(screen.getByText("No threads yet.")).toBeInTheDocument();
 	});
 
-	it("links to task page", () => {
+	it("links to thread page", () => {
 		render(<ThreadsList {...defaultProps} />);
 		const link = screen.getByRole("link", { name: /api design discussion/i });
-		expect(link).toHaveAttribute("href", "/missions/m1/tasks/t1");
+		expect(link).toHaveAttribute("href", "/missions/m1/threads/t1");
 	});
 
 	it("shows unknown creator when worker not in map", () => {

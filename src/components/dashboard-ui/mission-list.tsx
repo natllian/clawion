@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { MissionIndexItem } from "@/core/schemas";
 import { cn } from "@/lib/utils";
 
@@ -7,7 +8,6 @@ interface MissionListProps {
 	missions: MissionIndexItem[];
 	activeMissionId: string | null;
 	loadingMissions: boolean;
-	onMissionSelect: (id: string) => void;
 	sidebarCollapsed: boolean;
 }
 
@@ -46,7 +46,6 @@ export function MissionList({
 	missions,
 	activeMissionId,
 	loadingMissions,
-	onMissionSelect,
 	sidebarCollapsed,
 }: MissionListProps) {
 	if (loadingMissions) {
@@ -66,12 +65,11 @@ export function MissionList({
 			{missions.map((item) => {
 				const isActive = item.id === activeMissionId;
 				const content = (
-					<button
+					<Link
 						key={item.id}
-						onClick={() => onMissionSelect(item.id)}
-						type="button"
+						href={`/missions/${item.id}`}
 						className={cn(
-							"w-full rounded-lg border border-border/70 bg-background px-3 py-2 text-left text-xs text-foreground transition hover:border-primary/50 hover:bg-primary/5",
+							"block w-full rounded-lg border border-border/70 bg-background px-3 py-2 text-left text-xs text-foreground transition hover:border-primary/50 hover:bg-primary/5",
 							isActive && "border-primary/60 bg-primary/10",
 							sidebarCollapsed &&
 								"flex h-10 w-10 items-center justify-center px-0 py-0 text-center",
@@ -94,7 +92,7 @@ export function MissionList({
 								</p>
 							</div>
 						)}
-					</button>
+					</Link>
 				);
 
 				if (sidebarCollapsed) {
