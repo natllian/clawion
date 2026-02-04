@@ -83,20 +83,24 @@ function isAbortError(error: unknown) {
 	return error instanceof DOMException && error.name === "AbortError";
 }
 
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+	dateStyle: "medium",
+	timeStyle: "short",
+	timeZone: "UTC",
+});
+
 function formatDate(value?: string) {
 	if (!value) {
 		return "—";
 	}
 
-	const date = new Date(value);
+	const normalized = /Z|[+-]\d{2}:\d{2}$/.test(value) ? value : `${value}Z`;
+	const date = new Date(normalized);
 	if (Number.isNaN(date.getTime())) {
 		return value;
 	}
 
-	return new Intl.DateTimeFormat("en-US", {
-		dateStyle: "medium",
-		timeStyle: "short",
-	}).format(date);
+	return dateFormatter.format(date);
 }
 
 function getInitials(value: string) {
@@ -857,40 +861,32 @@ export function Dashboard() {
 																	<div
 																		key={task.id}
 																		className={cn(
-																			"rounded-xl border border-border/70 bg-background p-3 transition hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/40",
+																			"relative rounded-xl border border-border/70 bg-background p-3 transition hover:border-primary/40",
 																			isActive &&
 																				"border-primary/60 bg-primary/10",
 																		)}
 																	>
-																		<div className="flex items-start justify-between gap-2">
-																			<button
-																				type="button"
-																				onClick={() => setActiveTaskId(task.id)}
-																				className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+																		<button
+																			type="button"
+																			onClick={() => setActiveTaskId(task.id)}
+																			className="w-full text-left pr-16 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+																		>
+																			<p className="text-sm font-semibold text-foreground">
+																				{task.title}
+																			</p>
+																			<p className="mt-1 text-xs text-muted-foreground">
+																				{task.description}
+																			</p>
+																		</button>
+																		{activeMissionId ? (
+																			<Link
+																				href={`/missions/${activeMissionId}/tasks/${task.id}`}
+																				className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.28em] text-primary shadow-sm transition hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
 																			>
-																				<p className="text-sm font-semibold text-foreground">
-																					{task.title}
-																				</p>
-																				<p className="mt-1 text-xs text-muted-foreground">
-																					{task.description}
-																				</p>
-																			</button>
-																			{activeMissionId ? (
-																				<Button
-																					asChild
-																					variant="outline"
-																					size="xs"
-																					className="rounded-full border-primary/40 bg-primary/10 text-primary hover:bg-primary/20"
-																				>
-																					<Link
-																						href={`/missions/${activeMissionId}/tasks/${task.id}`}
-																					>
-																						<MessageSquare className="h-3 w-3" />
-																						Thread
-																					</Link>
-																				</Button>
-																			) : null}
-																		</div>
+																				<MessageSquare className="h-3 w-3" />
+																				Thread
+																			</Link>
+																		) : null}
 																		{task.statusNotes ? (
 																			<p className="mt-2 text-xs text-muted-foreground">
 																				{task.statusNotes}
