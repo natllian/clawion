@@ -147,7 +147,7 @@ export function ThreadDetail({
 	const isTaskBlocked = isBlocked(task.statusNotes);
 	const threadOpen = thread.messages.some((message) => !message.resolved);
 	const assigneeLabel = task.assigneeAgentId
-		? (agentMap.get(task.assigneeAgentId) ?? task.assigneeAgentId)
+		? `@${agentMap.get(task.assigneeAgentId) ?? task.assigneeAgentId}`
 		: "Unassigned";
 
 	const participants = new Set<string>();
@@ -215,7 +215,6 @@ export function ThreadDetail({
 				<div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
 					<span>Created {formatDate(task.createdAt)}</span>
 					<span>Updated {formatDate(task.updatedAt)}</span>
-					<span className="text-[0.65rem] text-muted-foreground">Assigned</span>
 					<span
 						className={cn(
 							"inline-flex items-center rounded-full border border-border/70 bg-background px-2 py-0.5 text-[0.65rem] font-medium text-foreground",
@@ -323,9 +322,6 @@ export function ThreadDetail({
 							<CardTitle className="text-sm">Assignee</CardTitle>
 						</CardHeader>
 						<CardContent className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-							<span className="text-[0.65rem] text-muted-foreground">
-								Assigned
-							</span>
 							<span
 								className={cn(
 									"inline-flex items-center rounded-full border border-border/70 bg-background px-2 py-0.5 text-[0.65rem] font-medium text-foreground",

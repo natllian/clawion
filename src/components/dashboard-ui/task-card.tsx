@@ -66,9 +66,6 @@ export function TaskCard({
 			</div>
 
 			<div className="mt-2 flex items-center gap-2 text-[0.65rem] text-muted-foreground">
-				<span className="text-[0.55rem] uppercase tracking-wide text-muted-foreground/80">
-					Assigned
-				</span>
 				<span
 					className={cn(
 						"inline-flex items-center rounded-full border border-border/70 bg-background px-2 py-0.5 text-[0.6rem] font-medium text-foreground",
@@ -76,7 +73,7 @@ export function TaskCard({
 					)}
 				>
 					{task.assigneeAgentId
-						? (agentMap.get(task.assigneeAgentId) ?? task.assigneeAgentId)
+						? `@${agentMap.get(task.assigneeAgentId) ?? task.assigneeAgentId}`
 						: "Unassigned"}
 				</span>
 			</div>
