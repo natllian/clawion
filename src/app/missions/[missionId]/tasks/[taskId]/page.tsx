@@ -10,6 +10,7 @@ import { missionSchema, tasksSchema, workersSchema } from "@/core/schemas";
 import { resolveMissionPath } from "@/core/workspace/mission";
 import { resolveMissionsDir } from "@/core/workspace/paths";
 import { getThread } from "@/core/workspace/threads";
+import { cn } from "@/lib/utils";
 
 function formatDate(value?: string) {
 	if (!value) {
@@ -102,11 +103,12 @@ export default async function TaskThreadPage({
 								</span>
 								<Badge
 									variant="outline"
-									className={
+									className={cn(
+										"rounded-full px-2 py-0.5 text-[0.65rem] font-medium",
 										threadOpen
 											? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600"
-											: "border-border/70 text-muted-foreground"
-									}
+											: "border-border/70 text-muted-foreground",
+									)}
 								>
 									{threadOpen ? "Open" : "Resolved"}
 								</Badge>
@@ -118,14 +120,14 @@ export default async function TaskThreadPage({
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge
 								variant="outline"
-								className="rounded-full text-[0.65rem] uppercase tracking-[0.3em]"
+								className="rounded-full border-border/70 bg-muted/60 px-2 py-0.5 text-[0.65rem] font-medium text-foreground/80"
 							>
 								{column?.name ?? task.columnId}
 							</Badge>
 							{isBlocked ? (
 								<Badge
 									variant="destructive"
-									className="rounded-full text-[0.65rem] uppercase tracking-[0.3em]"
+									className="rounded-full px-2 py-0.5 text-[0.65rem] font-medium"
 								>
 									Blocked
 								</Badge>
@@ -138,7 +140,12 @@ export default async function TaskThreadPage({
 					<div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
 						<span>Created {formatDate(task.createdAt)}</span>
 						<span>Updated {formatDate(task.updatedAt)}</span>
-						<span>Assignee: {assigneeLabel}</span>
+						<span className="text-[0.65rem] text-muted-foreground">
+							Assigned
+						</span>
+						<span className="inline-flex items-center rounded-full border border-border/70 bg-background px-2 py-0.5 text-[0.65rem] font-medium text-foreground">
+							{assigneeLabel}
+						</span>
 					</div>
 					{statusNotes ? (
 						<p className="mt-2 text-sm text-muted-foreground">{statusNotes}</p>
@@ -185,7 +192,7 @@ export default async function TaskThreadPage({
 														</div>
 														<Badge
 															variant="outline"
-															className="rounded-full text-[0.6rem] uppercase tracking-[0.3em]"
+															className="rounded-full border-border/70 bg-muted/60 px-2 py-0.5 text-[0.6rem] font-medium text-foreground/80"
 														>
 															{message.resolved ? "Resolved" : "Open"}
 														</Badge>
@@ -218,7 +225,7 @@ export default async function TaskThreadPage({
 								<p>{mission.description}</p>
 								<Badge
 									variant="outline"
-									className="rounded-full text-[0.6rem] uppercase tracking-[0.3em]"
+									className="rounded-full border-border/70 bg-muted/60 px-2 py-0.5 text-[0.65rem] font-medium text-foreground/80"
 								>
 									{mission.status}
 								</Badge>
@@ -229,8 +236,19 @@ export default async function TaskThreadPage({
 							<CardHeader className="pb-3">
 								<CardTitle className="text-sm">Assignee</CardTitle>
 							</CardHeader>
-							<CardContent className="text-sm text-muted-foreground">
-								{assigneeLabel}
+							<CardContent className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+								<span className="text-[0.65rem] text-muted-foreground">
+									Assigned
+								</span>
+								<span
+									className={cn(
+										"inline-flex items-center rounded-full border border-border/70 bg-background px-2 py-0.5 text-[0.65rem] font-medium text-foreground",
+										assigneeLabel === "Unassigned" &&
+											"border-dashed text-muted-foreground",
+									)}
+								>
+									{assigneeLabel}
+								</span>
 							</CardContent>
 						</Card>
 
@@ -248,7 +266,7 @@ export default async function TaskThreadPage({
 										<Badge
 											key={id}
 											variant="outline"
-											className="rounded-full text-[0.6rem] uppercase tracking-[0.3em]"
+											className="rounded-full border-border/70 bg-background px-2 py-0.5 text-[0.6rem] font-medium text-foreground/80"
 										>
 											{workerMap.get(id) ?? id}
 										</Badge>

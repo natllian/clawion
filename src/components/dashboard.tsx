@@ -10,8 +10,8 @@ import {
 	MessageSquare,
 	Sparkles,
 	Users,
+	X,
 } from "lucide-react";
-import Link from "next/link";
 import * as React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -41,6 +41,7 @@ import type {
 	Mission,
 	MissionIndexItem,
 	TasksFile,
+	ThreadFile,
 	WorkersFile,
 } from "@/core/schemas";
 import { cn } from "@/lib/utils";
@@ -134,6 +135,10 @@ export function Dashboard() {
 	const [activeWorkerId, setActiveWorkerId] = React.useState<string | null>(
 		null,
 	);
+	const [openThreadId, setOpenThreadId] = React.useState<string | null>(null);
+	const [thread, setThread] = React.useState<ThreadFile | null>(null);
+	const [threadLoading, setThreadLoading] = React.useState(false);
+	const [threadError, setThreadError] = React.useState<string | null>(null);
 	const [working, setWorking] = React.useState<string>("");
 	const [log, setLog] = React.useState<LogFile | null>(null);
 	const [error, setError] = React.useState<string | null>(null);
@@ -190,12 +195,16 @@ export function Dashboard() {
 			setWorkers(null);
 			setActiveTaskId(null);
 			setActiveWorkerId(null);
+			setOpenThreadId(null);
+			setThread(null);
 			return;
 		}
 
 		const controller = new AbortController();
 		setLoadingMission(true);
 		setError(null);
+		setOpenThreadId(null);
+		setThread(null);
 
 		async function loadMission() {
 			try {
@@ -236,7 +245,7 @@ export function Dashboard() {
 					) {
 						return current;
 					}
-					return tasksPayload.tasks[0]?.id ?? null;
+					return null;
 				});
 				setActiveWorkerId((current) => {
 					if (
@@ -309,6 +318,66 @@ export function Dashboard() {
 		};
 	}, [activeMissionId, activeWorkerId]);
 
+	React.useEffect(() => {
+		if (!activeMissionId || !openThreadId) {
+			setThread(null);
+			setThreadError(null);
+			return;
+		}
+
+		const controller = new AbortController();
+		setThreadLoading(true);
+		setThreadError(null);
+
+		async function loadThread() {
+			try {
+				const response = await fetch(
+					`/api/missions/${activeMissionId}/threads/${openThreadId}`,
+					{
+						cache: "no-store",
+						signal: controller.signal,
+					},
+				);
+				if (!response.ok) {
+					throw new Error("Unable to load thread.");
+				}
+				const payload = (await response.json()) as ThreadFile;
+				setThread(payload);
+			} catch (err) {
+				if (isAbortError(err)) {
+					return;
+				}
+				setThreadError("Unable to load thread details.");
+				setThread(null);
+			} finally {
+				setThreadLoading(false);
+			}
+		}
+
+		void loadThread();
+
+		return () => {
+			controller.abort();
+		};
+	}, [activeMissionId, openThreadId]);
+
+	React.useEffect(() => {
+		if (!openThreadId) {
+			return;
+		}
+
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (event.key === "Escape") {
+				setOpenThreadId(null);
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [openThreadId]);
+
 	const tasksColumns = tasks?.columns
 		? [...tasks.columns].sort((a, b) => a.order - b.order)
 		: [];
@@ -347,12 +416,41 @@ export function Dashboard() {
 		return Math.round((doneCount / tasks.tasks.length) * 100);
 	}, [tasks]);
 
+	const workerMap = React.useMemo(() => {
+		return new Map(
+			workers?.workers.map((worker) => [worker.id, worker.displayName]) ?? [],
+		);
+	}, [workers]);
+
+	const openTask = React.useMemo(() => {
+		if (!tasks || !openThreadId) {
+			return null;
+		}
+		return tasks.tasks.find((task) => task.id === openThreadId) ?? null;
+	}, [openThreadId, tasks]);
+
+	const openColumn = React.useMemo(() => {
+		if (!tasks || !openTask) {
+			return null;
+		}
+		return (
+			tasks.columns.find((column) => column.id === openTask.columnId) ?? null
+		);
+	}, [openTask, tasks]);
+
 	const roadmapContent = loadingMission
 		? "Loading ROADMAP.md..."
 		: roadmap.trim() || "No roadmap yet.";
 	const workingContent = loadingWorker
 		? "Loading working memory..."
 		: working.trim() || "No working memory file yet.";
+
+	const sidebarOffset = sidebarCollapsed ? 64 : 280;
+
+	const openThread = React.useCallback((taskId: string) => {
+		setOpenThreadId(taskId);
+		setActiveTaskId(taskId);
+	}, []);
 
 	return (
 		<div className="min-h-screen bg-background text-foreground">
@@ -503,7 +601,7 @@ export function Dashboard() {
 										))
 									) : tasks?.tasks.length ? (
 										tasks.tasks.map((task) => {
-											const isActive = task.id === activeTaskId;
+											const isActive = task.id === openThreadId;
 											return (
 												<div
 													key={task.id}
@@ -514,20 +612,19 @@ export function Dashboard() {
 												>
 													<div className="flex items-start justify-between gap-2">
 														<button
-															onClick={() => setActiveTaskId(task.id)}
+															onClick={() => openThread(task.id)}
 															type="button"
 															className="w-full text-left text-xs font-medium text-foreground"
 														>
 															{task.title}
 														</button>
-														{activeMissionId ? (
-															<Link
-																className="text-[0.65rem] text-primary"
-																href={`/missions/${activeMissionId}/tasks/${task.id}`}
-															>
-																Thread
-															</Link>
-														) : null}
+														<button
+															type="button"
+															onClick={() => openThread(task.id)}
+															className="text-[0.65rem] text-primary"
+														>
+															Thread
+														</button>
 													</div>
 													<p className="mt-1 text-[0.65rem] text-muted-foreground">
 														{task.columnId}
@@ -861,34 +958,43 @@ export function Dashboard() {
 																				{task.description}
 																			</p>
 																		</button>
-																		{activeMissionId ? (
-																			<Link
-																				href={`/missions/${activeMissionId}/tasks/${task.id}`}
-																				className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.28em] text-primary shadow-sm transition hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-																			>
-																				<MessageSquare className="h-3 w-3" />
-																				Thread
-																			</Link>
-																		) : null}
+																		<button
+																			type="button"
+																			onClick={() => openThread(task.id)}
+																			className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-border/80 bg-muted/70 px-2.5 py-1 text-[0.65rem] font-medium text-foreground/80 shadow-sm transition hover:border-primary/40 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+																		>
+																			<MessageSquare className="h-3 w-3" />
+																			Thread
+																		</button>
 																		{task.statusNotes ? (
 																			<p className="mt-2 text-xs text-muted-foreground">
 																				{task.statusNotes}
 																			</p>
 																		) : null}
-																		<div className="mt-3 flex flex-wrap items-center gap-2 text-[0.6rem] uppercase tracking-[0.3em] text-muted-foreground">
-																			<Badge
-																				variant={
-																					isBlocked ? "destructive" : "outline"
-																				}
-																				className="rounded-full"
+																		<div className="mt-3 flex flex-wrap items-center gap-2 text-[0.65rem] text-muted-foreground">
+																			<span className="rounded-full border border-border/70 bg-muted/70 px-2 py-0.5 text-[0.6rem] font-medium text-foreground/80">
+																				#{task.id}
+																			</span>
+																			{isBlocked ? (
+																				<span className="rounded-full border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[0.6rem] font-medium text-destructive">
+																					Blocked
+																				</span>
+																			) : null}
+																			<span className="text-[0.65rem] text-muted-foreground">
+																				Assigned
+																			</span>
+																			<span
+																				className={cn(
+																					"inline-flex items-center rounded-full border border-border/70 bg-background px-2 py-0.5 text-[0.6rem] font-medium text-foreground",
+																					!task.assigneeId &&
+																						"border-dashed text-muted-foreground",
+																				)}
 																			>
-																				{task.id}
-																			</Badge>
-																			{task.assigneeId ? (
-																				<span>Assigned: {task.assigneeId}</span>
-																			) : (
-																				<span>Unassigned</span>
-																			)}
+																				{task.assigneeId
+																					? (workerMap.get(task.assigneeId) ??
+																						task.assigneeId)
+																					: "Unassigned"}
+																			</span>
 																		</div>
 																	</div>
 																);
@@ -905,6 +1011,120 @@ export function Dashboard() {
 					</main>
 				</section>
 			</div>
+			{openThreadId ? (
+				<div className="fixed inset-0 z-40">
+					<button
+						type="button"
+						aria-label="Close thread panel"
+						className="absolute inset-0 bg-foreground/10 backdrop-blur-[1px]"
+						onClick={() => setOpenThreadId(null)}
+					/>
+					<aside
+						className="absolute top-0 h-full w-[92vw] border-r border-border/70 bg-background shadow-2xl animate-in slide-in-from-left-8 sm:w-[min(50vw,640px)]"
+						style={{ left: sidebarOffset }}
+					>
+						<div className="flex h-full flex-col">
+							<div className="border-b border-border/70 px-5 py-4">
+								<div className="flex items-start justify-between gap-4">
+									<div className="min-w-0">
+										<p className="text-[0.6rem] uppercase tracking-[0.2em] text-muted-foreground">
+											Thread
+										</p>
+										<h2 className="mt-1 text-lg font-semibold text-foreground">
+											{openTask?.title ?? "Task Thread"}
+										</h2>
+										<div className="mt-2 flex flex-wrap items-center gap-2 text-[0.65rem] text-muted-foreground">
+											<span className="rounded-full border border-border/70 bg-muted/70 px-2 py-0.5 text-[0.6rem] font-medium text-foreground/80">
+												#{openTask?.id ?? openThreadId}
+											</span>
+											{openColumn ? (
+												<span className="rounded-full border border-border/70 bg-background px-2 py-0.5 text-[0.6rem] font-medium text-foreground/80">
+													{openColumn.name}
+												</span>
+											) : null}
+											{openTask?.assigneeId ? (
+												<span className="inline-flex items-center rounded-full border border-border/70 bg-background px-2 py-0.5 text-[0.6rem] font-medium text-foreground">
+													{workerMap.get(openTask.assigneeId) ??
+														openTask.assigneeId}
+												</span>
+											) : null}
+										</div>
+									</div>
+									<button
+										type="button"
+										onClick={() => setOpenThreadId(null)}
+										className="rounded-full border border-border/70 bg-background p-2 text-muted-foreground transition hover:border-primary/40 hover:text-foreground"
+										aria-label="Close thread panel"
+									>
+										<X className="h-4 w-4" />
+									</button>
+								</div>
+							</div>
+							<div className="flex-1 overflow-y-auto px-5 py-4">
+								{threadLoading ? (
+									<div className="space-y-3">
+										{logSkeletons.map((key) => (
+											<div
+												key={key}
+												className="rounded-xl border border-border/70 bg-background p-3"
+											>
+												<Skeleton className="h-3 w-32" />
+												<Skeleton className="mt-3 h-2 w-full" />
+											</div>
+										))}
+									</div>
+								) : threadError ? (
+									<div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+										{threadError}
+									</div>
+								) : thread?.messages.length ? (
+									<div className="space-y-3">
+										{thread.messages.map((message) => {
+											const authorLabel =
+												workerMap.get(message.authorId) ?? message.authorId;
+											const mentionsLabel =
+												workerMap.get(message.mentions) ?? message.mentions;
+											return (
+												<div
+													key={message.id}
+													className="rounded-xl border border-border/70 bg-background p-3"
+												>
+													<div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+														<div className="flex flex-wrap items-center gap-2">
+															<span className="font-medium text-foreground">
+																{authorLabel}
+															</span>
+															<span className="rounded-full border border-border/70 px-2 py-0.5 text-[0.6rem] text-muted-foreground">
+																@{mentionsLabel}
+															</span>
+														</div>
+														<span className="rounded-full border border-border/70 bg-muted/60 px-2 py-0.5 text-[0.6rem] font-medium text-foreground/80">
+															{message.resolved ? "Resolved" : "Open"}
+														</span>
+													</div>
+													<p className="mt-2 text-sm text-foreground">
+														{message.content}
+													</p>
+													<div className="mt-3 text-[0.65rem] text-muted-foreground">
+														{formatDate(message.createdAt)}
+														{message.resolved
+															? ` · Resolved by ${message.resolvedBy ?? "—"}`
+															: " · Awaiting resolution"}
+													</div>
+												</div>
+											);
+										})}
+									</div>
+								) : (
+									<div className="rounded-xl border border-border/70 bg-background p-3 text-sm text-muted-foreground">
+										No thread messages yet.
+									</div>
+								)}
+							</div>
+						</div>
+					</aside>
+				</div>
+			) : null}
 		</div>
 	);
 }
