@@ -8,11 +8,12 @@ import {
 import {
 	addAgent,
 	listAgents,
+	readWorkingFile,
 	resolveWorkingPath,
 	updateAgent,
 } from "../src/core/workspace/agents";
 import { ensureWorkspace } from "../src/core/workspace/init";
-import { addLogEvent } from "../src/core/workspace/logs";
+import { addLogEvent, getLog } from "../src/core/workspace/logs";
 import { resolveMissionPath } from "../src/core/workspace/mission";
 import {
 	completeMission,
@@ -224,6 +225,12 @@ const HELP_ENTRIES: HelpEntry[] = [
 		purpose: "List agents for a mission.",
 		params: ["--mission <id>"],
 		example: "clawion agent list --mission m1",
+	},
+	{
+		command: "agent whoami",
+		purpose: "Show the acting agent profile, working notes, and logs.",
+		params: ["--mission <id>", "--agent <agentId>"],
+		example: "clawion agent whoami --mission m1 --agent agent-1",
 	},
 	{
 		command: "agent working",
@@ -727,6 +734,55 @@ agent
 			);
 			const agentsFile = await listAgents(missionPath);
 			console.log(JSON.stringify(agentsFile, null, 2));
+		} catch (error) {
+			console.error(error instanceof Error ? error.message : String(error));
+			process.exitCode = 1;
+		}
+	});
+
+agent
+	.command("whoami")
+	.description("Show details for the acting agent")
+	.requiredOption("--mission <id>", "Mission ID")
+	.action(async (options, command) => {
+		const actingAgentId = requireAgentId(command);
+		if (!actingAgentId) {
+			return;
+		}
+
+		try {
+			const missionPath = await resolveMissionPath(
+				context.missionsDir,
+				options.mission,
+			);
+			const agentsFile = await listAgents(missionPath);
+			const agentEntry = agentsFile.agents.find(
+				(entry) => entry.id === actingAgentId,
+			);
+			if (!agentEntry) {
+				console.error(`Agent not found: ${actingAgentId}`);
+				process.exitCode = 1;
+				return;
+			}
+
+			const working = await readWorkingFile(missionPath, actingAgentId);
+			const log = await getLog(
+				context.missionsDir,
+				options.mission,
+				actingAgentId,
+			);
+
+			console.log(
+				JSON.stringify(
+					{
+						agent: agentEntry,
+						working,
+						log,
+					},
+					null,
+					2,
+				),
+			);
 		} catch (error) {
 			console.error(error instanceof Error ? error.message : String(error));
 			process.exitCode = 1;
