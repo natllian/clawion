@@ -819,14 +819,40 @@ thread
 			return;
 		}
 
+		// Validate mentions agent ID
+		const mentionsId = options.mentions.trim();
+		if (mentionsId.includes(" ")) {
+			console.error(
+				"Error: Only one agent can be mentioned. Remove extra spaces or provide a single agent ID.",
+			);
+			process.exitCode = 1;
+			return;
+		}
+
 		try {
+			const missionPath = await resolveMissionPath(
+				context.missionsDir,
+				options.mission,
+			);
+			const agentsFile = await listAgents(missionPath);
+			const mentionedAgent = agentsFile.agents.find(
+				(entry) => entry.id === mentionsId,
+			);
+			if (!mentionedAgent) {
+				console.error(
+					`Error: Agent not found: ${mentionsId}. Use 'clawion agent list --mission ${options.mission}' to see available agents.`,
+				);
+				process.exitCode = 1;
+				return;
+			}
+
 			const messageId = await addThreadMessage({
 				missionsDir: context.missionsDir,
 				missionId: options.mission,
 				taskId: options.task,
 				title: options.title,
 				authorAgentId,
-				mentionsAgentId: options.mentions,
+				mentionsAgentId: mentionsId,
 				content: options.content,
 			});
 			console.log(`Thread message added: ${messageId}`);
