@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { TaskItem, TasksFile } from "@/core/schemas";
+import type { TaskItem, TasksFile, ThreadFile } from "@/core/schemas";
 import { TaskBoardSection } from "./TaskBoard";
 
 vi.mock("next/link", () => ({
@@ -45,6 +45,7 @@ describe("TaskBoardSection", () => {
 		loadingMission: false,
 		tasksColumns: mockTasksFile.columns,
 		tasksFile: mockTasksFile,
+		threads: [] as ThreadFile[],
 		activeTaskId: null as string | null,
 		activeMissionId: "m1",
 		agentMap: mockAgentMap,
@@ -123,6 +124,7 @@ describe("TaskColumn", () => {
 		activeTaskId: null as string | null,
 		activeMissionId: "m1",
 		agentMap: new Map<string, string>(),
+		threadTaskIds: new Set<string>(),
 		onTaskSelect: vi.fn(),
 	};
 

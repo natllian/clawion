@@ -39,6 +39,7 @@ describe("TaskCard", () => {
 		activeTaskId: null as string | null,
 		activeMissionId: null as string | null,
 		agentMap: new Map<string, string>(),
+		hasThread: false,
 		onTaskSelect: vi.fn(),
 	};
 
@@ -68,6 +69,18 @@ describe("TaskCard", () => {
 	it("renders task ID badge", () => {
 		render(<TaskCard {...defaultProps} />);
 		expect(screen.getByText("#1")).toBeInTheDocument();
+	});
+
+	it("does not show Thread link when the task has no thread", () => {
+		const props = { ...defaultProps, activeMissionId: "m1", hasThread: false };
+		render(<TaskCard {...props} />);
+		expect(screen.queryByText("Thread")).not.toBeInTheDocument();
+	});
+
+	it("shows Thread link when the task has a thread", () => {
+		const props = { ...defaultProps, activeMissionId: "m1", hasThread: true };
+		render(<TaskCard {...props} />);
+		expect(screen.getByText("Thread")).toBeInTheDocument();
 	});
 
 	it("shows Unassigned when no assignee", () => {

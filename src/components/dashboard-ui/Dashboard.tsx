@@ -427,6 +427,7 @@ export function Dashboard({
 								loadingMission={showMissionSkeleton}
 								tasksColumns={tasksColumns}
 								tasksFile={tasks}
+								threads={threads}
 								activeTaskId={activeTaskId}
 								activeMissionId={activeMissionId}
 								agentMap={agentMap}

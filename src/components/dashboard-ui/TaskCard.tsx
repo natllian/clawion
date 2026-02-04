@@ -12,6 +12,7 @@ interface TaskCardProps {
 	activeTaskId: string | null;
 	activeMissionId: string | null;
 	agentMap: Map<string, string>;
+	hasThread: boolean;
 	onTaskSelect: (id: string) => void;
 }
 
@@ -20,6 +21,7 @@ export function TaskCard({
 	activeTaskId,
 	activeMissionId,
 	agentMap,
+	hasThread,
 	onTaskSelect,
 }: TaskCardProps) {
 	const statusNotes = task.statusNotes ?? "";
@@ -50,7 +52,7 @@ export function TaskCard({
 					</p>
 				</button>
 
-				{activeMissionId ? (
+				{activeMissionId && hasThread ? (
 					<Link
 						href={`/missions/${activeMissionId}/threads/${task.id}`}
 						className="shrink-0 inline-flex items-center gap-1 rounded-full border border-border/80 bg-muted/70 px-2.5 py-1 text-[0.65rem] font-medium text-foreground/80 shadow-sm transition hover:border-primary/40 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"

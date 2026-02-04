@@ -2,7 +2,7 @@
 
 import { Users } from "lucide-react";
 import type * as React from "react";
-import type { TaskItem, TasksFile } from "@/core/schemas";
+import type { TaskItem, TasksFile, ThreadFile } from "@/core/schemas";
 import { TaskBoardSkeleton, TaskColumn } from "./TaskColumn";
 
 interface TaskBoardSectionProps {
@@ -10,6 +10,7 @@ interface TaskBoardSectionProps {
 	loadingMission: boolean;
 	tasksColumns: Array<{ id: string; name: string; order: number }>;
 	tasksFile: TasksFile | null;
+	threads: ThreadFile[];
 	activeTaskId: string | null;
 	activeMissionId: string | null;
 	agentMap: Map<string, string>;
@@ -21,11 +22,14 @@ export function TaskBoardSection({
 	loadingMission,
 	tasksColumns,
 	tasksFile,
+	threads,
 	activeTaskId,
 	activeMissionId,
 	agentMap,
 	onTaskSelect,
 }: TaskBoardSectionProps) {
+	const threadTaskIds = new Set<string>(threads.map((thread) => thread.taskId));
+
 	return (
 		<section className="rounded-2xl border border-border/70 bg-card p-5 shadow-sm">
 			{children}
@@ -66,6 +70,7 @@ export function TaskBoardSection({
 									activeTaskId={activeTaskId}
 									activeMissionId={activeMissionId}
 									agentMap={agentMap}
+									threadTaskIds={threadTaskIds}
 									onTaskSelect={onTaskSelect}
 								/>
 							);

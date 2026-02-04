@@ -10,6 +10,7 @@ interface TaskColumnProps {
 	activeTaskId: string | null;
 	activeMissionId: string | null;
 	agentMap: Map<string, string>;
+	threadTaskIds?: Set<string>;
 	onTaskSelect: (id: string) => void;
 }
 
@@ -19,8 +20,10 @@ export function TaskColumn({
 	activeTaskId,
 	activeMissionId,
 	agentMap,
+	threadTaskIds,
 	onTaskSelect,
 }: TaskColumnProps) {
+	const threadIds = threadTaskIds ?? new Set<string>();
 	return (
 		<div className="w-[280px]">
 			<div className="flex items-center justify-between">
@@ -40,6 +43,7 @@ export function TaskColumn({
 							activeTaskId={activeTaskId}
 							activeMissionId={activeMissionId}
 							agentMap={agentMap}
+							hasThread={threadIds.has(task.id)}
 							onTaskSelect={onTaskSelect}
 						/>
 					))
