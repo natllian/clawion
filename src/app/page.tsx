@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
 import { readJson } from "@/core/fs/json";
-import { missionIndexSchema } from "@/core/schemas";
+import { missionsIndexSchema } from "@/core/schemas";
 import { resolveMissionsDir } from "@/core/workspace/paths";
 
 export default async function Home() {
 	const missionsDir = resolveMissionsDir();
-	const missionsIndex = await readJson(missionsDir, missionIndexSchema);
+	const missionsIndex = await readJson(missionsDir, missionsIndexSchema);
 
 	if (missionsIndex.missions.length > 0) {
 		redirect(`/missions/${missionsIndex.missions[0].id}`);
