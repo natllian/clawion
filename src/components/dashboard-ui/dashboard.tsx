@@ -273,6 +273,24 @@ export function Dashboard() {
 		return Math.round((doneCount / tasks.tasks.length) * 100);
 	}, [tasks]);
 
+	// Sorted threads: open first, then by updatedAt descending
+	const sortedThreads = React.useMemo(() => {
+		return [...threads].sort((a, b) => {
+			// Open threads first
+			if (a.status === "open" && b.status !== "open") return -1;
+			if (a.status !== "open" && b.status === "open") return 1;
+
+			// Then by updatedAt descending
+			const aTime = new Date(
+				a.messages[a.messages.length - 1]?.createdAt ?? 0,
+			).getTime();
+			const bTime = new Date(
+				b.messages[b.messages.length - 1]?.createdAt ?? 0,
+			).getTime();
+			return bTime - aTime;
+		});
+	}, [threads]);
+
 	return (
 		<div className="min-h-screen bg-background text-foreground">
 			<div className="flex min-h-screen">
@@ -314,7 +332,7 @@ export function Dashboard() {
 							</p>
 							<div className="flex max-h-[320px] flex-col gap-2 overflow-y-auto scrollbar-thin pr-1">
 								<ThreadsList
-									threads={threads}
+									threads={sortedThreads}
 									workerMap={workerMap}
 									loadingMission={loadingMission}
 									activeMissionId={activeMissionId}
@@ -324,7 +342,7 @@ export function Dashboard() {
 					) : (
 						<div className="flex flex-col items-center gap-2 text-[0.65rem] text-muted-foreground">
 							<Sparkles className="h-4 w-4" />
-							<span>{threads.length} threads</span>
+							<span>{sortedThreads.length} threads</span>
 						</div>
 					)}
 				</Sidebar>
