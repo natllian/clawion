@@ -66,7 +66,7 @@ export function TaskCard({
 				aria-label={`Select task: ${task.title}`}
 				className="mt-1 w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
 			>
-				<div className="relative h-30 overflow-y-auto pr-2 scrollbar-none overscroll-contain">
+				<div className="relative max-h-30 overflow-y-auto pr-2 scrollbar-none overscroll-contain">
 					<div className="markdown">
 						<ReactMarkdown remarkPlugins={[remarkGfm]}>
 							{task.description}
