@@ -95,23 +95,12 @@ export function Dashboard({
 				setMissionsDir(payload.missionsDir);
 				setMissions(payload.missions);
 
-				// Use initialMissionId from props if available, otherwise use first or current
-				if (
-					initialMissionId &&
-					payload.missions.some((item) => item.id === initialMissionId)
-				) {
-					setActiveMissionId(initialMissionId);
-				} else {
-					setActiveMissionId((current) => {
-						if (
-							current &&
-							payload.missions.some((item) => item.id === current)
-						) {
-							return current;
-						}
-						return payload.missions[0]?.id ?? null;
-					});
-				}
+				setActiveMissionId((current) => {
+					if (current && payload.missions.some((item) => item.id === current)) {
+						return current;
+					}
+					return payload.missions[0]?.id ?? null;
+				});
 			} catch (err) {
 				if (isAbortError(err)) return;
 				setError("Unable to read missions index. Run clawion init first.");
@@ -125,7 +114,17 @@ export function Dashboard({
 		return () => {
 			controller.abort();
 		};
-	}, [initialMissionId]);
+	}, []);
+
+	React.useEffect(() => {
+		if (!initialMissionId || missions.length === 0) {
+			return;
+		}
+
+		if (missions.some((item) => item.id === initialMissionId)) {
+			setActiveMissionId(initialMissionId);
+		}
+	}, [initialMissionId, missions]);
 
 	// Mission data loading
 	React.useEffect(() => {
@@ -221,9 +220,7 @@ export function Dashboard({
 
 	// Sync activeThreadId with initialThreadId prop
 	React.useEffect(() => {
-		if (initialThreadId) {
-			setActiveThreadId(initialThreadId);
-		}
+		setActiveThreadId(initialThreadId ?? null);
 	}, [initialThreadId]);
 
 	// Worker data loading
@@ -322,6 +319,10 @@ export function Dashboard({
 		});
 	}, [threads]);
 
+	const showMissionSkeleton = loadingMission && !tasks;
+	const showThreadsSkeleton = loadingMission && threads.length === 0;
+	const showWorkersSkeleton = loadingMission && !workers;
+
 	return (
 		<div className="min-h-screen bg-background text-foreground">
 			<div className="flex min-h-screen">
@@ -364,7 +365,7 @@ export function Dashboard({
 								<ThreadsList
 									threads={sortedThreads}
 									workerMap={workerMap}
-									loadingMission={loadingMission}
+									loadingMission={showThreadsSkeleton}
 									activeMissionId={activeMissionId}
 									activeThreadId={activeThreadId}
 								/>
@@ -397,7 +398,7 @@ export function Dashboard({
 							/>
 						) : (
 							<TaskBoardSection
-								loadingMission={loadingMission}
+								loadingMission={showMissionSkeleton}
 								tasksColumns={tasksColumns}
 								tasksFile={tasks}
 								activeTaskId={activeTaskId}
@@ -439,7 +440,7 @@ export function Dashboard({
 									</div>
 									<WorkerDropdown
 										workers={workers}
-										loadingMission={loadingMission}
+										loadingMission={showWorkersSkeleton}
 										activeWorkerId={activeWorkerId}
 										onWorkerSelect={setActiveWorkerId}
 										working={working}
