@@ -48,15 +48,11 @@ const program = new Command();
 program
 	.name("clawion")
 	.description("Clawion CLI")
-	.option("--missions-dir <path>", "Override missions directory")
 	.option("--agent <agentId>", "Agent ID for scoped actions")
 	.showHelpAfterError();
 
-program.hook("preAction", async (_thisCommand, actionCommand) => {
-	const options = actionCommand.optsWithGlobals() as {
-		missionsDir?: string;
-	};
-	const missionsDir = resolveMissionsDir(options.missionsDir);
+program.hook("preAction", async (_thisCommand, _actionCommand) => {
+	const missionsDir = resolveMissionsDir();
 	context.missionsDir = missionsDir;
 	await ensureWorkspace({ missionsDir });
 });
