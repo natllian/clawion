@@ -12,27 +12,46 @@ export const threadMessageSchema = z
 	.object({
 		id: idSchema,
 		createdAt: isoDateSchema,
-		authorId: idSchema,
-		mentions: idSchema,
+		authorAgentId: idSchema,
+		mentionsAgentId: idSchema,
 		content: nonEmptyTextSchema,
 		resolved: z.boolean(),
 		resolvedAt: isoDateSchema.optional(),
-		resolvedBy: idSchema.optional(),
+		resolvedByAgentId: idSchema.optional(),
+		reopenedAt: isoDateSchema.optional(),
+		reopenedByAgentId: idSchema.optional(),
 	})
 	.strict()
 	.superRefine((value, ctx) => {
 		if (value.resolved) {
-			if (!value.resolvedAt || !value.resolvedBy) {
+			if (!value.resolvedAt || !value.resolvedByAgentId) {
 				ctx.addIssue({
 					code: z.ZodIssueCode.custom,
 					message:
-						"resolvedAt and resolvedBy are required when resolved is true",
+						"resolvedAt and resolvedByAgentId are required when resolved is true",
 				});
 			}
-		} else if (value.resolvedAt || value.resolvedBy) {
+			if (value.reopenedAt || value.reopenedByAgentId) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message:
+						"reopenedAt/reopenedByAgentId must be absent when resolved is true",
+				});
+			}
+		} else if (value.resolvedAt || value.resolvedByAgentId) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
-				message: "resolvedAt/resolvedBy must be absent when resolved is false",
+				message:
+					"resolvedAt/resolvedByAgentId must be absent when resolved is false",
+			});
+		} else if (
+			(value.reopenedAt && !value.reopenedByAgentId) ||
+			(!value.reopenedAt && value.reopenedByAgentId)
+		) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message:
+					"reopenedAt and reopenedByAgentId must either both be present or both be absent",
 			});
 		}
 	});
@@ -42,7 +61,7 @@ export const threadSchema = z
 		schemaVersion: schemaVersionSchema,
 		taskId: idSchema,
 		title: nonEmptyTextSchema,
-		creator: idSchema,
+		creatorAgentId: idSchema,
 		status: threadStatusSchema,
 		messages: z.array(threadMessageSchema),
 	})

@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+	agentsSchema,
 	logSchema,
 	missionSchema,
 	missionsIndexSchema,
 	tasksSchema,
 	threadSchema,
-	workersSchema,
 } from "../src/core/schemas";
 
 describe("schemas", () => {
@@ -46,7 +46,7 @@ describe("schemas", () => {
 					description: "Do something",
 					columnId: "todo",
 					statusNotes: "",
-					assigneeId: "w1",
+					assigneeAgentId: "a1",
 					createdAt: new Date().toISOString(),
 					updatedAt: new Date().toISOString(),
 				},
@@ -76,13 +76,13 @@ describe("schemas", () => {
 		expect(result.success).toBe(false);
 	});
 
-	it("accepts valid workers file", () => {
-		const result = workersSchema.safeParse({
+	it("accepts valid agents file", () => {
+		const result = agentsSchema.safeParse({
 			schemaVersion: 1,
-			workers: [
+			agents: [
 				{
-					id: "w1",
-					displayName: "Worker One",
+					id: "a1",
+					displayName: "Agent One",
 					roleDescription: "Lead",
 					systemRole: "manager",
 					status: "active",
@@ -92,13 +92,13 @@ describe("schemas", () => {
 		expect(result.success).toBe(true);
 	});
 
-	it("accepts workers file without a manager", () => {
-		const result = workersSchema.safeParse({
+	it("accepts agents file without a manager", () => {
+		const result = agentsSchema.safeParse({
 			schemaVersion: 1,
-			workers: [
+			agents: [
 				{
-					id: "w1",
-					displayName: "Worker One",
+					id: "a1",
+					displayName: "Agent One",
 					roleDescription: "Contributor",
 					systemRole: "worker",
 					status: "active",
@@ -108,10 +108,10 @@ describe("schemas", () => {
 		expect(result.success).toBe(true);
 	});
 
-	it("accepts empty workers file", () => {
-		const result = workersSchema.safeParse({
+	it("accepts empty agents file", () => {
+		const result = agentsSchema.safeParse({
 			schemaVersion: 1,
-			workers: [],
+			agents: [],
 		});
 		expect(result.success).toBe(true);
 	});
@@ -120,12 +120,15 @@ describe("schemas", () => {
 		const result = threadSchema.safeParse({
 			schemaVersion: 1,
 			taskId: "t1",
+			title: "Test Thread",
+			creatorAgentId: "a1",
+			status: "open",
 			messages: [
 				{
 					id: "msg1",
 					createdAt: new Date().toISOString(),
-					authorId: "w1",
-					mentions: ["w2"],
+					authorAgentId: "a1",
+					mentionsAgentId: ["a2"],
 					content: "Hello",
 					resolved: false,
 				},
@@ -138,12 +141,15 @@ describe("schemas", () => {
 		const result = threadSchema.safeParse({
 			schemaVersion: 1,
 			taskId: "t1",
+			title: "Test Thread",
+			creatorAgentId: "a1",
+			status: "open",
 			messages: [
 				{
 					id: "msg1",
 					createdAt: new Date().toISOString(),
-					authorId: "w1",
-					mentions: "w2",
+					authorAgentId: "a1",
+					mentionsAgentId: "a2",
 					content: "Hello",
 					resolved: true,
 				},
@@ -157,18 +163,18 @@ describe("schemas", () => {
 			schemaVersion: 1,
 			taskId: "t1",
 			title: "Test Thread",
-			creator: "w1",
+			creatorAgentId: "a1",
 			status: "resolved",
 			messages: [
 				{
 					id: "msg1",
 					createdAt: new Date().toISOString(),
-					authorId: "w1",
-					mentions: "w2",
+					authorAgentId: "a1",
+					mentionsAgentId: "a2",
 					content: "Hello",
 					resolved: true,
 					resolvedAt: new Date().toISOString(),
-					resolvedBy: "w2",
+					resolvedByAgentId: "a2",
 				},
 			],
 		});
@@ -180,18 +186,18 @@ describe("schemas", () => {
 			schemaVersion: 1,
 			taskId: "t1",
 			title: "Test Thread",
-			creator: "w1",
+			creatorAgentId: "a1",
 			status: "open",
 			messages: [
 				{
 					id: "msg1",
 					createdAt: new Date().toISOString(),
-					authorId: "w1",
-					mentions: "w2",
+					authorAgentId: "a1",
+					mentionsAgentId: "a2",
 					content: "Hello",
 					resolved: false,
 					resolvedAt: new Date().toISOString(),
-					resolvedBy: "w2",
+					resolvedByAgentId: "a2",
 				},
 			],
 		});
@@ -201,7 +207,7 @@ describe("schemas", () => {
 	it("accepts valid log file", () => {
 		const result = logSchema.safeParse({
 			schemaVersion: 1,
-			workerId: "w1",
+			agentId: "a1",
 			events: [
 				{
 					id: "e1",

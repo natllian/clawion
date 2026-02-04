@@ -30,18 +30,19 @@ function defaultTasksTemplate() {
 		schemaVersion: 1,
 		description: "Tasks for this mission.",
 		columns: [
-			{ id: "todo", name: "Todo", order: 1 },
-			{ id: "doing", name: "Doing", order: 2 },
-			{ id: "done", name: "Done", order: 3 },
+			{ id: "pending", name: "Pending", order: 1 },
+			{ id: "ongoing", name: "Ongoing", order: 2 },
+			{ id: "blocked", name: "Blocked", order: 3 },
+			{ id: "completed", name: "Completed", order: 4 },
 		],
 		tasks: [],
 	};
 }
 
-function defaultWorkersTemplate() {
+function defaultAgentsTemplate() {
 	return {
 		schemaVersion: 1,
-		workers: [],
+		agents: [],
 	};
 }
 
@@ -95,8 +96,8 @@ export async function ensureWorkspace(
 	);
 	await ensureJsonFile(join(templateDir, "tasks.json"), defaultTasksTemplate());
 	await ensureJsonFile(
-		join(templateDir, "workers.json"),
-		defaultWorkersTemplate(),
+		join(templateDir, "agents.json"),
+		defaultAgentsTemplate(),
 	);
 	await ensureMarkdownFile(
 		join(templateDir, "ROADMAP.md"),

@@ -17,7 +17,7 @@ interface ThreadDetailProps {
 	missionId: string;
 	threadId: string;
 	mission: Mission | null;
-	workerMap: Map<string, string>;
+	agentMap: Map<string, string>;
 }
 
 interface ThreadResponse {
@@ -27,7 +27,7 @@ interface ThreadResponse {
 		title: string;
 		description: string;
 		columnId: string;
-		assigneeId: string | null;
+		assigneeAgentId: string | null;
 		statusNotes: string | null;
 		createdAt: string;
 		updatedAt: string;
@@ -94,7 +94,7 @@ export function ThreadDetail({
 	missionId,
 	threadId,
 	mission,
-	workerMap,
+	agentMap,
 }: ThreadDetailProps) {
 	const router = useRouter();
 	const [data, setData] = React.useState<ThreadResponse | null>(null);
@@ -146,14 +146,14 @@ export function ThreadDetail({
 	const { thread, task, column } = data;
 	const isTaskBlocked = isBlocked(task.statusNotes);
 	const threadOpen = thread.messages.some((message) => !message.resolved);
-	const assigneeLabel = task.assigneeId
-		? (workerMap.get(task.assigneeId) ?? task.assigneeId)
+	const assigneeLabel = task.assigneeAgentId
+		? (agentMap.get(task.assigneeAgentId) ?? task.assigneeAgentId)
 		: "Unassigned";
 
 	const participants = new Set<string>();
 	thread.messages.forEach((message: ThreadMessage) => {
-		participants.add(message.authorId);
-		participants.add(message.mentions ?? "");
+		participants.add(message.authorAgentId);
+		participants.add(message.mentionsAgentId ?? "");
 	});
 
 	return (
@@ -251,9 +251,11 @@ export function ThreadDetail({
 							) : (
 								thread.messages.map((message: ThreadMessage) => {
 									const authorLabel =
-										workerMap.get(message.authorId) ?? message.authorId;
+										agentMap.get(message.authorAgentId) ??
+										message.authorAgentId;
 									const mentionsLabel =
-										workerMap.get(message.mentions ?? "") ?? message.mentions;
+										agentMap.get(message.mentionsAgentId ?? "") ??
+										message.mentionsAgentId;
 									return (
 										<div key={message.id} className="relative flex gap-3">
 											<Avatar className="z-10 mt-1">
@@ -284,7 +286,7 @@ export function ThreadDetail({
 												<div className="border-t border-border/70 px-3 py-2 text-[0.65rem] text-muted-foreground">
 													{formatDate(message.createdAt)}
 													{message.resolved
-														? ` · Resolved by ${message.resolvedBy ?? "—"} on ${formatDate(message.resolvedAt)}`
+														? ` · Resolved by ${message.resolvedByAgentId ?? "—"} on ${formatDate(message.resolvedAt)}`
 														: " · Awaiting resolution"}
 												</div>
 											</div>
@@ -352,7 +354,7 @@ export function ThreadDetail({
 										variant="outline"
 										className="rounded-full border-border/70 bg-background px-2 py-0.5 text-[0.6rem] font-medium text-foreground/80"
 									>
-										{workerMap.get(id ?? "") ?? id}
+										{agentMap.get(id ?? "") ?? id}
 									</Badge>
 								))
 							)}

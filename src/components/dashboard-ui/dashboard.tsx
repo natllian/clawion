@@ -3,15 +3,16 @@
 import { Sparkles } from "lucide-react";
 import * as React from "react";
 import type {
+	AgentsFile,
 	LogFile,
 	Mission,
 	MissionIndexItem,
 	TasksFile,
 	ThreadFile,
-	WorkersFile,
 } from "@/core/schemas";
 import { cn } from "@/lib/utils";
 import {
+	AgentDropdown,
 	DashboardHeader,
 	ErrorBanner,
 	MissionList,
@@ -19,7 +20,6 @@ import {
 	TaskBoardSection,
 	ThreadDetail,
 	ThreadsList,
-	WorkerDropdown,
 } from "./index";
 
 type MissionsResponse = {
@@ -34,7 +34,7 @@ type MissionResponse = {
 };
 
 type WorkingResponse = {
-	workerId: string;
+	agentId: string;
 	content: string;
 };
 
@@ -63,17 +63,15 @@ export function Dashboard({
 	const [roadmap, setRoadmap] = React.useState<string>("");
 	const [tasks, setTasks] = React.useState<TasksFile | null>(null);
 	const [threads, setThreads] = React.useState<ThreadFile[]>([]);
-	const [workers, setWorkers] = React.useState<WorkersFile | null>(null);
+	const [agents, setAgents] = React.useState<AgentsFile | null>(null);
 	const [activeTaskId, setActiveTaskId] = React.useState<string | null>(null);
-	const [activeWorkerId, setActiveWorkerId] = React.useState<string | null>(
-		null,
-	);
+	const [activeAgentId, setActiveAgentId] = React.useState<string | null>(null);
 	const [working, setWorking] = React.useState<string>("");
 	const [log, setLog] = React.useState<LogFile | null>(null);
 	const [error, setError] = React.useState<string | null>(null);
 	const [loadingMissions, setLoadingMissions] = React.useState(true);
 	const [loadingMission, setLoadingMission] = React.useState(false);
-	const [loadingWorker, setLoadingWorker] = React.useState(false);
+	const [loadingAgent, setLoadingAgent] = React.useState(false);
 	const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
 
 	// Mission loading
@@ -133,9 +131,9 @@ export function Dashboard({
 			setRoadmap("");
 			setTasks(null);
 			setThreads([]);
-			setWorkers(null);
+			setAgents(null);
 			setActiveTaskId(null);
-			setActiveWorkerId(null);
+			setActiveAgentId(null);
 			return;
 		}
 
@@ -148,7 +146,7 @@ export function Dashboard({
 				const [
 					missionResponse,
 					tasksResponse,
-					workersResponse,
+					agentsResponse,
 					threadsResponse,
 				] = await Promise.all([
 					fetch(`/api/missions/${activeMissionId}`, {
@@ -159,7 +157,7 @@ export function Dashboard({
 						cache: "no-store",
 						signal: controller.signal,
 					}),
-					fetch(`/api/missions/${activeMissionId}/workers`, {
+					fetch(`/api/missions/${activeMissionId}/agents`, {
 						cache: "no-store",
 						signal: controller.signal,
 					}),
@@ -176,14 +174,14 @@ export function Dashboard({
 				const missionPayload =
 					(await missionResponse.json()) as MissionResponse;
 				const tasksPayload = (await tasksResponse.json()) as TasksFile;
-				const workersPayload = (await workersResponse.json()) as WorkersFile;
+				const agentsPayload = (await agentsResponse.json()) as AgentsFile;
 				const threadsPayload = (await threadsResponse.json()) as ThreadFile[];
 
 				setMission(missionPayload.mission);
 				setRoadmap(missionPayload.roadmap);
 				setTasks(tasksPayload);
 				setThreads(threadsPayload);
-				setWorkers(workersPayload);
+				setAgents(agentsPayload);
 
 				setActiveTaskId((current) => {
 					if (
@@ -194,14 +192,14 @@ export function Dashboard({
 					}
 					return null;
 				});
-				setActiveWorkerId((current) => {
+				setActiveAgentId((current) => {
 					if (
 						current &&
-						workersPayload.workers.some((worker) => worker.id === current)
+						agentsPayload.agents.some((agent) => agent.id === current)
 					) {
 						return current;
 					}
-					return workersPayload.workers[0]?.id ?? null;
+					return agentsPayload.agents[0]?.id ?? null;
 				});
 			} catch (err) {
 				if (isAbortError(err)) return;
@@ -223,25 +221,25 @@ export function Dashboard({
 		setActiveThreadId(initialThreadId ?? null);
 	}, [initialThreadId]);
 
-	// Worker data loading
+	// Agent data loading
 	React.useEffect(() => {
-		if (!activeMissionId || !activeWorkerId) {
+		if (!activeMissionId || !activeAgentId) {
 			setWorking("");
 			setLog(null);
 			return;
 		}
 
 		const controller = new AbortController();
-		setLoadingWorker(true);
+		setLoadingAgent(true);
 
-		async function loadWorker() {
+		async function loadAgent() {
 			try {
 				const [workingResponse, logResponse] = await Promise.all([
-					fetch(`/api/missions/${activeMissionId}/working/${activeWorkerId}`, {
+					fetch(`/api/missions/${activeMissionId}/working/${activeAgentId}`, {
 						cache: "no-store",
 						signal: controller.signal,
 					}),
-					fetch(`/api/missions/${activeMissionId}/logs/${activeWorkerId}`, {
+					fetch(`/api/missions/${activeMissionId}/logs/${activeAgentId}`, {
 						cache: "no-store",
 						signal: controller.signal,
 					}),
@@ -256,16 +254,16 @@ export function Dashboard({
 				setWorking("");
 				setLog(null);
 			} finally {
-				setLoadingWorker(false);
+				setLoadingAgent(false);
 			}
 		}
 
-		void loadWorker();
+		void loadAgent();
 
 		return () => {
 			controller.abort();
 		};
-	}, [activeMissionId, activeWorkerId]);
+	}, [activeMissionId, activeAgentId]);
 
 	// Derived state
 	const tasksColumns = React.useMemo(
@@ -276,26 +274,26 @@ export function Dashboard({
 		[tasks],
 	);
 
-	const workerMap = React.useMemo(
+	const agentMap = React.useMemo(
 		() =>
 			new Map(
-				workers?.workers.map((worker) => [worker.id, worker.displayName]) ?? [],
+				agents?.agents.map((agent) => [agent.id, agent.displayName]) ?? [],
 			),
-		[workers],
+		[agents],
 	);
 
 	const completion = React.useMemo(() => {
 		if (!tasks || tasks.tasks.length === 0) return 0;
 
-		const doneColumn =
-			tasks.columns.find((column) => column.id.toLowerCase() === "done") ??
+		const completedColumn =
+			tasks.columns.find((column) => column.id.toLowerCase() === "completed") ??
 			tasks.columns.find((column) =>
-				column.name.toLowerCase().includes("done"),
+				column.name.toLowerCase().includes("complete"),
 			) ??
 			tasks.columns[tasks.columns.length - 1];
 
 		const doneCount = tasks.tasks.filter(
-			(task) => task.columnId === doneColumn?.id,
+			(task) => task.columnId === completedColumn?.id,
 		).length;
 
 		return Math.round((doneCount / tasks.tasks.length) * 100);
@@ -321,7 +319,7 @@ export function Dashboard({
 
 	const showMissionSkeleton = loadingMission && !tasks;
 	const showThreadsSkeleton = loadingMission && threads.length === 0;
-	const showWorkersSkeleton = loadingMission && !workers;
+	const showAgentsSkeleton = loadingMission && !agents;
 
 	return (
 		<div className="min-h-screen bg-background text-foreground">
@@ -364,7 +362,7 @@ export function Dashboard({
 							<div className="flex max-h-[320px] flex-col gap-2 overflow-y-auto scrollbar-thin pr-1">
 								<ThreadsList
 									threads={sortedThreads}
-									workerMap={workerMap}
+									agentMap={agentMap}
 									loadingMission={showThreadsSkeleton}
 									activeMissionId={activeMissionId}
 									activeThreadId={activeThreadId}
@@ -394,7 +392,7 @@ export function Dashboard({
 								missionId={activeMissionId ?? ""}
 								threadId={activeThreadId}
 								mission={mission}
-								workerMap={workerMap}
+								agentMap={agentMap}
 							/>
 						) : (
 							<TaskBoardSection
@@ -403,10 +401,10 @@ export function Dashboard({
 								tasksFile={tasks}
 								activeTaskId={activeTaskId}
 								activeMissionId={activeMissionId}
-								workerMap={workerMap}
+								agentMap={agentMap}
 								onTaskSelect={setActiveTaskId}
 							>
-								{/* Progress stats with worker panel */}
+								{/* Progress stats with agent panel */}
 								<div className="flex flex-wrap items-center justify-between gap-4">
 									<div>
 										<div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
@@ -433,19 +431,19 @@ export function Dashboard({
 									</div>
 								</div>
 
-								{/* Worker panel */}
+								{/* Agent panel */}
 								<div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
 									<div className="flex items-center gap-2 text-[0.65rem] uppercase tracking-wide">
-										<span>Workers</span>
+										<span>Agents</span>
 									</div>
-									<WorkerDropdown
-										workers={workers}
-										loadingMission={showWorkersSkeleton}
-										activeWorkerId={activeWorkerId}
-										onWorkerSelect={setActiveWorkerId}
+									<AgentDropdown
+										agents={agents}
+										loadingMission={showAgentsSkeleton}
+										activeAgentId={activeAgentId}
+										onAgentSelect={setActiveAgentId}
 										working={working}
 										log={log}
-										loadingWorker={loadingWorker}
+										loadingAgent={loadingAgent}
 									/>
 								</div>
 							</TaskBoardSection>

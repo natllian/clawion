@@ -9,7 +9,7 @@ interface TaskCardProps {
 	task: TaskItem;
 	activeTaskId: string | null;
 	activeMissionId: string | null;
-	workerMap: Map<string, string>;
+	agentMap: Map<string, string>;
 	onTaskSelect: (id: string) => void;
 }
 
@@ -17,7 +17,7 @@ export function TaskCard({
 	task,
 	activeTaskId,
 	activeMissionId,
-	workerMap,
+	agentMap,
 	onTaskSelect,
 }: TaskCardProps) {
 	const statusNotes = task.statusNotes ?? "";
@@ -72,11 +72,11 @@ export function TaskCard({
 				<span
 					className={cn(
 						"inline-flex items-center rounded-full border border-border/70 bg-background px-2 py-0.5 text-[0.6rem] font-medium text-foreground",
-						!task.assigneeId && "border-dashed text-muted-foreground",
+						!task.assigneeAgentId && "border-dashed text-muted-foreground",
 					)}
 				>
-					{task.assigneeId
-						? (workerMap.get(task.assigneeId) ?? task.assigneeId)
+					{task.assigneeAgentId
+						? (agentMap.get(task.assigneeAgentId) ?? task.assigneeAgentId)
 						: "Unassigned"}
 				</span>
 			</div>

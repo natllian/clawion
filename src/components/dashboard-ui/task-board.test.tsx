@@ -39,7 +39,7 @@ describe("TaskBoardSection", () => {
 		tasks: mockTasks,
 	};
 
-	const mockWorkerMap = new Map<string, string>([["w1", "Alice"]]);
+	const mockAgentMap = new Map<string, string>([["agent-1", "Alice"]]);
 
 	const defaultProps = {
 		loadingMission: false,
@@ -47,7 +47,7 @@ describe("TaskBoardSection", () => {
 		tasksFile: mockTasksFile,
 		activeTaskId: null as string | null,
 		activeMissionId: "m1",
-		workerMap: mockWorkerMap,
+		agentMap: mockAgentMap,
 		onTaskSelect: vi.fn(),
 	};
 
@@ -91,13 +91,13 @@ describe("TaskBoardSection", () => {
 		).toBeInTheDocument();
 	});
 
-	it("renders workers label and task columns", () => {
+	it("renders agents label and task columns", () => {
 		const { container } = render(
 			<TaskBoardSection {...defaultProps}>
 				<div>Content</div>
 			</TaskBoardSection>,
 		);
-		expect(container.textContent).toContain("Workers");
+		expect(container.textContent).toContain("Agents");
 		expect(container.textContent).toContain("To Do");
 		expect(container.textContent).toContain("Done");
 	});
@@ -122,7 +122,7 @@ describe("TaskColumn", () => {
 		tasks: mockTasks,
 		activeTaskId: null as string | null,
 		activeMissionId: "m1",
-		workerMap: new Map<string, string>(),
+		agentMap: new Map<string, string>(),
 		onTaskSelect: vi.fn(),
 	};
 

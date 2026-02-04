@@ -22,8 +22,8 @@ describe("threads", () => {
 			missionId: "m1",
 			taskId: "t1",
 			title: "Thread for t1",
-			authorId: "manager-1",
-			mentions: "worker-1",
+			authorAgentId: "manager-1",
+			mentionsAgentId: "agent-1",
 			content: "Please review.",
 		});
 		await addThreadMessage({
@@ -31,8 +31,8 @@ describe("threads", () => {
 			missionId: "m1",
 			taskId: "t1",
 			title: "Thread for t1",
-			authorId: "manager-1",
-			mentions: "worker-2",
+			authorAgentId: "manager-1",
+			mentionsAgentId: "agent-2",
 			content: "Second message.",
 		});
 
@@ -41,13 +41,13 @@ describe("threads", () => {
 		expect(thread.messages).toHaveLength(2);
 		expect(thread.messages[0].resolved).toBe(false);
 
-		await resolveThreadMessage(missionsDir, "m1", "t1", messageId, "worker-1");
+		await resolveThreadMessage(missionsDir, "m1", "t1", messageId, "agent-1");
 
 		thread = await readJson(threadPath, threadSchema);
 		expect(thread.messages[0].resolved).toBe(true);
 		expect(thread.messages[1].resolved).toBe(false);
 
-		await unresolveThreadMessage(missionsDir, "m1", "t1", messageId);
+		await unresolveThreadMessage(missionsDir, "m1", "t1", messageId, "agent-1");
 		thread = await readJson(threadPath, threadSchema);
 		expect(thread.messages[0].resolved).toBe(false);
 	});
@@ -57,11 +57,11 @@ describe("threads", () => {
 		await createMissionFixture(missionsDir, "m1");
 
 		await expect(
-			resolveThreadMessage(missionsDir, "m1", "t1", "missing", "worker-1"),
+			resolveThreadMessage(missionsDir, "m1", "t1", "missing", "agent-1"),
 		).rejects.toThrow("Message not found");
 
 		await expect(
-			unresolveThreadMessage(missionsDir, "m1", "t1", "missing"),
+			unresolveThreadMessage(missionsDir, "m1", "t1", "missing", "agent-1"),
 		).rejects.toThrow("Message not found");
 	});
 
@@ -85,8 +85,8 @@ describe("threads", () => {
 			missionId: "m1",
 			taskId: "task-a",
 			title: "Thread A",
-			authorId: "manager-1",
-			mentions: "worker-1",
+			authorAgentId: "manager-1",
+			mentionsAgentId: "agent-1",
 			content: "Message A",
 		});
 		await addThreadMessage({
@@ -94,8 +94,8 @@ describe("threads", () => {
 			missionId: "m1",
 			taskId: "task-b",
 			title: "Thread B",
-			authorId: "worker-1",
-			mentions: "manager-1",
+			authorAgentId: "agent-1",
+			mentionsAgentId: "manager-1",
 			content: "Message B",
 		});
 
@@ -122,8 +122,8 @@ describe("threads", () => {
 			missionId: "m1",
 			taskId: "existing-task",
 			title: "Thread",
-			authorId: "manager-1",
-			mentions: "worker-1",
+			authorAgentId: "manager-1",
+			mentionsAgentId: "agent-1",
 			content: "First message",
 		});
 
@@ -133,8 +133,8 @@ describe("threads", () => {
 				missionId: "m1",
 				taskId: "existing-task",
 				title: "Duplicate",
-				authorId: "manager-1",
-				mentions: "worker-1",
+				authorAgentId: "manager-1",
+				mentionsAgentId: "agent-1",
 				content: "Should fail",
 			}),
 		).rejects.toThrow("Thread already exists");

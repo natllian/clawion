@@ -2,7 +2,7 @@ import { cp, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { readJson, writeJsonAtomic } from "../fs/json";
 import { pathExists } from "../fs/util";
-import { missionSchema, tasksSchema, workersSchema } from "../schemas";
+import { agentsSchema, missionSchema, tasksSchema } from "../schemas";
 import {
 	addMissionIndexEntry,
 	loadMissionsIndex,
@@ -59,11 +59,8 @@ export async function createMission(input: MissionCreateInput) {
 		}),
 	);
 
-	const workers = await readJson(
-		join(missionDir, "workers.json"),
-		workersSchema,
-	);
-	await writeJsonAtomic(join(missionDir, "workers.json"), workers);
+	const agents = await readJson(join(missionDir, "agents.json"), agentsSchema);
+	await writeJsonAtomic(join(missionDir, "agents.json"), agents);
 
 	await addMissionIndexEntry(input.missionsDir, {
 		id: input.id,

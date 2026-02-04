@@ -1,12 +1,12 @@
 import { join } from "node:path";
 import { readJson } from "../fs/json";
-import { workersSchema } from "../schemas";
+import { agentsSchema } from "../schemas";
 import { resolveMissionPath } from "./mission";
 
 type ManagerCheckInput = {
 	missionsDir: string;
 	missionId: string;
-	workerId: string;
+	agentId: string;
 };
 
 export async function assertManager(input: ManagerCheckInput): Promise<void> {
@@ -14,19 +14,20 @@ export async function assertManager(input: ManagerCheckInput): Promise<void> {
 		input.missionsDir,
 		input.missionId,
 	);
-	const workersPath = join(missionPath, "workers.json");
-	const workersFile = await readJson(workersPath, workersSchema);
-	const worker = workersFile.workers.find(
-		(entry) => entry.id === input.workerId,
-	);
+	const agentsPath = join(missionPath, "agents.json");
+	const agentsFile = await readJson(agentsPath, agentsSchema);
+	const agent = agentsFile.agents.find((entry) => entry.id === input.agentId);
 
-	if (!worker) {
-		throw new Error(`Worker not found: ${input.workerId}`);
+	if (!agent) {
+		throw new Error(`Agent not found: ${input.agentId}`);
 	}
 
-	if (worker.systemRole !== "manager") {
+	if (agent.systemRole !== "manager") {
 		throw new Error(
-			`Manager role required. Worker ${input.workerId} is not a manager.`,
+			`Manager role required. Agent ${input.agentId} is not a manager.`,
 		);
 	}
 }
+
+// Backwards-compat re-export is intentionally omitted. The legacy term should
+// not appear outside of systemRole values.

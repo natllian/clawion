@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import { readJson, writeJsonAtomic } from "../fs/json";
 import { taskItemSchema, tasksSchema } from "../schemas";
+import { resolveColumnIdForStatus, type TaskStatus } from "../task-status";
 import { resolveMissionPath } from "./mission";
 
 type TaskCreateInput = {
@@ -9,14 +10,13 @@ type TaskCreateInput = {
 	id: string;
 	title: string;
 	description: string;
-	columnId?: string;
 };
 
 type TaskUpdateInput = {
 	missionsDir: string;
 	missionId: string;
 	id: string;
-	columnId?: string;
+	status?: TaskStatus;
 	statusNotes?: string;
 };
 
@@ -43,8 +43,7 @@ export async function createTask(input: TaskCreateInput) {
 	}
 
 	const defaultColumn = tasksFile.columns[0]?.id;
-	const columnId = input.columnId ?? defaultColumn;
-	if (!columnId) {
+	if (!defaultColumn) {
 		throw new Error("No columns available to assign task.");
 	}
 
@@ -53,7 +52,7 @@ export async function createTask(input: TaskCreateInput) {
 		id: input.id,
 		title: input.title,
 		description: input.description,
-		columnId,
+		columnId: defaultColumn,
 		statusNotes: "",
 		createdAt: now,
 		updatedAt: now,
@@ -81,9 +80,13 @@ export async function updateTask(input: TaskUpdateInput) {
 		throw new Error(`Task not found: ${input.id}`);
 	}
 
+	const nextColumnId = input.status
+		? resolveColumnIdForStatus(tasksFile.columns, input.status)
+		: task.columnId;
+
 	const nextTask = taskItemSchema.parse({
 		...task,
-		columnId: input.columnId ?? task.columnId,
+		columnId: nextColumnId,
 		statusNotes: input.statusNotes ?? task.statusNotes,
 		updatedAt: nowIso(),
 	});
@@ -102,7 +105,7 @@ export async function assignTask(
 	missionsDir: string,
 	missionId: string,
 	taskId: string,
-	assigneeId: string,
+	assigneeAgentId: string,
 ) {
 	const missionPath = await resolveMissionPath(missionsDir, missionId);
 	const tasksFile = await readJson(
@@ -116,7 +119,7 @@ export async function assignTask(
 
 	const nextTask = taskItemSchema.parse({
 		...task,
-		assigneeId,
+		assigneeAgentId,
 		updatedAt: nowIso(),
 	});
 

@@ -13,7 +13,7 @@ describe("logs", () => {
 		const eventId = await addLogEvent({
 			missionsDir,
 			missionId: "m1",
-			workerId: "worker-1",
+			agentId: "agent-1",
 			level: "info",
 			type: "task:update",
 			message: "Updated task",
@@ -22,25 +22,25 @@ describe("logs", () => {
 		const secondEventId = await addLogEvent({
 			missionsDir,
 			missionId: "m1",
-			workerId: "worker-1",
+			agentId: "agent-1",
 			level: "warn",
 			type: "task:warn",
 			message: "Second event",
 		});
 
-		const logPath = join(missionsDir, "m1", "logs", "worker-1.json");
+		const logPath = join(missionsDir, "m1", "logs", "agent-1.json");
 		const logFile = await readJson(logPath, logSchema);
 		expect(logFile.events).toHaveLength(2);
 		expect(logFile.events[0].id).toBe(eventId);
 		expect(logFile.events[1].id).toBe(secondEventId);
 	});
 
-	it("gets log for non-existent worker", async () => {
+	it("gets log for non-existent agent", async () => {
 		const missionsDir = await createWorkspace();
 		await createMissionFixture(missionsDir, "m1");
 
-		const log = await getLog(missionsDir, "m1", "non-existent-worker");
-		expect(log.workerId).toBe("non-existent-worker");
+		const log = await getLog(missionsDir, "m1", "non-existent-agent");
+		expect(log.agentId).toBe("non-existent-agent");
 		expect(log.events).toEqual([]);
 	});
 });

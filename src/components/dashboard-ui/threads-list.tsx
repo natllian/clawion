@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 interface ThreadsListProps {
 	threads: ThreadFile[];
-	workerMap: Map<string, string>;
+	agentMap: Map<string, string>;
 	loadingMission: boolean;
 	activeMissionId: string | null;
 	activeThreadId?: string | null;
@@ -17,7 +17,7 @@ interface ThreadsListProps {
 
 export function ThreadsList({
 	threads,
-	workerMap,
+	agentMap,
 	loadingMission,
 	activeMissionId,
 	activeThreadId,
@@ -52,7 +52,8 @@ export function ThreadsList({
 	return (
 		<>
 			{threads.map((thread) => {
-				const creatorName = workerMap.get(thread.creator) ?? thread.creator;
+				const creatorName =
+					agentMap.get(thread.creatorAgentId) ?? thread.creatorAgentId;
 
 				return (
 					<Link

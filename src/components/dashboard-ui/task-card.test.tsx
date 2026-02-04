@@ -38,7 +38,7 @@ describe("TaskCard", () => {
 		task: mockTask,
 		activeTaskId: null as string | null,
 		activeMissionId: null as string | null,
-		workerMap: new Map<string, string>(),
+		agentMap: new Map<string, string>(),
 		onTaskSelect: vi.fn(),
 	};
 
@@ -69,8 +69,8 @@ describe("TaskCard", () => {
 	it("shows assignee name when assigned", () => {
 		const props = {
 			...defaultProps,
-			task: { ...mockTask, assigneeId: "worker-1" },
-			workerMap: new Map([["worker-1", "alice"]]),
+			task: { ...mockTask, assigneeAgentId: "agent-1" },
+			agentMap: new Map([["agent-1", "alice"]]),
 		};
 		render(<TaskCard {...props} />);
 		expect(screen.getByText("alice")).toBeInTheDocument();

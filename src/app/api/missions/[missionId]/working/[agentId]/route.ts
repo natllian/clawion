@@ -1,25 +1,33 @@
 import { NextResponse } from "next/server";
+import { readWorkingFile } from "@/core/workspace/agents";
 import { resolveMissionPath } from "@/core/workspace/mission";
 import { resolveMissionsDir } from "@/core/workspace/paths";
-import { listWorkers } from "@/core/workspace/workers";
 
 export const runtime = "nodejs";
 
 type RouteContext = {
-	params: Promise<{ missionId: string }> | { missionId: string };
+	params:
+		| Promise<{ missionId: string; agentId: string }>
+		| { missionId: string; agentId: string };
 };
 
 export async function GET(_request: Request, context: RouteContext) {
 	try {
-		const { missionId } = await context.params;
+		const { missionId, agentId } = await context.params;
 		const missionsDir = resolveMissionsDir();
 		const missionDir = await resolveMissionPath(missionsDir, missionId);
-		const workers = await listWorkers(missionDir);
-		return NextResponse.json(workers, {
-			headers: {
-				"Cache-Control": "no-store",
+		const content = await readWorkingFile(missionDir, agentId);
+		return NextResponse.json(
+			{
+				agentId,
+				content,
 			},
-		});
+			{
+				headers: {
+					"Cache-Control": "no-store",
+				},
+			},
+		);
 	} catch (error) {
 		const message = error instanceof Error ? error.message : "Unknown error";
 		const status = message.toLowerCase().includes("not found") ? 404 : 500;

@@ -3,131 +3,131 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { readJson, writeJsonAtomic } from "../src/core/fs/json";
-import { workersSchema } from "../src/core/schemas";
-import { DEFAULT_MANAGER_ROLE_DESCRIPTION } from "../src/core/workspace/roles";
+import { agentsSchema } from "../src/core/schemas";
 import {
-	addWorker,
-	listWorkers,
+	addAgent,
+	listAgents,
 	readWorkingFile,
 	resolveWorkingPath,
-	updateWorker,
-} from "../src/core/workspace/workers";
+	updateAgent,
+} from "../src/core/workspace/agents";
+import { DEFAULT_MANAGER_ROLE_DESCRIPTION } from "../src/core/workspace/roles";
 import { createMissionFixture, createWorkspace } from "./helpers";
 
 async function createMissionDir(): Promise<string> {
-	const root = await mkdtemp(join(tmpdir(), "clawion-workers-"));
+	const root = await mkdtemp(join(tmpdir(), "clawion-agents-"));
 	const missionDir = join(root, "mission-a");
 	await mkdir(missionDir, { recursive: true });
 
-	await writeJsonAtomic(join(missionDir, "workers.json"), {
+	await writeJsonAtomic(join(missionDir, "agents.json"), {
 		schemaVersion: 1,
-		workers: [],
+		agents: [],
 	});
 
 	return missionDir;
 }
 
-describe("addWorker", () => {
+describe("addAgent", () => {
 	it("adds a manager and fills default role description", async () => {
 		const missionDir = await createMissionDir();
 
-		await addWorker(missionDir, {
+		await addAgent(missionDir, {
 			id: "manager-1",
 			displayName: "Manager",
 			systemRole: "manager",
 		});
 
-		const workersFile = await readJson(
-			join(missionDir, "workers.json"),
-			workersSchema,
+		const agentsFile = await readJson(
+			join(missionDir, "agents.json"),
+			agentsSchema,
 		);
 
-		expect(workersFile.workers).toHaveLength(1);
-		expect(workersFile.workers[0].roleDescription).toBe(
+		expect(agentsFile.agents).toHaveLength(1);
+		expect(agentsFile.agents[0].roleDescription).toBe(
 			DEFAULT_MANAGER_ROLE_DESCRIPTION,
 		);
 	});
 
-	it("requires roleDescription for non-manager workers", async () => {
+	it("requires roleDescription for non-manager agents", async () => {
 		const missionDir = await createMissionDir();
 
 		await expect(
-			addWorker(missionDir, {
-				id: "worker-1",
-				displayName: "Worker",
+			addAgent(missionDir, {
+				id: "agent-1",
+				displayName: "Agent",
 				systemRole: "worker",
 			}),
 		).rejects.toThrow("roleDescription is required");
 	});
 
-	it("rejects duplicate workers", async () => {
+	it("rejects duplicate agents", async () => {
 		const missionDir = await createMissionDir();
 
-		await addWorker(missionDir, {
-			id: "worker-1",
-			displayName: "Worker",
+		await addAgent(missionDir, {
+			id: "agent-1",
+			displayName: "Agent",
 			roleDescription: "Contributor",
 			systemRole: "worker",
 		});
 
 		await expect(
-			addWorker(missionDir, {
-				id: "worker-1",
-				displayName: "Worker",
+			addAgent(missionDir, {
+				id: "agent-1",
+				displayName: "Agent",
 				roleDescription: "Contributor",
 				systemRole: "worker",
 			}),
-		).rejects.toThrow("Worker already exists");
+		).rejects.toThrow("Agent already exists");
 	});
 });
 
-describe("worker updates", () => {
-	it("updates worker data and lists workers", async () => {
+describe("agent updates", () => {
+	it("updates agent data and lists agents", async () => {
 		const missionsDir = await createWorkspace();
 		await createMissionFixture(missionsDir, "m1");
 		const missionDir = join(missionsDir, "m1");
 
-		await addWorker(missionDir, {
-			id: "worker-1",
-			displayName: "Worker",
+		await addAgent(missionDir, {
+			id: "agent-1",
+			displayName: "Agent",
 			roleDescription: "Contributor",
 			systemRole: "worker",
 		});
-		await addWorker(missionDir, {
-			id: "worker-2",
-			displayName: "Worker Two",
+		await addAgent(missionDir, {
+			id: "agent-2",
+			displayName: "Agent Two",
 			roleDescription: "Contributor",
 			systemRole: "worker",
 		});
 
-		await updateWorker(missionDir, "worker-1", {
-			displayName: "Worker Updated",
+		await updateAgent(missionDir, "agent-1", {
+			displayName: "Agent Updated",
 			status: "paused",
 		});
-		await updateWorker(missionDir, "worker-1", {
+		await updateAgent(missionDir, "agent-1", {
 			roleDescription: "Updated role",
 		});
 
-		const workersFile = await listWorkers(missionDir);
-		expect(workersFile.workers[0].displayName).toBe("Worker Updated");
-		expect(workersFile.workers[0].status).toBe("paused");
-		expect(workersFile.workers[0].roleDescription).toBe("Updated role");
-		expect(workersFile.workers).toHaveLength(2);
+		const agentsFile = await listAgents(missionDir);
+		expect(agentsFile.agents[0].displayName).toBe("Agent Updated");
+		expect(agentsFile.agents[0].status).toBe("paused");
+		expect(agentsFile.agents[0].roleDescription).toBe("Updated role");
+		expect(agentsFile.agents).toHaveLength(2);
 
-		const workingPath = resolveWorkingPath(missionDir, "worker-1");
-		expect(workingPath).toContain("working/worker-1.md");
+		const workingPath = resolveWorkingPath(missionDir, "agent-1");
+		expect(workingPath).toContain("working/agent-1.md");
 	});
 
-	it("rejects updates for missing workers", async () => {
+	it("rejects updates for missing agents", async () => {
 		const missionsDir = await createWorkspace();
 		await createMissionFixture(missionsDir, "m1");
 		const missionDir = join(missionsDir, "m1");
 
 		await expect(
-			updateWorker(missionDir, "missing", {
+			updateAgent(missionDir, "missing", {
 				displayName: "Nope",
 			}),
-		).rejects.toThrow("Worker not found");
+		).rejects.toThrow("Agent not found");
 	});
 
 	it("reads working file content", async () => {
@@ -135,7 +135,7 @@ describe("worker updates", () => {
 		await createMissionFixture(missionsDir, "m1");
 		const missionDir = join(missionsDir, "m1");
 
-		const workingPath = join(missionDir, "working", "worker-1.md");
+		const workingPath = join(missionDir, "working", "agent-1.md");
 		await mkdir(join(missionDir, "working"), { recursive: true });
 		await writeFile(
 			workingPath,
@@ -143,7 +143,7 @@ describe("worker updates", () => {
 			"utf8",
 		);
 
-		const content = await readWorkingFile(missionDir, "worker-1");
+		const content = await readWorkingFile(missionDir, "agent-1");
 		expect(content).toContain("Working Memory");
 		expect(content).toContain("Task progress: 50%");
 	});
@@ -153,7 +153,7 @@ describe("worker updates", () => {
 		await createMissionFixture(missionsDir, "m1");
 		const missionDir = join(missionsDir, "m1");
 
-		const content = await readWorkingFile(missionDir, "ghost-worker");
+		const content = await readWorkingFile(missionDir, "ghost-agent");
 		expect(content).toBe("");
 	});
 });

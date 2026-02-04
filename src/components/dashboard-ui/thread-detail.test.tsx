@@ -10,7 +10,7 @@ interface ThreadResponse {
 		title: string;
 		description: string;
 		columnId: string;
-		assigneeId: string | null;
+		assigneeAgentId: string | null;
 		statusNotes: string | null;
 		createdAt: string;
 		updatedAt: string;
@@ -50,26 +50,26 @@ const mockThread: ThreadFile = {
 	schemaVersion: 1,
 	taskId: "t1",
 	title: "Test Thread",
-	creator: "worker-1",
+	creatorAgentId: "agent-1",
 	status: "open",
 	messages: [
 		{
 			id: "msg-1",
 			createdAt: "2024-01-01T10:00:00Z",
-			authorId: "worker-1",
-			mentions: "manager-1",
+			authorAgentId: "agent-1",
+			mentionsAgentId: "manager-1",
 			content: "Hello, this is a test message.",
 			resolved: false,
 		},
 		{
 			id: "msg-2",
 			createdAt: "2024-01-01T11:00:00Z",
-			authorId: "manager-1",
-			mentions: "worker-1",
+			authorAgentId: "manager-1",
+			mentionsAgentId: "agent-1",
 			content: "Reply message.",
 			resolved: true,
 			resolvedAt: "2024-01-01T12:00:00Z",
-			resolvedBy: "manager-1",
+			resolvedByAgentId: "manager-1",
 		},
 	],
 };
@@ -81,7 +81,7 @@ const mockThreadResponse: ThreadResponse = {
 		title: "Task Title",
 		description: "Task description",
 		columnId: "todo",
-		assigneeId: "worker-1",
+		assigneeAgentId: "agent-1",
 		statusNotes: null,
 		createdAt: "2024-01-01T09:00:00Z",
 		updatedAt: "2024-01-01T12:00:00Z",
@@ -92,8 +92,8 @@ const mockThreadResponse: ThreadResponse = {
 	},
 };
 
-const workerMap = new Map([
-	["worker-1", "Alice"],
+const agentMap = new Map([
+	["agent-1", "Alice"],
 	["manager-1", "Bob"],
 ]);
 
@@ -116,7 +116,7 @@ describe("ThreadDetail", () => {
 				missionId="m1"
 				threadId="t1"
 				mission={mockMission}
-				workerMap={workerMap}
+				agentMap={agentMap}
 			/>,
 		);
 
@@ -136,7 +136,7 @@ describe("ThreadDetail", () => {
 				missionId="m1"
 				threadId="missing"
 				mission={mockMission}
-				workerMap={workerMap}
+				agentMap={agentMap}
 			/>,
 		);
 
@@ -156,7 +156,7 @@ describe("ThreadDetail", () => {
 				missionId="m1"
 				threadId="t1"
 				mission={mockMission}
-				workerMap={workerMap}
+				agentMap={agentMap}
 			/>,
 		);
 
@@ -176,7 +176,7 @@ describe("ThreadDetail", () => {
 				missionId="m1"
 				threadId="t1"
 				mission={mockMission}
-				workerMap={workerMap}
+				agentMap={agentMap}
 			/>,
 		);
 
@@ -197,7 +197,7 @@ describe("ThreadDetail", () => {
 				missionId="m1"
 				threadId="t1"
 				mission={mockMission}
-				workerMap={workerMap}
+				agentMap={agentMap}
 			/>,
 		);
 
@@ -217,7 +217,7 @@ describe("ThreadDetail", () => {
 				missionId="m1"
 				threadId="t1"
 				mission={mockMission}
-				workerMap={workerMap}
+				agentMap={agentMap}
 			/>,
 		);
 

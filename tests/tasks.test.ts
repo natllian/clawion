@@ -42,10 +42,10 @@ describe("tasks", () => {
 			missionsDir,
 			missionId: "m1",
 			id: "t1",
-			columnId: "doing",
+			status: "ongoing",
 		});
 
-		await assignTask(missionsDir, "m1", "t1", "worker-1");
+		await assignTask(missionsDir, "m1", "t1", "agent-1");
 
 		const tasksFile = await readJson(
 			join(missionsDir, "m1", "tasks.json"),
@@ -54,8 +54,8 @@ describe("tasks", () => {
 
 		const task = tasksFile.tasks.find((entry) => entry.id === "t1");
 		expect(task?.statusNotes).toBe("Blocked: waiting");
-		expect(task?.assigneeId).toBe("worker-1");
-		expect(task?.columnId).toBe("doing");
+		expect(task?.assigneeAgentId).toBe("agent-1");
+		expect(task?.columnId).toBe("ongoing");
 
 		const listed = await listTasks(missionsDir, "m1");
 		expect(listed.tasks).toHaveLength(2);
@@ -93,7 +93,7 @@ describe("tasks", () => {
 		).rejects.toThrow("Task not found");
 
 		await expect(
-			assignTask(missionsDir, "m1", "missing", "worker-1"),
+			assignTask(missionsDir, "m1", "missing", "agent-1"),
 		).rejects.toThrow("Task not found");
 	});
 

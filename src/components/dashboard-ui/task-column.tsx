@@ -9,7 +9,7 @@ interface TaskColumnProps {
 	tasks: TaskItem[];
 	activeTaskId: string | null;
 	activeMissionId: string | null;
-	workerMap: Map<string, string>;
+	agentMap: Map<string, string>;
 	onTaskSelect: (id: string) => void;
 }
 
@@ -18,7 +18,7 @@ export function TaskColumn({
 	tasks: columnTasks,
 	activeTaskId,
 	activeMissionId,
-	workerMap,
+	agentMap,
 	onTaskSelect,
 }: TaskColumnProps) {
 	return (
@@ -39,7 +39,7 @@ export function TaskColumn({
 							task={task}
 							activeTaskId={activeTaskId}
 							activeMissionId={activeMissionId}
-							workerMap={workerMap}
+							agentMap={agentMap}
 							onTaskSelect={onTaskSelect}
 						/>
 					))

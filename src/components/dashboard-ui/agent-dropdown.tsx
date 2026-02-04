@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { LogFile, WorkersFile } from "@/core/schemas";
+import type { AgentsFile, LogFile } from "@/core/schemas";
 import { cn } from "@/lib/utils";
 
 const logLevelTone: Record<"info" | "warn" | "error", string> = {
@@ -57,26 +57,26 @@ export function LogEvent({ event }: LogEventProps) {
 	);
 }
 
-interface WorkerDropdownProps {
-	workers: WorkersFile | null;
+interface AgentDropdownProps {
+	agents: AgentsFile | null;
 	loadingMission: boolean;
-	activeWorkerId: string | null;
-	onWorkerSelect: (id: string) => void;
+	activeAgentId: string | null;
+	onAgentSelect: (id: string) => void;
 	working: string;
 	log: LogFile | null;
-	loadingWorker: boolean;
+	loadingAgent: boolean;
 }
 
-export function WorkerDropdown({
-	workers,
+export function AgentDropdown({
+	agents,
 	loadingMission,
-	activeWorkerId,
-	onWorkerSelect,
+	activeAgentId,
+	onAgentSelect,
 	working,
 	log,
-	loadingWorker,
-}: WorkerDropdownProps) {
-	const skeletons = ["worker-a", "worker-b", "worker-c"];
+	loadingAgent,
+}: AgentDropdownProps) {
+	const skeletons = ["agent-a", "agent-b", "agent-c"];
 
 	if (loadingMission) {
 		return (
@@ -94,52 +94,52 @@ export function WorkerDropdown({
 		);
 	}
 
-	if (!workers?.workers.length) {
-		return <span>No workers yet.</span>;
+	if (!agents?.agents.length) {
+		return <span>No agents yet.</span>;
 	}
 
 	return (
 		<>
-			{workers.workers.map((worker) => {
-				const isActive = worker.id === activeWorkerId;
+			{agents.agents.map((agent) => {
+				const isActive = agent.id === activeAgentId;
 
 				return (
-					<DropdownMenu key={worker.id} modal={false}>
+					<DropdownMenu key={agent.id} modal={false}>
 						<DropdownMenuTrigger asChild>
 							<button
 								type="button"
-								onClick={() => onWorkerSelect(worker.id)}
+								onClick={() => onAgentSelect(agent.id)}
 								className="flex items-center gap-2 rounded-full border border-border/70 bg-background px-2 py-1 text-xs text-foreground transition hover:border-primary/40 hover:bg-primary/5"
 							>
 								<Avatar size="sm">
 									<AvatarFallback>
-										{getInitials(worker.displayName)}
+										{getInitials(agent.displayName)}
 									</AvatarFallback>
 								</Avatar>
-								<span>{worker.displayName}</span>
+								<span>{agent.displayName}</span>
 							</button>
 						</DropdownMenuTrigger>
 
 						<DropdownMenuContent className="w-[420px] p-3" sideOffset={8}>
 							<DropdownMenuLabel className="text-xs uppercase tracking-wide text-muted-foreground">
-								Worker Snapshot
+								Agent Snapshot
 							</DropdownMenuLabel>
 							<DropdownMenuSeparator />
 
 							<div className="space-y-3">
 								<div className="rounded-lg border border-border/70 bg-background p-3">
 									<p className="text-sm font-medium text-foreground">
-										{worker.displayName}
+										{agent.displayName}
 									</p>
 									<div className="mt-1 max-h-[120px] overflow-y-auto scrollbar-dropdown">
 										<div className="markdown text-xs text-muted-foreground">
 											<ReactMarkdown remarkPlugins={[remarkGfm]}>
-												{worker.roleDescription || "No description provided."}
+												{agent.roleDescription || "No description provided."}
 											</ReactMarkdown>
 										</div>
 									</div>
 									<p className="mt-2 text-[0.6rem] uppercase tracking-wide text-muted-foreground">
-										{worker.systemRole ?? "—"} · {worker.status ?? "—"}
+										{agent.systemRole ?? "—"} · {agent.status ?? "—"}
 									</p>
 								</div>
 
@@ -155,7 +155,7 @@ export function WorkerDropdown({
 												content={
 													isActive
 														? working.trim() || "No working memory file yet."
-														: "Select a worker to load working memory."
+														: "Select an agent to load working memory."
 												}
 											/>
 										</div>
@@ -163,7 +163,7 @@ export function WorkerDropdown({
 
 									<TabsContent value="logs" className="mt-2">
 										<div className="flex h-[160px] flex-col gap-2 overflow-y-auto scrollbar-dropdown pr-1">
-											{loadingWorker ? (
+											{loadingAgent ? (
 												logSkeletons.map((key) => (
 													<div
 														key={key}
@@ -181,8 +181,8 @@ export function WorkerDropdown({
 											) : (
 												<div className="rounded-lg border border-border/70 bg-background p-2 text-xs text-muted-foreground">
 													{isActive
-														? "No logs for this worker yet."
-														: "Select a worker to load logs."}
+														? "No logs for this agent yet."
+														: "Select an agent to load logs."}
 												</div>
 											)}
 										</div>

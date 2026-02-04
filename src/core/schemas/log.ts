@@ -29,7 +29,7 @@ export const logEventSchema = z
 export const logSchema = z
 	.object({
 		schemaVersion: schemaVersionSchema,
-		workerId: idSchema,
+		agentId: idSchema,
 		events: z.array(logEventSchema),
 	})
 	.strict();

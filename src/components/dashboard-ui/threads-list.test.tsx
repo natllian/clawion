@@ -9,14 +9,14 @@ describe("ThreadsList", () => {
 			schemaVersion: 1,
 			taskId: "t1",
 			title: "API Design Discussion",
-			creator: "manager-1",
+			creatorAgentId: "manager-1",
 			status: "open",
 			messages: [
 				{
 					id: "msg1",
 					createdAt: new Date().toISOString(),
-					authorId: "manager-1",
-					mentions: "w1",
+					authorAgentId: "manager-1",
+					mentionsAgentId: "agent-1",
 					content: "Let's discuss the API design.",
 					resolved: false,
 				},
@@ -26,31 +26,31 @@ describe("ThreadsList", () => {
 			schemaVersion: 1,
 			taskId: "t2",
 			title: "Bug Fix Confirmation",
-			creator: "w1",
+			creatorAgentId: "agent-1",
 			status: "resolved",
 			messages: [
 				{
 					id: "msg2",
 					createdAt: new Date().toISOString(),
-					authorId: "w1",
-					mentions: "manager-1",
+					authorAgentId: "agent-1",
+					mentionsAgentId: "manager-1",
 					content: "Bug is fixed.",
 					resolved: true,
 					resolvedAt: new Date().toISOString(),
-					resolvedBy: "manager-1",
+					resolvedByAgentId: "manager-1",
 				},
 			],
 		},
 	];
 
-	const mockWorkerMap = new Map<string, string>([
+	const mockAgentMap = new Map<string, string>([
 		["manager-1", "Manager"],
-		["w1", "Alice"],
+		["agent-1", "Alice"],
 	]);
 
 	const defaultProps = {
 		threads: mockThreads,
-		workerMap: mockWorkerMap,
+		agentMap: mockAgentMap,
 		loadingMission: false,
 		activeMissionId: "m1",
 	};
@@ -106,19 +106,19 @@ describe("ThreadsList", () => {
 		expect(link).toHaveAttribute("href", "/missions/m1/threads/t1");
 	});
 
-	it("shows unknown creator when worker not in map", () => {
+	it("shows unknown creator when agent not in map", () => {
 		const threadsWithUnknownCreator: ThreadFile[] = [
 			{
 				schemaVersion: 1,
 				taskId: "t1",
 				title: "Unknown Creator",
-				creator: "unknown-worker",
+				creatorAgentId: "unknown-agent",
 				status: "open",
 				messages: [],
 			},
 		];
 		const props = { ...defaultProps, threads: threadsWithUnknownCreator };
 		render(<ThreadsList {...props} />);
-		expect(screen.getByText("by unknown-worker")).toBeInTheDocument();
+		expect(screen.getByText("by unknown-agent")).toBeInTheDocument();
 	});
 });

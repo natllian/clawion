@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { readJson, writeJsonAtomic } from "../fs/json";
 import { pathExists } from "../fs/util";
 import { threadMessageSchema, threadSchema } from "../schemas";
+import { addLogEvent } from "./logs";
 import { resolveMissionPath } from "./mission";
 
 type ThreadMessageInput = {
@@ -10,8 +11,8 @@ type ThreadMessageInput = {
 	missionId: string;
 	taskId: string;
 	title: string;
-	authorId: string;
-	mentions: string;
+	authorAgentId: string;
+	mentionsAgentId: string;
 	content: string;
 };
 
@@ -31,7 +32,7 @@ async function loadThread(missionPath: string, taskId: string) {
 			schemaVersion: 1,
 			taskId,
 			title: "New Thread",
-			creator: "unknown",
+			creatorAgentId: "unknown",
 			status: "open",
 			messages: [],
 		});
@@ -55,7 +56,7 @@ export async function createThread(input: ThreadMessageInput) {
 		schemaVersion: 1,
 		taskId: input.taskId,
 		title: input.title,
-		creator: input.authorId,
+		creatorAgentId: input.authorAgentId,
 		status: "open",
 		messages: [],
 	});
@@ -74,8 +75,8 @@ export async function addThreadMessage(input: ThreadMessageInput) {
 	const message = threadMessageSchema.parse({
 		id: randomUUID(),
 		createdAt: nowIso(),
-		authorId: input.authorId,
-		mentions: input.mentions,
+		authorAgentId: input.authorAgentId,
+		mentionsAgentId: input.mentionsAgentId,
 		content: input.content,
 		resolved: false,
 	});
@@ -83,7 +84,7 @@ export async function addThreadMessage(input: ThreadMessageInput) {
 	const nextThread = threadSchema.parse({
 		...thread.data,
 		title: thread.data.title || input.title,
-		creator: thread.data.creator || input.authorId,
+		creatorAgentId: thread.data.creatorAgentId || input.authorAgentId,
 		messages: [...thread.data.messages, message],
 	});
 
@@ -96,7 +97,7 @@ export async function resolveThreadMessage(
 	missionId: string,
 	taskId: string,
 	messageId: string,
-	resolvedBy: string,
+	resolvedByAgentId: string,
 ) {
 	const missionPath = await resolveMissionPath(missionsDir, missionId);
 	const thread = await loadThread(missionPath, taskId);
@@ -110,7 +111,9 @@ export async function resolveThreadMessage(
 		...message,
 		resolved: true,
 		resolvedAt: nowIso(),
-		resolvedBy,
+		resolvedByAgentId,
+		reopenedAt: undefined,
+		reopenedByAgentId: undefined,
 	});
 
 	// Update thread status based on unresolved messages
@@ -134,6 +137,7 @@ export async function unresolveThreadMessage(
 	missionId: string,
 	taskId: string,
 	messageId: string,
+	reopenedByAgentId: string,
 ) {
 	const missionPath = await resolveMissionPath(missionsDir, missionId);
 	const thread = await loadThread(missionPath, taskId);
@@ -143,11 +147,14 @@ export async function unresolveThreadMessage(
 		throw new Error(`Message not found: ${messageId}`);
 	}
 
+	const reopenedAt = nowIso();
 	const updatedMessage = threadMessageSchema.parse({
 		...message,
 		resolved: false,
 		resolvedAt: undefined,
-		resolvedBy: undefined,
+		resolvedByAgentId: undefined,
+		reopenedAt,
+		reopenedByAgentId,
 	});
 
 	const nextThread = threadSchema.parse({
@@ -159,6 +166,22 @@ export async function unresolveThreadMessage(
 	});
 
 	await writeJsonAtomic(thread.path, nextThread);
+
+	await addLogEvent({
+		missionsDir,
+		missionId,
+		agentId: reopenedByAgentId,
+		level: "info",
+		type: "thread:unresolve",
+		message: `Reopened thread message ${messageId} in task ${taskId}.`,
+		taskId,
+		threadId: messageId,
+		payload: {
+			taskId,
+			messageId,
+			reopenedAt,
+		},
+	});
 }
 
 export async function getThread(
@@ -173,7 +196,7 @@ export async function getThread(
 			schemaVersion: 1,
 			taskId,
 			title: "New Thread",
-			creator: "unknown",
+			creatorAgentId: "unknown",
 			status: "open",
 			messages: [],
 		});

@@ -12,7 +12,7 @@ function nowIso(): string {
 async function setupMission(
 	missionsDir: string,
 	missionId: string,
-	workers: Array<{
+	agents: Array<{
 		id: string;
 		displayName: string;
 		roleDescription: string;
@@ -23,9 +23,9 @@ async function setupMission(
 	const missionDir = join(missionsDir, missionId);
 	await mkdir(missionDir, { recursive: true });
 
-	await writeJsonAtomic(join(missionDir, "workers.json"), {
+	await writeJsonAtomic(join(missionDir, "agents.json"), {
 		schemaVersion: 1,
-		workers,
+		agents,
 	});
 
 	await writeJsonAtomic(join(missionsDir, "index.json"), {
@@ -46,7 +46,7 @@ async function setupMission(
 }
 
 describe("assertManager", () => {
-	it("allows a manager worker", async () => {
+	it("allows a manager agent", async () => {
 		const missionsDir = await mkdtemp(join(tmpdir(), "clawion-perm-"));
 		await setupMission(missionsDir, "m1", [
 			{
@@ -62,12 +62,12 @@ describe("assertManager", () => {
 			assertManager({
 				missionsDir,
 				missionId: "m1",
-				workerId: "manager-1",
+				agentId: "manager-1",
 			}),
 		).resolves.toBeUndefined();
 	});
 
-	it("rejects a non-manager worker", async () => {
+	it("rejects a non-manager agent", async () => {
 		const missionsDir = await mkdtemp(join(tmpdir(), "clawion-perm-"));
 		await setupMission(missionsDir, "m1", [
 			{
@@ -78,8 +78,8 @@ describe("assertManager", () => {
 				status: "active",
 			},
 			{
-				id: "worker-1",
-				displayName: "Worker",
+				id: "agent-1",
+				displayName: "Agent",
 				roleDescription: "Contributor",
 				systemRole: "worker",
 				status: "active",
@@ -90,12 +90,12 @@ describe("assertManager", () => {
 			assertManager({
 				missionsDir,
 				missionId: "m1",
-				workerId: "worker-1",
+				agentId: "agent-1",
 			}),
 		).rejects.toThrow("Manager role required");
 	});
 
-	it("rejects unknown workers", async () => {
+	it("rejects unknown agents", async () => {
 		const missionsDir = await mkdtemp(join(tmpdir(), "clawion-perm-"));
 		await setupMission(missionsDir, "m1", [
 			{
@@ -111,8 +111,8 @@ describe("assertManager", () => {
 			assertManager({
 				missionsDir,
 				missionId: "m1",
-				workerId: "missing",
+				agentId: "missing",
 			}),
-		).rejects.toThrow("Worker not found");
+		).rejects.toThrow("Agent not found");
 	});
 });

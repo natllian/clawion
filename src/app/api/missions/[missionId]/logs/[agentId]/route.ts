@@ -7,15 +7,15 @@ export const runtime = "nodejs";
 
 type RouteContext = {
 	params:
-		| Promise<{ missionId: string; workerId: string }>
-		| { missionId: string; workerId: string };
+		| Promise<{ missionId: string; agentId: string }>
+		| { missionId: string; agentId: string };
 };
 
 export async function GET(_request: Request, context: RouteContext) {
 	try {
-		const { missionId, workerId } = await context.params;
+		const { missionId, agentId } = await context.params;
 		const missionsDir = resolveMissionsDir();
-		const log = await getLog(missionsDir, missionId, workerId);
+		const log = await getLog(missionsDir, missionId, agentId);
 		return NextResponse.json(log, {
 			headers: {
 				"Cache-Control": "no-store",

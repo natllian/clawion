@@ -42,7 +42,7 @@ export async function GET(_request: Request, context: RouteContext) {
 					title: task.title,
 					description: task.description,
 					columnId: task.columnId,
-					assigneeId: task.assigneeId,
+					assigneeAgentId: task.assigneeAgentId,
 					statusNotes: task.statusNotes,
 					createdAt: task.createdAt,
 					updatedAt: task.updatedAt,

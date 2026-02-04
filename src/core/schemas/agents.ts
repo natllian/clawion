@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { idSchema, nonEmptyTextSchema, schemaVersionSchema } from "./shared";
 
-export const workerSchema = z
+export const agentSchema = z
 	.object({
 		id: idSchema,
 		displayName: nonEmptyTextSchema,
@@ -11,12 +11,12 @@ export const workerSchema = z
 	})
 	.strict();
 
-export const workersSchema = z
+export const agentsSchema = z
 	.object({
 		schemaVersion: schemaVersionSchema,
-		workers: z.array(workerSchema),
+		agents: z.array(agentSchema),
 	})
 	.strict();
 
-export type Worker = z.infer<typeof workerSchema>;
-export type WorkersFile = z.infer<typeof workersSchema>;
+export type Agent = z.infer<typeof agentSchema>;
+export type AgentsFile = z.infer<typeof agentsSchema>;

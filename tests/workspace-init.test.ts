@@ -5,10 +5,10 @@ import { describe, expect, it } from "vitest";
 import { readJson } from "../src/core/fs/json";
 import { pathExists } from "../src/core/fs/util";
 import {
+	agentsSchema,
 	missionSchema,
 	missionsIndexSchema,
 	tasksSchema,
-	workersSchema,
 } from "../src/core/schemas";
 import { ensureWorkspace } from "../src/core/workspace/init";
 
@@ -28,7 +28,7 @@ describe("ensureWorkspace", () => {
 		expect(await pathExists(templateDir)).toBe(true);
 		expect(await pathExists(join(templateDir, "mission.json"))).toBe(true);
 		expect(await pathExists(join(templateDir, "tasks.json"))).toBe(true);
-		expect(await pathExists(join(templateDir, "workers.json"))).toBe(true);
+		expect(await pathExists(join(templateDir, "agents.json"))).toBe(true);
 		expect(await pathExists(join(templateDir, "ROADMAP.md"))).toBe(true);
 		expect(await pathExists(join(templateDir, "working"))).toBe(true);
 		expect(await pathExists(join(templateDir, "threads"))).toBe(true);
@@ -39,7 +39,7 @@ describe("ensureWorkspace", () => {
 
 		await readJson(join(templateDir, "mission.json"), missionSchema);
 		await readJson(join(templateDir, "tasks.json"), tasksSchema);
-		await readJson(join(templateDir, "workers.json"), workersSchema);
+		await readJson(join(templateDir, "agents.json"), agentsSchema);
 	});
 
 	it("is idempotent when run multiple times", async () => {

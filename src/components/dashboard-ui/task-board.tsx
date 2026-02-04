@@ -12,7 +12,7 @@ interface TaskBoardSectionProps {
 	tasksFile: TasksFile | null;
 	activeTaskId: string | null;
 	activeMissionId: string | null;
-	workerMap: Map<string, string>;
+	agentMap: Map<string, string>;
 	onTaskSelect: (id: string) => void;
 }
 
@@ -23,7 +23,7 @@ export function TaskBoardSection({
 	tasksFile,
 	activeTaskId,
 	activeMissionId,
-	workerMap,
+	agentMap,
 	onTaskSelect,
 }: TaskBoardSectionProps) {
 	return (
@@ -33,7 +33,7 @@ export function TaskBoardSection({
 			<div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
 				<div className="flex items-center gap-2 text-[0.65rem] uppercase tracking-wide">
 					<Users className="h-3.5 w-3.5" />
-					Workers
+					Agents
 				</div>
 			</div>
 
@@ -65,7 +65,7 @@ export function TaskBoardSection({
 									tasks={columnTasks}
 									activeTaskId={activeTaskId}
 									activeMissionId={activeMissionId}
-									workerMap={workerMap}
+									agentMap={agentMap}
 									onTaskSelect={onTaskSelect}
 								/>
 							);

@@ -8,7 +8,7 @@ import { resolveMissionPath } from "./mission";
 type LogInput = {
 	missionsDir: string;
 	missionId: string;
-	workerId: string;
+	agentId: string;
 	level: "info" | "warn" | "error";
 	type: string;
 	message: string;
@@ -21,8 +21,8 @@ function nowIso(): string {
 	return new Date().toISOString();
 }
 
-async function loadLog(missionPath: string, workerId: string) {
-	const logPath = join(missionPath, "logs", `${workerId}.json`);
+async function loadLog(missionPath: string, agentId: string) {
+	const logPath = join(missionPath, "logs", `${agentId}.json`);
 	try {
 		return {
 			path: logPath,
@@ -31,7 +31,7 @@ async function loadLog(missionPath: string, workerId: string) {
 	} catch {
 		const empty = logSchema.parse({
 			schemaVersion: 1,
-			workerId,
+			agentId,
 			events: [],
 		});
 		await writeJsonAtomic(logPath, empty);
@@ -44,7 +44,7 @@ export async function addLogEvent(input: LogInput) {
 		input.missionsDir,
 		input.missionId,
 	);
-	const log = await loadLog(missionPath, input.workerId);
+	const log = await loadLog(missionPath, input.agentId);
 	const event = logEventSchema.parse({
 		id: randomUUID(),
 		timestamp: nowIso(),
@@ -71,14 +71,14 @@ export async function addLogEvent(input: LogInput) {
 export async function getLog(
 	missionsDir: string,
 	missionId: string,
-	workerId: string,
+	agentId: string,
 ) {
 	const missionPath = await resolveMissionPath(missionsDir, missionId);
-	const logPath = join(missionPath, "logs", `${workerId}.json`);
+	const logPath = join(missionPath, "logs", `${agentId}.json`);
 	if (!(await pathExists(logPath))) {
 		return logSchema.parse({
 			schemaVersion: 1,
-			workerId,
+			agentId,
 			events: [],
 		});
 	}
