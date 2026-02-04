@@ -9,7 +9,6 @@ import {
 	addAgent,
 	listAgents,
 	readWorkingFile,
-	resolveWorkingPath,
 	updateAgent,
 } from "../src/core/workspace/agents";
 import { ensureWorkspace } from "../src/core/workspace/init";
@@ -231,12 +230,6 @@ const HELP_ENTRIES: HelpEntry[] = [
 		purpose: "Show the acting agent profile, working notes, and logs.",
 		params: ["--mission <id>", "--agent <agentId>"],
 		example: "clawion agent whoami --mission m1 --agent agent-1",
-	},
-	{
-		command: "agent working",
-		purpose: "Print path to an agent working file.",
-		params: ["--mission <id>", "--id <agentId>"],
-		example: "clawion agent working --mission m1 --id agent-1",
 	},
 	{
 		command: "thread add",
@@ -783,24 +776,6 @@ agent
 					2,
 				),
 			);
-		} catch (error) {
-			console.error(error instanceof Error ? error.message : String(error));
-			process.exitCode = 1;
-		}
-	});
-
-agent
-	.command("working")
-	.description("Print path to an agent working file")
-	.requiredOption("--mission <id>", "Mission ID")
-	.requiredOption("--id <agentId>", "Agent ID")
-	.action(async (options) => {
-		try {
-			const missionPath = await resolveMissionPath(
-				context.missionsDir,
-				options.mission,
-			);
-			console.log(resolveWorkingPath(missionPath, options.id));
 		} catch (error) {
 			console.error(error instanceof Error ? error.message : String(error));
 			process.exitCode = 1;
