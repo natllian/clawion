@@ -6,6 +6,8 @@ import {
 	schemaVersionSchema,
 } from "./shared";
 
+export const threadStatusSchema = z.enum(["open", "resolved"]);
+
 export const threadMessageSchema = z
 	.object({
 		id: idSchema,
@@ -39,9 +41,13 @@ export const threadSchema = z
 	.object({
 		schemaVersion: schemaVersionSchema,
 		taskId: idSchema,
+		title: nonEmptyTextSchema,
+		creator: idSchema,
+		status: threadStatusSchema,
 		messages: z.array(threadMessageSchema),
 	})
 	.strict();
 
+export type ThreadStatus = z.infer<typeof threadStatusSchema>;
 export type ThreadMessage = z.infer<typeof threadMessageSchema>;
 export type ThreadFile = z.infer<typeof threadSchema>;

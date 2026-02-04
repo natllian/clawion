@@ -228,12 +228,13 @@ const HELP_ENTRIES: HelpEntry[] = [
 		params: [
 			"--mission <id>",
 			"--task <taskId>",
+			"--title <text>",
 			"--content <text>",
 			"--mentions <workerId>",
 			"--worker <authorId>",
 		],
 		example:
-			"clawion thread add --mission m1 --task t1 --content 'Please review' --mentions w1 --worker manager-1",
+			"clawion thread add --mission m1 --task t1 --title 'API Review' --content 'Please review' --mentions w1 --worker manager-1",
 	},
 	{
 		command: "thread resolve",
@@ -638,6 +639,7 @@ thread
 	.description("Append a message to a task thread")
 	.requiredOption("--mission <id>", "Mission ID")
 	.requiredOption("--task <taskId>", "Task ID")
+	.requiredOption("--title <text>", "Thread title")
 	.requiredOption("--content <text>", "Message content")
 	.requiredOption("--mentions <workerId>", "Mentioned worker ID")
 	.requiredOption("--worker <authorId>", "Author worker ID")
@@ -647,6 +649,7 @@ thread
 				missionsDir: context.missionsDir,
 				missionId: options.mission,
 				taskId: options.task,
+				title: options.title,
 				authorId: options.worker,
 				mentions: options.mentions,
 				content: options.content,

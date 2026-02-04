@@ -9,6 +9,7 @@ type ThreadMessageInput = {
 	missionsDir: string;
 	missionId: string;
 	taskId: string;
+	title: string;
 	authorId: string;
 	mentions: string;
 	content: string;
@@ -29,11 +30,38 @@ async function loadThread(missionPath: string, taskId: string) {
 		const empty = threadSchema.parse({
 			schemaVersion: 1,
 			taskId,
+			title: "New Thread",
+			creator: "unknown",
+			status: "open",
 			messages: [],
 		});
 		await writeJsonAtomic(threadPath, empty);
 		return { path: threadPath, data: empty };
 	}
+}
+
+export async function createThread(input: ThreadMessageInput) {
+	const missionPath = await resolveMissionPath(
+		input.missionsDir,
+		input.missionId,
+	);
+	const threadPath = join(missionPath, "threads", `${input.taskId}.json`);
+
+	if (await pathExists(threadPath)) {
+		throw new Error(`Thread already exists for task: ${input.taskId}`);
+	}
+
+	const thread = threadSchema.parse({
+		schemaVersion: 1,
+		taskId: input.taskId,
+		title: input.title,
+		creator: input.authorId,
+		status: "open",
+		messages: [],
+	});
+
+	await writeJsonAtomic(threadPath, thread);
+	return thread;
 }
 
 export async function addThreadMessage(input: ThreadMessageInput) {
@@ -42,6 +70,7 @@ export async function addThreadMessage(input: ThreadMessageInput) {
 		input.missionId,
 	);
 	const thread = await loadThread(missionPath, input.taskId);
+
 	const message = threadMessageSchema.parse({
 		id: randomUUID(),
 		createdAt: nowIso(),
@@ -53,6 +82,8 @@ export async function addThreadMessage(input: ThreadMessageInput) {
 
 	const nextThread = threadSchema.parse({
 		...thread.data,
+		title: thread.data.title || input.title,
+		creator: thread.data.creator || input.authorId,
 		messages: [...thread.data.messages, message],
 	});
 
@@ -82,8 +113,14 @@ export async function resolveThreadMessage(
 		resolvedBy,
 	});
 
+	// Update thread status based on unresolved messages
+	const hasUnresolved = thread.data.messages.some(
+		(m) => m.id !== messageId && !m.resolved,
+	);
+
 	const nextThread = threadSchema.parse({
 		...thread.data,
+		status: hasUnresolved ? "open" : "resolved",
 		messages: thread.data.messages.map((entry) =>
 			entry.id === messageId ? updatedMessage : entry,
 		),
@@ -115,6 +152,7 @@ export async function unresolveThreadMessage(
 
 	const nextThread = threadSchema.parse({
 		...thread.data,
+		status: "open",
 		messages: thread.data.messages.map((entry) =>
 			entry.id === messageId ? updatedMessage : entry,
 		),
@@ -134,8 +172,33 @@ export async function getThread(
 		return threadSchema.parse({
 			schemaVersion: 1,
 			taskId,
+			title: "New Thread",
+			creator: "unknown",
+			status: "open",
 			messages: [],
 		});
 	}
 	return readJson(threadPath, threadSchema);
+}
+
+export async function listThreads(missionsDir: string, missionId: string) {
+	const missionPath = await resolveMissionPath(missionsDir, missionId);
+	const threadsDir = join(missionPath, "threads");
+
+	if (!(await pathExists(threadsDir))) {
+		return [];
+	}
+
+	const { readdir } = await import("node:fs/promises");
+	const files = await readdir(threadsDir);
+	const threadFiles = files.filter((f) => f.endsWith(".json"));
+
+	const threads = await Promise.all(
+		threadFiles.map(async (file) => {
+			const _taskId = file.replace(/\.json$/, "");
+			return readJson(join(threadsDir, file), threadSchema);
+		}),
+	);
+
+	return threads;
 }

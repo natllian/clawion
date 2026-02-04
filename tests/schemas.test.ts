@@ -156,6 +156,9 @@ describe("schemas", () => {
 		const result = threadSchema.safeParse({
 			schemaVersion: 1,
 			taskId: "t1",
+			title: "Test Thread",
+			creator: "w1",
+			status: "resolved",
 			messages: [
 				{
 					id: "msg1",
@@ -176,6 +179,9 @@ describe("schemas", () => {
 		const result = threadSchema.safeParse({
 			schemaVersion: 1,
 			taskId: "t1",
+			title: "Test Thread",
+			creator: "w1",
+			status: "open",
 			messages: [
 				{
 					id: "msg1",

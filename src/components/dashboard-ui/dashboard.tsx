@@ -7,6 +7,7 @@ import type {
 	Mission,
 	MissionIndexItem,
 	TasksFile,
+	ThreadFile,
 	WorkersFile,
 } from "@/core/schemas";
 import { cn } from "@/lib/utils";
@@ -49,6 +50,7 @@ export function Dashboard() {
 	const [mission, setMission] = React.useState<Mission | null>(null);
 	const [roadmap, setRoadmap] = React.useState<string>("");
 	const [tasks, setTasks] = React.useState<TasksFile | null>(null);
+	const [threads, setThreads] = React.useState<ThreadFile[]>([]);
 	const [workers, setWorkers] = React.useState<WorkersFile | null>(null);
 	const [activeTaskId, setActiveTaskId] = React.useState<string | null>(null);
 	const [activeWorkerId, setActiveWorkerId] = React.useState<string | null>(
@@ -107,6 +109,7 @@ export function Dashboard() {
 			setMission(null);
 			setRoadmap("");
 			setTasks(null);
+			setThreads([]);
 			setWorkers(null);
 			setActiveTaskId(null);
 			setActiveWorkerId(null);
@@ -119,21 +122,29 @@ export function Dashboard() {
 
 		async function loadMission() {
 			try {
-				const [missionResponse, tasksResponse, workersResponse] =
-					await Promise.all([
-						fetch(`/api/missions/${activeMissionId}`, {
-							cache: "no-store",
-							signal: controller.signal,
-						}),
-						fetch(`/api/missions/${activeMissionId}/tasks`, {
-							cache: "no-store",
-							signal: controller.signal,
-						}),
-						fetch(`/api/missions/${activeMissionId}/workers`, {
-							cache: "no-store",
-							signal: controller.signal,
-						}),
-					]);
+				const [
+					missionResponse,
+					tasksResponse,
+					workersResponse,
+					threadsResponse,
+				] = await Promise.all([
+					fetch(`/api/missions/${activeMissionId}`, {
+						cache: "no-store",
+						signal: controller.signal,
+					}),
+					fetch(`/api/missions/${activeMissionId}/tasks`, {
+						cache: "no-store",
+						signal: controller.signal,
+					}),
+					fetch(`/api/missions/${activeMissionId}/workers`, {
+						cache: "no-store",
+						signal: controller.signal,
+					}),
+					fetch(`/api/missions/${activeMissionId}/threads`, {
+						cache: "no-store",
+						signal: controller.signal,
+					}),
+				]);
 
 				if (!missionResponse.ok) {
 					throw new Error("Mission not found.");
@@ -143,10 +154,12 @@ export function Dashboard() {
 					(await missionResponse.json()) as MissionResponse;
 				const tasksPayload = (await tasksResponse.json()) as TasksFile;
 				const workersPayload = (await workersResponse.json()) as WorkersFile;
+				const threadsPayload = (await threadsResponse.json()) as ThreadFile[];
 
 				setMission(missionPayload.mission);
 				setRoadmap(missionPayload.roadmap);
 				setTasks(tasksPayload);
+				setThreads(threadsPayload);
 				setWorkers(workersPayload);
 
 				setActiveTaskId((current) => {
@@ -301,7 +314,8 @@ export function Dashboard() {
 							</p>
 							<div className="flex max-h-[320px] flex-col gap-2 overflow-y-auto pr-1">
 								<ThreadsList
-									tasks={tasks}
+									threads={threads}
+									workerMap={workerMap}
 									loadingMission={loadingMission}
 									activeMissionId={activeMissionId}
 								/>
@@ -310,7 +324,7 @@ export function Dashboard() {
 					) : (
 						<div className="flex flex-col items-center gap-2 text-[0.65rem] text-muted-foreground">
 							<Sparkles className="h-4 w-4" />
-							<span>{tasks?.tasks.length ?? 0} threads</span>
+							<span>{threads.length} threads</span>
 						</div>
 					)}
 				</Sidebar>
