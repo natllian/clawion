@@ -1,6 +1,5 @@
 #!/usr/bin/env tsx
 import { spawn } from "node:child_process";
-import { readFile } from "node:fs/promises";
 import { Command } from "commander";
 import {
 	resolveStatusForColumn,
@@ -106,7 +105,6 @@ const HELP_ENTRIES: HelpEntry[] = [
 		params: [
 			"--id <id>",
 			"--set <markdown> (optional)",
-			"--file <path> (optional)",
 			"--agent <agentId> (required for updates)",
 		],
 		example:
@@ -393,18 +391,11 @@ mission
 	.description("Show or update mission roadmap (manager only for updates)")
 	.requiredOption("--id <id>", "Mission ID")
 	.option("--set <markdown>", "Replace roadmap contents")
-	.option("--file <path>", "Replace roadmap contents from a local file")
 	.action(async (options, command) => {
 		try {
-			if (!options.set && !options.file) {
+			if (!options.set) {
 				const data = await showMission(context.missionsDir, options.id);
 				console.log(data.roadmap);
-				return;
-			}
-
-			if (options.set && options.file) {
-				console.error("Provide only one of --set or --file.");
-				process.exitCode = 1;
 				return;
 			}
 
@@ -413,9 +404,7 @@ mission
 				return;
 			}
 
-			const roadmap = options.file
-				? await readFile(options.file, "utf8")
-				: String(options.set);
+			const roadmap = String(options.set);
 
 			await updateMissionRoadmap({
 				missionsDir: context.missionsDir,
