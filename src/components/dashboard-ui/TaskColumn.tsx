@@ -2,7 +2,7 @@
 
 import { Skeleton } from "@/components/ui/skeleton";
 import type { TaskItem } from "@/core/schemas";
-import { TaskCard } from "./task-card";
+import { TaskCard } from "./TaskCard";
 
 interface TaskColumnProps {
 	column: { id: string; name: string; order: number };

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AgentsFile } from "@/core/schemas";
 
 // Dynamic import to apply mocks before testing
-const { AgentDropdown: TestedAgentDropdown } = await import("./agent-dropdown");
+const { AgentDropdown: TestedAgentDropdown } = await import("./AgentDropdown");
 
 const mockAgents: AgentsFile = {
 	schemaVersion: 1,

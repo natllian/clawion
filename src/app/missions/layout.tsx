@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { Dashboard } from "@/components/dashboard";
+import { Dashboard } from "@/components/Dashboard";
 
 function getParam(value: string | string[] | undefined): string | undefined {
 	if (!value) {

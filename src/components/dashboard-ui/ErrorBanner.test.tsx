@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { ErrorBanner } from "./error-banner";
+import { ErrorBanner } from "./ErrorBanner";
 
 describe("ErrorBanner", () => {
 	afterEach(() => {

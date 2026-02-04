@@ -13,7 +13,7 @@ import {
 import type { Mission } from "@/core/schemas";
 import { missionStatusTone } from "@/lib/status-tones";
 import { cn } from "@/lib/utils";
-import { MarkdownBlock } from "./markdown-block";
+import { MarkdownBlock } from "./MarkdownBlock";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
 	dateStyle: "medium",

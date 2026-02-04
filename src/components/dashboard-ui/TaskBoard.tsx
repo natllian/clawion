@@ -3,7 +3,7 @@
 import { Users } from "lucide-react";
 import type * as React from "react";
 import type { TaskItem, TasksFile } from "@/core/schemas";
-import { TaskBoardSkeleton, TaskColumn } from "./task-column";
+import { TaskBoardSkeleton, TaskColumn } from "./TaskColumn";
 
 interface TaskBoardSectionProps {
 	children: React.ReactNode;

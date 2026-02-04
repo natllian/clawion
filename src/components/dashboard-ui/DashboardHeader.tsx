@@ -1,11 +1,11 @@
 "use client";
 
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Badge } from "@/components/ui/badge";
 import type { Mission } from "@/core/schemas";
 import { missionStatusTone } from "@/lib/status-tones";
 import { cn } from "@/lib/utils";
-import { SnapshotDropdown } from "./snapshot-dropdown";
+import { SnapshotDropdown } from "./SnapshotDropdown";
 
 interface DashboardHeaderProps {
 	mission: Mission | null;

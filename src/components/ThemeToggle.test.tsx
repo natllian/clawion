@@ -27,7 +27,7 @@ Object.defineProperty(global, "matchMedia", {
 });
 
 // Dynamic import to apply mocks before testing
-const { ThemeToggle } = await import("./theme-toggle");
+const { ThemeToggle } = await import("./ThemeToggle");
 
 describe("ThemeToggle", () => {
 	afterEach(() => {

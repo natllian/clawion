@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { TaskItem, TasksFile } from "@/core/schemas";
-import { TaskBoardSection } from "./task-board";
+import { TaskBoardSection } from "./TaskBoard";
 
 vi.mock("next/link", () => ({
 	default: ({
@@ -14,7 +14,7 @@ vi.mock("next/link", () => ({
 }));
 
 // Dynamic import to ensure mocks are applied
-const { TaskColumn } = await import("./task-column");
+const { TaskColumn } = await import("./TaskColumn");
 
 describe("TaskBoardSection", () => {
 	const mockTasks: TaskItem[] = [

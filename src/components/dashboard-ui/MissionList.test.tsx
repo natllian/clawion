@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import type { MissionIndexItem } from "@/core/schemas";
-import { MissionList } from "./mission-list";
+import { MissionList } from "./MissionList";
 
 describe("MissionList", () => {
 	const mockMissions: MissionIndexItem[] = [

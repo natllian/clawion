@@ -21,7 +21,7 @@ vi.mock("lucide-react", async () => {
 });
 
 // Dynamic import to ensure mocks are applied
-const { TaskCard } = await import("./task-card");
+const { TaskCard } = await import("./TaskCard");
 
 describe("TaskCard", () => {
 	const mockTask: TaskItem = {

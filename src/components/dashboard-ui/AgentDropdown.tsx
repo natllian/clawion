@@ -197,4 +197,4 @@ export function AgentDropdown({
 	);
 }
 
-import { MarkdownBlock } from "./markdown-block";
+import { MarkdownBlock } from "./MarkdownBlock";

@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Sidebar, SidebarHeader } from "./sidebar";
+import { Sidebar, SidebarHeader } from "./Sidebar";
 
 describe("Sidebar", () => {
 	const defaultProps = {

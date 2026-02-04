@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import type { ThreadFile } from "@/core/schemas";
-import { ThreadsList } from "./threads-list";
+import { ThreadsList } from "./ThreadsList";
 
 describe("ThreadsList", () => {
 	const mockThreads: ThreadFile[] = [

@@ -1,9 +1,9 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Mission } from "@/core/schemas/mission";
-import { DashboardHeader } from "./dashboard-header";
+import { DashboardHeader } from "./DashboardHeader";
 
-vi.mock("@/components/theme-toggle", () => ({
+vi.mock("@/components/ThemeToggle", () => ({
 	ThemeToggle: () => (
 		<button type="button" data-testid="theme-toggle">
 			Theme
@@ -11,7 +11,7 @@ vi.mock("@/components/theme-toggle", () => ({
 	),
 }));
 
-vi.mock("./snapshot-dropdown", () => ({
+vi.mock("./SnapshotDropdown", () => ({
 	SnapshotDropdown: ({ mission }: { mission: Mission | null }) => (
 		<div data-testid="snapshot-dropdown">
 			{mission ? "Snapshot Menu" : "No Mission"}

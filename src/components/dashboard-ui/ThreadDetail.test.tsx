@@ -98,7 +98,7 @@ const agentMap = new Map([
 ]);
 
 // Dynamic import to apply mocks before testing
-const { ThreadDetail } = await import("./thread-detail");
+const { ThreadDetail } = await import("./ThreadDetail");
 
 describe("ThreadDetail", () => {
 	afterEach(() => {
