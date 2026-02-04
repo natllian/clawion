@@ -2,6 +2,8 @@
 
 import { MessageSquare } from "lucide-react";
 import Link from "next/link";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { TaskItem } from "@/core/schemas";
 import { cn } from "@/lib/utils";
 
@@ -37,13 +39,22 @@ export function TaskCard({
 				className="w-full text-left pr-16 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
 			>
 				<p className="text-sm font-semibold text-foreground">{task.title}</p>
-				<p className="mt-1 text-xs text-muted-foreground">{task.description}</p>
+				<div className="mt-1 h-16 overflow-y-auto pr-2">
+					<div className="markdown">
+						<ReactMarkdown remarkPlugins={[remarkGfm]}>
+							{task.description}
+						</ReactMarkdown>
+					</div>
+				</div>
 			</button>
 
 			{activeMissionId ? (
 				<Link
 					href={`/missions/${activeMissionId}/threads/${task.id}`}
 					className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-border/80 bg-muted/70 px-2.5 py-1 text-[0.65rem] font-medium text-foreground/80 shadow-sm transition hover:border-primary/40 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+					onClick={(event) => {
+						event.stopPropagation();
+					}}
 				>
 					<MessageSquare className="h-3 w-3" />
 					Thread

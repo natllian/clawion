@@ -143,12 +143,7 @@ describe("TaskColumn", () => {
 	it("calls onTaskSelect when task is clicked", () => {
 		const onSelect = vi.fn();
 		render(<TaskColumn {...defaultProps} onTaskSelect={onSelect} />);
-		// Click on the task card by finding the element with task title
-		const taskElement = screen.getByText("Test Task").closest("button");
-		expect(taskElement).not.toBeNull();
-		if (taskElement) {
-			fireEvent.click(taskElement);
-		}
+		fireEvent.click(screen.getByRole("button", { name: /test task/i }));
 		expect(onSelect).toHaveBeenCalledWith("t1");
 	});
 });

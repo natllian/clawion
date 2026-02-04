@@ -56,6 +56,15 @@ describe("TaskCard", () => {
 		expect(screen.getByText("Test description")).toBeInTheDocument();
 	});
 
+	it("renders markdown in task description", () => {
+		const props = {
+			...defaultProps,
+			task: { ...mockTask, description: "Hello **world**" },
+		};
+		render(<TaskCard {...props} />);
+		expect(screen.getByText("world").tagName.toLowerCase()).toBe("strong");
+	});
+
 	it("renders task ID badge", () => {
 		render(<TaskCard {...defaultProps} />);
 		expect(screen.getByText("#1")).toBeInTheDocument();
@@ -85,13 +94,19 @@ describe("TaskCard", () => {
 	it("applies active styling when selected", () => {
 		const props = { ...defaultProps, activeTaskId: "1" };
 		render(<TaskCard {...props} />);
-		const card = screen.getByText("Test Task").closest("div");
+		const card = screen
+			.getByRole("button", { name: /test task/i })
+			.closest("div");
+		expect(card).not.toBeNull();
 		expect(card).toHaveClass("bg-primary/10");
 	});
 
 	it("does not apply active styling when not selected", () => {
 		render(<TaskCard {...defaultProps} />);
-		const card = screen.getByText("Test Task").closest("div");
+		const card = screen
+			.getByRole("button", { name: /test task/i })
+			.closest("div");
+		expect(card).not.toBeNull();
 		expect(card).not.toHaveClass("bg-primary/10");
 	});
 
