@@ -109,10 +109,7 @@ export function WorkerDropdown({
 							<button
 								type="button"
 								onClick={() => onWorkerSelect(worker.id)}
-								className={cn(
-									"flex items-center gap-2 rounded-full border border-border/70 bg-background px-2 py-1 text-xs text-foreground transition hover:border-primary/40 hover:bg-primary/5",
-									isActive && "border-primary/60 bg-primary/10",
-								)}
+								className="flex items-center gap-2 rounded-full border border-border/70 bg-background px-2 py-1 text-xs text-foreground transition hover:border-primary/40 hover:bg-primary/5"
 							>
 								<Avatar size="sm">
 									<AvatarFallback>
