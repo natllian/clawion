@@ -162,6 +162,7 @@ export function ThreadDetail({
 				<Button
 					variant="ghost"
 					size="sm"
+					className="hover:bg-muted/50"
 					onClick={() => router.push(`/missions/${missionId}`)}
 				>
 					<ArrowLeft className="mr-2 h-4 w-4" />
