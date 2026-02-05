@@ -1,9 +1,11 @@
+import { mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { readJson } from "../src/core/fs/json";
 import { missionsIndexSchema } from "../src/core/schemas";
 import {
 	addMissionIndexEntry,
+	loadMissionsIndex,
 	updateMissionIndexEntry,
 } from "../src/core/workspace/index-file";
 import { createWorkspace } from "./helpers";
@@ -73,5 +75,17 @@ describe("missions index", () => {
 				description: "Updated",
 			}),
 		).rejects.toThrow("Mission not found");
+	});
+
+	it("throws helpful error when index.json does not exist", async () => {
+		// Create a temporary directory without the index.json file
+		const tempDir = await mkdtemp("/tmp/clawion-test-");
+		try {
+			await expect(loadMissionsIndex(tempDir)).rejects.toThrow(
+				"Missions index not found",
+			);
+		} finally {
+			await rm(tempDir, { recursive: true, force: true });
+		}
 	});
 });

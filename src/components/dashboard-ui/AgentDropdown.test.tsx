@@ -1,9 +1,11 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { AgentsFile } from "@/core/schemas";
+import type { AgentsFile, WorkingEvent } from "@/core/schemas";
 
 // Dynamic import to apply mocks before testing
-const { AgentDropdown: TestedAgentDropdown } = await import("./AgentDropdown");
+const { AgentDropdown: TestedAgentDropdown, WorkingEventItem } = await import(
+	"./AgentDropdown"
+);
 
 const mockAgents: AgentsFile = {
 	schemaVersion: 1,
@@ -26,9 +28,9 @@ const mockAgents: AgentsFile = {
 const defaultProps = {
 	agents: mockAgents,
 	loadingMission: false,
-	activeAgentId: null as string | null,
+	activeAgentId: "agent-1" as string | null,
 	onAgentSelect: vi.fn(),
-	working: [],
+	working: [] as WorkingEvent[],
 	memory: "",
 	loadingAgent: false,
 };
@@ -36,6 +38,7 @@ const defaultProps = {
 describe("AgentDropdown - rendering", () => {
 	afterEach(() => {
 		cleanup();
+		vi.clearAllMocks();
 	});
 
 	it("renders agent names", () => {
@@ -105,5 +108,61 @@ describe("AgentDropdown - rendering", () => {
 			"[data-slot='dropdown-menu-trigger']",
 		);
 		expect(buttons).toHaveLength(2);
+	});
+});
+
+describe("WorkingEventItem", () => {
+	afterEach(() => {
+		cleanup();
+	});
+
+	it("renders event with date and content", () => {
+		const event: WorkingEvent = {
+			id: "w1",
+			agentId: "agent-1",
+			createdAt: "2024-01-15T10:30:00Z",
+			content: "Test content",
+		};
+		render(<WorkingEventItem event={event} />);
+		// Check that the event contains some date formatting (contains the year)
+		expect(screen.getByText(/2024/)).toBeInTheDocument();
+		expect(screen.getByText("Test content")).toBeInTheDocument();
+	});
+
+	it("handles invalid date gracefully", () => {
+		const event: WorkingEvent = {
+			id: "w1",
+			agentId: "agent-1",
+			createdAt: "invalid-date",
+			content: "Test content",
+		};
+		render(<WorkingEventItem event={event} />);
+		// Should display the original string for invalid dates
+		expect(screen.getByText("invalid-date")).toBeInTheDocument();
+	});
+
+	it("renders markdown content", () => {
+		const event: WorkingEvent = {
+			id: "w1",
+			agentId: "agent-1",
+			createdAt: "2024-01-15T10:30:00Z",
+			content: "**Bold** and *italic*",
+		};
+		render(<WorkingEventItem event={event} />);
+		expect(screen.getByText("Bold")).toBeInTheDocument();
+	});
+
+	it("renders multiline content", () => {
+		const event: WorkingEvent = {
+			id: "w1",
+			agentId: "agent-1",
+			createdAt: "2024-01-15T10:30:00Z",
+			content: "Line 1\nLine 2\nLine 3",
+		};
+		render(<WorkingEventItem event={event} />);
+		// Markdown renders newlines as <br> within paragraphs, check content is present
+		expect(screen.getByText(/Line 1/)).toBeInTheDocument();
+		expect(screen.getByText(/Line 2/)).toBeInTheDocument();
+		expect(screen.getByText(/Line 3/)).toBeInTheDocument();
 	});
 });

@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp } from "node:fs/promises";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -98,5 +98,18 @@ describe("listAgents", () => {
 		const ids = agentsFile.agents.map((agent) => agent.id).sort();
 		expect(ids).toEqual(["agent-1", "agent-2"]);
 		expect(agentsFile.agents).toHaveLength(2);
+	});
+
+	it("throws helpful error when agents file does not exist", async () => {
+		const missionsDir = await createWorkspace();
+		await createMissionFixture(missionsDir, "m1");
+		const missionDir = join(missionsDir, "m1");
+
+		// Remove the agents.json file to simulate an uninitialized mission
+		await rm(join(missionDir, "agents.json"), { force: true });
+
+		await expect(listAgents(missionDir)).rejects.toThrow(
+			"Agents file not found",
+		);
 	});
 });
