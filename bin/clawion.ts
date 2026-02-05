@@ -551,16 +551,20 @@ message
 
 		const mentionsRaw =
 			typeof options.mentions === "string" ? options.mentions : "";
-		const mentions = Array.from(
-			new Set<string>(
-				mentionsRaw
-					.split(",")
-					.map((value: string) => value.trim())
-					.filter(
-						(value: string) => value.length > 0 && value !== authorAgentId,
-					),
-			),
-		);
+		const rawMentions = mentionsRaw
+			.split(",")
+			.map((value: string) => value.trim())
+			.filter((value: string) => value.length > 0);
+
+		if (rawMentions.includes(authorAgentId)) {
+			console.error(
+				`Error: Cannot mention yourself (${authorAgentId}). Remove yourself from --mentions.`,
+			);
+			process.exitCode = 1;
+			return;
+		}
+
+		const mentions = Array.from(new Set<string>(rawMentions));
 
 		if (mentions.length === 0) {
 			console.error("Error: --mentions must include at least one agent ID.");
