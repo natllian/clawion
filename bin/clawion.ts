@@ -57,7 +57,8 @@ program.hook("preAction", async (_thisCommand, _actionCommand) => {
 	const missionsDir = resolveMissionsDir();
 	context.missionsDir = missionsDir;
 	await ensureWorkspace({ missionsDir });
-	await appendCliInvocation(missionsDir, process.argv.slice(2));
+	const command = `clawion ${process.argv.slice(2).join(" ")}`;
+	await appendCliInvocation(missionsDir, command);
 });
 
 program

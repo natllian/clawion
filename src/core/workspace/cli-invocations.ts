@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 
 type CliInvocationEntry = {
 	timestamp: string;
-	args: string[];
+	command: string;
 };
 
 function nowIso(): string {
@@ -16,14 +16,14 @@ export function resolveCliInvocationsPath(missionsDir: string): string {
 
 export async function appendCliInvocation(
 	missionsDir: string,
-	args: string[],
+	command: string,
 ): Promise<void> {
 	const path = resolveCliInvocationsPath(missionsDir);
 	await mkdir(dirname(path), { recursive: true });
 
 	const entry: CliInvocationEntry = {
 		timestamp: nowIso(),
-		args,
+		command,
 	};
 
 	await appendFile(path, `${JSON.stringify(entry)}\n`, "utf8");
