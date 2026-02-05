@@ -160,7 +160,6 @@ function renderUnreadMentions(
 			lines.push(`#### Message ${mention.messageId}`);
 			lines.push(`- From: ${mention.authorAgentId}`);
 			lines.push(`- At: ${mention.createdAt}`);
-			lines.push(`- Mentions: ${mention.mentionsAgentIds.join(", ")}`);
 			lines.push("");
 			lines.push(mention.content.trim());
 		}
@@ -249,7 +248,7 @@ function buildWorkerWakeLines(ctx: WakeContext): string[] {
 	lines.push("");
 	lines.push("1) Handle Unread Mentions first.");
 	lines.push(
-		"   - Reply with an answer, a clear question, or a concrete next step + ETA.",
+		"   - Reply with an answer, a clear question, or a concrete next step.",
 	);
 	lines.push("");
 	lines.push("2) Pick the single highest-priority Assigned Task.");
@@ -454,7 +453,7 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 	lines.push("");
 	lines.push("3) Dispatch next steps.");
 	lines.push(
-		"   Ensure each task has: a clear outcome, constraints/acceptance criteria, an owner, and an expected update cadence.",
+		"   Ensure each task has: a clear outcome, constraints/acceptance criteria, an owner.",
 	);
 	lines.push("");
 	lines.push("4) Communicate decisions in threads.");
