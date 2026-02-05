@@ -79,6 +79,16 @@ function buildTaskTitleById(tasks: TasksFile): Map<string, string> {
 	return new Map(tasks.tasks.map((task) => [task.id, task.title] as const));
 }
 
+function summarizeTaskDescription(description: string): string {
+	const trimmed = description?.trim() ?? "";
+	if (!trimmed) {
+		return "_No description._";
+	}
+	const firstParagraph = trimmed.split(/\n\s*\n/)[0] ?? "";
+	const firstLine = firstParagraph.split("\n")[0] ?? "";
+	return firstLine.trim() || "_No description._";
+}
+
 function groupUnreadMentions(unread: UnreadMention[]) {
 	const sorted = [...unread].sort((a, b) =>
 		a.createdAt.localeCompare(b.createdAt),
@@ -128,6 +138,7 @@ function renderAssignedTasks(lines: string[], tasks: TaskWithStatus[]) {
 				statusNotes ? ` — ${statusNotes}` : ""
 			}`,
 		);
+		lines.push(`  Description: ${summarizeTaskDescription(task.description)}`);
 	}
 }
 
@@ -199,8 +210,6 @@ function buildWorkerWakeLines(ctx: WakeContext): string[] {
 	lines.push(
 		"SYSTEM: Protocol: (1) respond to Unread Mentions; (2) progress Assigned Tasks; (3) log progress via `clawion working add` and keep `clawion memory set` current. If anything is unclear or blocked, ask early—use `clawion message add` to mention the manager and/or relevant peers for feedback. Messages shown as unread will be auto-acknowledged after this Wake.",
 	);
-	lines.push("");
-	lines.push(`Generated at: ${ctx.generatedAt}`);
 
 	lines.push("");
 	lines.push("## Agent");
@@ -311,8 +320,6 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 	lines.push(
 		"SYSTEM: Protocol: (1) triage Unread Mentions; (2) scan mission health (blocked/unassigned tasks, recent thread activity, team working updates); (3) decide and dispatch next steps by creating/assigning/updating tasks; (4) communicate decisions via `clawion message add`. Messages shown as unread will be auto-acknowledged after this Wake.",
 	);
-	lines.push("");
-	lines.push(`Generated at: ${ctx.generatedAt}`);
 
 	lines.push("");
 	lines.push("## Agent");
@@ -377,6 +384,9 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 	} else {
 		for (const task of unassignedTasks) {
 			lines.push(`- ${task.title} (#${task.id}) — ${task.status}`);
+			lines.push(
+				`  Description: ${summarizeTaskDescription(task.description)}`,
+			);
 		}
 	}
 
@@ -390,6 +400,9 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 			const note = task.statusNotes?.trim();
 			lines.push(
 				`- ${task.title} (#${task.id})${who}${note ? ` — ${note}` : ""}`,
+			);
+			lines.push(
+				`  Description: ${summarizeTaskDescription(task.description)}`,
 			);
 		}
 	}
