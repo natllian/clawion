@@ -231,6 +231,9 @@ function buildWorkerWakeLines(ctx: WakeContext): string[] {
 	lines.push("");
 	lines.push(ctx.mission.description.trim() || "_No mission description._");
 
+	lines.push("### ROADMAP");
+	lines.push(ctx.roadmap.trim() || "_No roadmap yet._");
+
 	lines.push("");
 	renderAssignedTasks(lines, ctx.assignedTasks);
 
