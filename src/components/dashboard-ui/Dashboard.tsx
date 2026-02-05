@@ -4,11 +4,11 @@ import { Sparkles } from "lucide-react";
 import * as React from "react";
 import type {
 	AgentsFile,
-	LogFile,
 	Mission,
 	MissionIndexItem,
 	TasksFile,
-	ThreadFile,
+	ThreadSummary,
+	WorkingEvent,
 } from "@/core/schemas";
 import { cn } from "@/lib/utils";
 import {
@@ -34,6 +34,11 @@ type MissionResponse = {
 };
 
 type WorkingResponse = {
+	agentId: string;
+	events: WorkingEvent[];
+};
+
+type MemoryResponse = {
 	agentId: string;
 	content: string;
 };
@@ -62,12 +67,12 @@ export function Dashboard({
 	const [mission, setMission] = React.useState<Mission | null>(null);
 	const [roadmap, setRoadmap] = React.useState<string>("");
 	const [tasks, setTasks] = React.useState<TasksFile | null>(null);
-	const [threads, setThreads] = React.useState<ThreadFile[]>([]);
+	const [threads, setThreads] = React.useState<ThreadSummary[]>([]);
 	const [agents, setAgents] = React.useState<AgentsFile | null>(null);
 	const [activeTaskId, setActiveTaskId] = React.useState<string | null>(null);
 	const [activeAgentId, setActiveAgentId] = React.useState<string | null>(null);
-	const [working, setWorking] = React.useState<string>("");
-	const [log, setLog] = React.useState<LogFile | null>(null);
+	const [working, setWorking] = React.useState<WorkingEvent[]>([]);
+	const [memory, setMemory] = React.useState<string>("");
 	const [error, setError] = React.useState<string | null>(null);
 	const [loadingMissions, setLoadingMissions] = React.useState(true);
 	const [loadingMission, setLoadingMission] = React.useState(false);
@@ -180,7 +185,8 @@ export function Dashboard({
 				const missionPayload =
 					(await missionResponse.json()) as MissionResponse;
 				const tasksPayload = (await tasksResponse.json()) as TasksFile;
-				const threadsPayload = (await threadsResponse.json()) as ThreadFile[];
+				const threadsPayload =
+					(await threadsResponse.json()) as ThreadSummary[];
 
 				let agentsPayload: AgentsFile = { schemaVersion: 1, agents: [] };
 				let agentsWarning: string | null = null;
@@ -245,8 +251,8 @@ export function Dashboard({
 	// Agent data loading
 	React.useEffect(() => {
 		if (!activeMissionId || !activeAgentId) {
-			setWorking("");
-			setLog(null);
+			setWorking([]);
+			setMemory("");
 			return;
 		}
 
@@ -255,32 +261,32 @@ export function Dashboard({
 
 		async function loadAgent() {
 			try {
-				const [workingResponse, logResponse] = await Promise.all([
+				const [workingResponse, memoryResponse] = await Promise.all([
 					fetch(`/api/missions/${activeMissionId}/working/${activeAgentId}`, {
 						cache: "no-store",
 						signal: controller.signal,
 					}),
-					fetch(`/api/missions/${activeMissionId}/logs/${activeAgentId}`, {
+					fetch(`/api/missions/${activeMissionId}/memory/${activeAgentId}`, {
 						cache: "no-store",
 						signal: controller.signal,
 					}),
 				]);
 
-				if (!workingResponse.ok || !logResponse.ok) {
-					setWorking("");
-					setLog(null);
+				if (!workingResponse.ok || !memoryResponse.ok) {
+					setWorking([]);
+					setMemory("");
 					return;
 				}
 
 				const workingPayload =
 					(await workingResponse.json()) as WorkingResponse;
-				const logPayload = (await logResponse.json()) as LogFile;
-				setWorking(workingPayload.content);
-				setLog(logPayload);
+				const memoryPayload = (await memoryResponse.json()) as MemoryResponse;
+				setWorking(workingPayload.events);
+				setMemory(memoryPayload.content);
 			} catch (err) {
 				if (isAbortError(err)) return;
-				setWorking("");
-				setLog(null);
+				setWorking([]);
+				setMemory("");
 			} finally {
 				setLoadingAgent(false);
 			}
@@ -310,6 +316,11 @@ export function Dashboard({
 		[agents],
 	);
 
+	const taskMap = React.useMemo(
+		() => new Map(tasks?.tasks.map((task) => [task.id, task.title]) ?? []),
+		[tasks],
+	);
+
 	const completion = React.useMemo(() => {
 		if (!tasks || tasks.tasks.length === 0) return 0;
 
@@ -327,20 +338,11 @@ export function Dashboard({
 		return Math.round((doneCount / tasks.tasks.length) * 100);
 	}, [tasks]);
 
-	// Sorted threads: open first, then by updatedAt descending
+	// Sorted threads: newest activity first
 	const sortedThreads = React.useMemo(() => {
 		return [...threads].sort((a, b) => {
-			// Open threads first
-			if (a.status === "open" && b.status !== "open") return -1;
-			if (a.status !== "open" && b.status === "open") return 1;
-
-			// Then by updatedAt descending
-			const aTime = new Date(
-				a.messages[a.messages.length - 1]?.createdAt ?? 0,
-			).getTime();
-			const bTime = new Date(
-				b.messages[b.messages.length - 1]?.createdAt ?? 0,
-			).getTime();
+			const aTime = new Date(a.lastMessageAt ?? 0).getTime();
+			const bTime = new Date(b.lastMessageAt ?? 0).getTime();
 			return bTime - aTime;
 		});
 	}, [threads]);
@@ -391,6 +393,7 @@ export function Dashboard({
 								<ThreadsList
 									threads={sortedThreads}
 									agentMap={agentMap}
+									taskMap={taskMap}
 									loadingMission={showThreadsSkeleton}
 									activeMissionId={activeMissionId}
 									activeThreadId={activeThreadId}
@@ -471,7 +474,7 @@ export function Dashboard({
 										activeAgentId={activeAgentId}
 										onAgentSelect={setActiveAgentId}
 										working={working}
-										log={log}
+										memory={memory}
 										loadingAgent={loadingAgent}
 									/>
 								</div>

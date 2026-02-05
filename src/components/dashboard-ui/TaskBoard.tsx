@@ -2,7 +2,7 @@
 
 import { Users } from "lucide-react";
 import type * as React from "react";
-import type { TaskItem, TasksFile, ThreadFile } from "@/core/schemas";
+import type { TaskItem, TasksFile, ThreadSummary } from "@/core/schemas";
 import { TaskBoardSkeleton, TaskColumn } from "./TaskColumn";
 
 interface TaskBoardSectionProps {
@@ -10,7 +10,7 @@ interface TaskBoardSectionProps {
 	loadingMission: boolean;
 	tasksColumns: Array<{ id: string; name: string; order: number }>;
 	tasksFile: TasksFile | null;
-	threads: ThreadFile[];
+	threads: ThreadSummary[];
 	activeTaskId: string | null;
 	activeMissionId: string | null;
 	agentMap: Map<string, string>;

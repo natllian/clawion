@@ -1,7 +1,5 @@
-import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { readJson, writeJsonAtomic } from "../fs/json";
-import { pathExists } from "../fs/util";
 import { agentSchema, agentsSchema } from "../schemas";
 import { DEFAULT_MANAGER_ROLE_DESCRIPTION } from "./roles";
 
@@ -100,22 +98,4 @@ export async function listAgents(missionDir: string) {
 			`Failed to read agents file: ${error instanceof Error ? error.message : String(error)}`,
 		);
 	}
-}
-
-export function resolveWorkingPath(
-	missionDir: string,
-	agentId: string,
-): string {
-	return join(missionDir, "working", `${agentId}.md`);
-}
-
-export async function readWorkingFile(
-	missionDir: string,
-	agentId: string,
-): Promise<string> {
-	const workingPath = resolveWorkingPath(missionDir, agentId);
-	if (!(await pathExists(workingPath))) {
-		return "";
-	}
-	return readFile(workingPath, "utf8");
 }

@@ -30,9 +30,10 @@ describe("ensureWorkspace", () => {
 		expect(await pathExists(join(templateDir, "tasks.json"))).toBe(true);
 		expect(await pathExists(join(templateDir, "agents.json"))).toBe(true);
 		expect(await pathExists(join(templateDir, "ROADMAP.md"))).toBe(true);
-		expect(await pathExists(join(templateDir, "working"))).toBe(true);
 		expect(await pathExists(join(templateDir, "threads"))).toBe(true);
-		expect(await pathExists(join(templateDir, "logs"))).toBe(true);
+		expect(await pathExists(join(templateDir, "inbox"))).toBe(true);
+		expect(await pathExists(join(templateDir, "working"))).toBe(true);
+		expect(await pathExists(join(templateDir, "memory"))).toBe(true);
 
 		const indexJson = await readJson(indexPath, missionsIndexSchema);
 		expect(indexJson.missions).toHaveLength(0);

@@ -9,8 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Mission, ThreadFile, ThreadMessage } from "@/core/schemas";
-import { missionStatusTone, threadStatusTone } from "@/lib/status-tones";
+import type {
+	Mission,
+	ThreadDetail as ThreadDetailData,
+	ThreadMessageEvent,
+} from "@/core/schemas";
+import { missionStatusTone } from "@/lib/status-tones";
 import { cn } from "@/lib/utils";
 import { MarkdownBlock } from "./MarkdownBlock";
 
@@ -22,7 +26,7 @@ interface ThreadDetailProps {
 }
 
 interface ThreadResponse {
-	thread: ThreadFile;
+	thread: ThreadDetailData;
 	task: {
 		id: string;
 		title: string;
@@ -146,15 +150,16 @@ export function ThreadDetail({
 
 	const { thread, task, column } = data;
 	const isTaskBlocked = isBlocked(task.statusNotes);
-	const threadOpen = thread.messages.some((message) => !message.resolved);
 	const assigneeLabel = task.assigneeAgentId
 		? `@${agentMap.get(task.assigneeAgentId) ?? task.assigneeAgentId}`
 		: "Unassigned";
 
 	const participants = new Set<string>();
-	thread.messages.forEach((message: ThreadMessage) => {
+	thread.messages.forEach((message: ThreadMessageEvent) => {
 		participants.add(message.authorAgentId);
-		participants.add(message.mentionsAgentId ?? "");
+		message.mentionsAgentIds.forEach((id) => {
+			participants.add(id);
+		});
 	});
 
 	return (
@@ -179,15 +184,6 @@ export function ThreadDetail({
 								{task.title}
 							</h1>
 							<span className="text-sm text-muted-foreground">#{task.id}</span>
-							<Badge
-								variant="outline"
-								className={cn(
-									"rounded-full px-2 py-0.5 text-[0.65rem] font-medium",
-									threadStatusTone[threadOpen ? "open" : "resolved"],
-								)}
-							>
-								{threadOpen ? "Open" : "Resolved"}
-							</Badge>
 						</div>
 						<p className="mt-2 text-sm text-muted-foreground">
 							{task.description}
@@ -249,13 +245,14 @@ export function ThreadDetail({
 									No thread messages yet.
 								</div>
 							) : (
-								thread.messages.map((message: ThreadMessage) => {
+								thread.messages.map((message: ThreadMessageEvent) => {
 									const authorLabel =
 										agentMap.get(message.authorAgentId) ??
 										message.authorAgentId;
-									const mentionsLabel =
-										agentMap.get(message.mentionsAgentId ?? "") ??
-										message.mentionsAgentId;
+									const mentionsLabel = message.mentionsAgentIds
+										.map((id) => agentMap.get(id) ?? id)
+										.map((label) => `@${label}`)
+										.join(", ");
 									return (
 										<div key={message.id} className="relative flex gap-3">
 											<Avatar className="z-10 mt-1">
@@ -270,24 +267,15 @@ export function ThreadDetail({
 															{authorLabel}
 														</span>
 														<span className="text-muted-foreground">
-															to @{mentionsLabel}
+															to {mentionsLabel}
 														</span>
 													</div>
-													<Badge
-														variant="outline"
-														className="rounded-full border-border/70 bg-muted/60 px-2 py-0.5 text-[0.6rem] font-medium text-foreground/80"
-													>
-														{message.resolved ? "Resolved" : "Open"}
-													</Badge>
 												</div>
 												<div className="px-3 py-3">
 													<MarkdownBlock content={message.content} />
 												</div>
 												<div className="border-t border-border/70 px-3 py-2 text-[0.65rem] text-muted-foreground">
 													{formatDate(message.createdAt)}
-													{message.resolved
-														? ` · Resolved by ${message.resolvedByAgentId ?? "—"} on ${formatDate(message.resolvedAt)}`
-														: " · Awaiting resolution"}
 												</div>
 											</div>
 										</div>

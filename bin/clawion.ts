@@ -1,6 +1,10 @@
 #!/usr/bin/env tsx
 import { spawn } from "node:child_process";
+import { join } from "node:path";
 import { Command } from "commander";
+import { readJsonLines } from "../src/core/fs/jsonl";
+import { pathExists } from "../src/core/fs/util";
+import { threadMessageEventSchema } from "../src/core/schemas";
 import {
 	resolveStatusForColumn,
 	type TaskStatus,
@@ -8,12 +12,12 @@ import {
 import {
 	addAgent,
 	listAgents,
-	readWorkingFile,
 	updateAgent,
 } from "../src/core/workspace/agents";
 import { appendCliInvocation } from "../src/core/workspace/cli-invocations";
+import { appendInboxAck, listInboxAcks } from "../src/core/workspace/inbox";
 import { ensureWorkspace } from "../src/core/workspace/init";
-import { addLogEvent, getLog } from "../src/core/workspace/logs";
+import { readMemory, setMemory } from "../src/core/workspace/memory";
 import { resolveMissionPath } from "../src/core/workspace/mission";
 import {
 	completeMission,
@@ -30,12 +34,11 @@ import {
 	listTasks,
 	updateTask,
 } from "../src/core/workspace/tasks";
+import { addThreadMessage } from "../src/core/workspace/threads";
 import {
-	addThreadMessage,
-	listThreads,
-	resolveThreadMessage,
-	unresolveThreadMessage,
-} from "../src/core/workspace/threads";
+	appendWorkingEvent,
+	listWorkingEvents,
+} from "../src/core/workspace/working";
 
 type CliContext = {
 	missionsDir: string;
@@ -213,68 +216,42 @@ const HELP_ENTRIES: HelpEntry[] = [
 	},
 	{
 		command: "agent whoami",
-		purpose: "Show the acting agent profile, working notes, and logs.",
+		purpose: "Show the acting agent profile, working events, and memory.",
 		params: ["--mission <id>", "--agent <agentId>"],
 		example: "clawion agent whoami --mission m1 --agent agent-1",
 	},
 	{
-		command: "thread add",
+		command: "wake",
+		purpose: "Generate the agent prompt and acknowledge unread mentions.",
+		params: ["--mission <id>", "--agent <agentId>"],
+		example: "clawion wake --mission m1 --agent agent-1",
+	},
+	{
+		command: "message add",
 		purpose: "Append a message to a task thread.",
 		params: [
 			"--mission <id>",
 			"--task <taskId>",
-			"--title <text>",
 			"--content <markdown>",
-			"--mentions <agentId>",
+			"--mentions <agentId,...>",
 			"--agent <agentId>",
 		],
 		example:
-			"clawion thread add --mission m1 --task t1 --title 'API Review' --content 'Please review' --mentions agent-1 --agent manager-1",
+			"clawion message add --mission m1 --task t1 --content 'Please review' --mentions agent-1,agent-2 --agent manager-1",
 	},
 	{
-		command: "thread resolve",
-		purpose: "Resolve a thread message.",
-		params: [
-			"--mission <id>",
-			"--task <taskId>",
-			"--message <messageId>",
-			"--agent <agentId>",
-		],
+		command: "working add",
+		purpose: "Append a working event for the acting agent.",
+		params: ["--mission <id>", "--content <markdown>", "--agent <agentId>"],
 		example:
-			"clawion thread resolve --mission m1 --task t1 --message msg1 --agent agent-1",
+			"clawion working add --mission m1 --content 'Investigating API error' --agent agent-1",
 	},
 	{
-		command: "thread unresolve",
-		purpose: "Reopen a thread message.",
-		params: [
-			"--mission <id>",
-			"--task <taskId>",
-			"--message <messageId>",
-			"--agent <agentId>",
-		],
+		command: "memory set",
+		purpose: "Replace the memory summary for the acting agent.",
+		params: ["--mission <id>", "--content <markdown>", "--agent <agentId>"],
 		example:
-			"clawion thread unresolve --mission m1 --task t1 --message msg1 --agent agent-1",
-	},
-	{
-		command: "thread inbox",
-		purpose: "List unresolved mentions for the acting agent.",
-		params: ["--mission <id>", "--agent <agentId>"],
-		example: "clawion thread inbox --mission m1 --agent agent-1",
-	},
-	{
-		command: "log add",
-		purpose: "Append a log event for the acting agent.",
-		params: [
-			"--mission <id>",
-			"--agent <agentId>",
-			"--level <info|warn|error>",
-			"--type <type>",
-			"--message <markdown>",
-			"--task <taskId> (optional)",
-			"--thread <threadId> (optional)",
-		],
-		example:
-			"clawion log add --mission m1 --agent agent-1 --level info --type task:update --message 'Updated task'",
+			"clawion memory set --mission m1 --content '# Summary\\n- ...' --agent agent-1",
 	},
 ];
 
@@ -779,19 +756,17 @@ agent
 				return;
 			}
 
-			const working = await readWorkingFile(missionPath, actingAgentId);
-			const log = await getLog(
-				context.missionsDir,
-				options.mission,
-				actingAgentId,
-			);
+			const [working, memory] = await Promise.all([
+				listWorkingEvents(context.missionsDir, options.mission, actingAgentId),
+				readMemory(context.missionsDir, options.mission, actingAgentId),
+			]);
 
 			console.log(
 				JSON.stringify(
 					{
 						agent: agentEntry,
 						working,
-						log,
+						memory,
 					},
 					null,
 					2,
@@ -807,36 +782,225 @@ agent.action(() => {
 	agent.help();
 });
 
-const thread = program.command("thread").description("Thread management");
+program
+	.command("wake")
+	.description("Generate the agent prompt and acknowledge unread mentions")
+	.requiredOption("--mission <id>", "Mission ID")
+	.action(async (options, command) => {
+		const agentId = requireAgentId(command);
+		if (!agentId) {
+			return;
+		}
 
-thread
+		try {
+			const missionPath = await resolveMissionPath(
+				context.missionsDir,
+				options.mission,
+			);
+			const agentsFile = await listAgents(missionPath);
+			const agentEntry = agentsFile.agents.find(
+				(entry) => entry.id === agentId,
+			);
+			if (!agentEntry) {
+				console.error(`Agent not found: ${agentId}`);
+				process.exitCode = 1;
+				return;
+			}
+
+			const [missionPayload, tasksFile, workingEvents, memory, inboxAcks] =
+				await Promise.all([
+					showMission(context.missionsDir, options.mission),
+					listTasks(context.missionsDir, options.mission),
+					listWorkingEvents(context.missionsDir, options.mission, agentId),
+					readMemory(context.missionsDir, options.mission, agentId),
+					listInboxAcks(context.missionsDir, options.mission, agentId),
+				]);
+
+			const ackedMessageIds = new Set(
+				inboxAcks.map((entry) => entry.messageId),
+			);
+
+			const threadsDir = join(missionPath, "threads");
+			const unreadMentions: Array<{
+				taskId: string;
+				messageId: string;
+				authorAgentId: string;
+				mentionsAgentIds: string[];
+				content: string;
+				createdAt: string;
+			}> = [];
+
+			if (await pathExists(threadsDir)) {
+				const { readdir } = await import("node:fs/promises");
+				const files = await readdir(threadsDir);
+				const threadFiles = files.filter((file) => file.endsWith(".jsonl"));
+
+				for (const file of threadFiles) {
+					const taskId = file.replace(/\\.jsonl$/, "");
+					const messages = await readJsonLines(
+						join(threadsDir, file),
+						threadMessageEventSchema,
+					);
+					for (const message of messages) {
+						if (!message.mentionsAgentIds.includes(agentId)) {
+							continue;
+						}
+						if (ackedMessageIds.has(message.id)) {
+							continue;
+						}
+						unreadMentions.push({
+							taskId,
+							messageId: message.id,
+							authorAgentId: message.authorAgentId,
+							mentionsAgentIds: message.mentionsAgentIds,
+							content: message.content,
+							createdAt: message.createdAt,
+						});
+					}
+				}
+			}
+
+			const assignedTasks = tasksFile.tasks
+				.map((task) => ({
+					...task,
+					status: resolveStatusForColumn(tasksFile.columns, task.columnId),
+				}))
+				.filter(
+					(task) =>
+						task.assigneeAgentId === agentId && task.status !== "completed",
+				);
+
+			const lines: string[] = [];
+
+			lines.push(`# Wake: ${agentEntry.displayName}`);
+			lines.push("");
+			lines.push("## Agent");
+			lines.push(`- ID: ${agentEntry.id}`);
+			lines.push(`- Display name: ${agentEntry.displayName}`);
+			lines.push(`- System role: ${agentEntry.systemRole}`);
+			lines.push(`- Status: ${agentEntry.status}`);
+			lines.push("");
+			lines.push("### Role Description");
+			lines.push(agentEntry.roleDescription || "_No role description._");
+			lines.push("");
+			lines.push("## Mission Overview");
+			lines.push(`- ID: ${missionPayload.mission.id}`);
+			lines.push(`- Name: ${missionPayload.mission.name}`);
+			lines.push(`- Status: ${missionPayload.mission.status}`);
+			lines.push(`- Description: ${missionPayload.mission.description}`);
+			lines.push("");
+			lines.push("### ROADMAP");
+			lines.push(missionPayload.roadmap?.trim() || "_No roadmap yet._");
+			lines.push("");
+			lines.push("## Assigned Tasks");
+			if (assignedTasks.length === 0) {
+				lines.push("_No assigned tasks._");
+			} else {
+				for (const task of assignedTasks) {
+					const statusNotes = task.statusNotes?.trim();
+					lines.push(
+						`- ${task.title} (#${task.id}) — ${task.status}${
+							statusNotes ? ` — ${statusNotes}` : ""
+						}`,
+					);
+				}
+			}
+			lines.push("");
+			lines.push("## Unread Mentions");
+			if (unreadMentions.length === 0) {
+				lines.push("_No unread mentions._");
+			} else {
+				for (const mention of unreadMentions) {
+					lines.push(
+						`### Task ${mention.taskId} · Message ${mention.messageId}`,
+					);
+					lines.push(`- From: ${mention.authorAgentId}`);
+					lines.push(`- Mentions: ${mention.mentionsAgentIds.join(", ")}`);
+					lines.push(`- At: ${mention.createdAt}`);
+					lines.push("");
+					lines.push(mention.content);
+					lines.push("");
+				}
+			}
+			lines.push("");
+			lines.push("## Working Summary");
+			if (workingEvents.length === 0) {
+				lines.push("_No working events yet._");
+			} else {
+				const recent = workingEvents.slice(-8);
+				for (const event of recent) {
+					lines.push(`- ${event.createdAt} · ${event.content}`);
+				}
+			}
+			lines.push("");
+			lines.push("## Memory");
+			lines.push(memory.trim() || "_No memory yet._");
+			lines.push("");
+			lines.push("## Next Actions");
+			lines.push(
+				`1. Reply: \`clawion message add --mission ${options.mission} --task <taskId> --content "..." --mentions <agentId,...> --agent ${agentId}\``,
+			);
+			lines.push(
+				`2. Log progress: \`clawion working add --mission ${options.mission} --content "..." --agent ${agentId}\``,
+			);
+			lines.push(
+				`3. Update summary: \`clawion memory set --mission ${options.mission} --content "..." --agent ${agentId}\``,
+			);
+			lines.push("");
+			lines.push(
+				"_Unread mentions above have been automatically acknowledged._",
+			);
+
+			console.log(lines.join("\n"));
+
+			await Promise.all(
+				unreadMentions.map((mention) =>
+					appendInboxAck({
+						missionsDir: context.missionsDir,
+						missionId: options.mission,
+						agentId,
+						messageId: mention.messageId,
+						taskId: mention.taskId,
+					}),
+				),
+			);
+		} catch (error) {
+			console.error(error instanceof Error ? error.message : String(error));
+			process.exitCode = 1;
+		}
+	});
+
+const message = program.command("message").description("Thread messaging");
+
+message
 	.command("add")
 	.description("Append a message to a task thread")
 	.requiredOption("--mission <id>", "Mission ID")
 	.requiredOption("--task <taskId>", "Task ID")
-	.requiredOption("--title <text>", "Thread title")
 	.requiredOption("--content <markdown>", "Message content")
-	.requiredOption("--mentions <agentId>", "Mentioned agent ID")
+	.requiredOption(
+		"--mentions <agentIds>",
+		"Mentioned agent IDs (comma-separated)",
+	)
 	.action(async (options, command) => {
 		const authorAgentId = requireAgentId(command);
 		if (!authorAgentId) {
 			return;
 		}
 
-		// Validate mentions agent ID
-		const mentionsId = options.mentions.trim();
-		if (mentionsId.includes(" ")) {
-			console.error(
-				"Error: Only one agent can be mentioned. Remove extra spaces or provide a single agent ID.",
-			);
-			process.exitCode = 1;
-			return;
-		}
+		const mentionsRaw =
+			typeof options.mentions === "string" ? options.mentions : "";
+		const mentions = Array.from(
+			new Set<string>(
+				mentionsRaw
+					.split(",")
+					.map((value: string) => value.trim())
+					.filter((value: string) => value.length > 0),
+			),
+		);
 
-		if (mentionsId === authorAgentId) {
-			console.error(
-				`Error: You cannot mention yourself. The --mentions agent must be different from --agent (author).`,
-			);
+		if (mentions.length === 0) {
+			console.error("Error: --mentions must include at least one agent ID.");
 			process.exitCode = 1;
 			return;
 		}
@@ -847,12 +1011,21 @@ thread
 				options.mission,
 			);
 			const agentsFile = await listAgents(missionPath);
-			const mentionedAgent = agentsFile.agents.find(
-				(entry) => entry.id === mentionsId,
+			const activeAgents = agentsFile.agents.filter(
+				(entry) => entry.status === "active",
 			);
-			if (!mentionedAgent) {
+			const activeAgentIds = new Set(activeAgents.map((entry) => entry.id));
+			const invalidMentions = mentions.filter(
+				(entry) => !activeAgentIds.has(entry),
+			);
+
+			if (invalidMentions.length > 0) {
 				console.error(
-					`Error: Agent not found: ${mentionsId}. Use 'clawion agent list --mission ${options.mission}' to see available agents.`,
+					`Error: Invalid mentions: ${invalidMentions.join(
+						", ",
+					)}. Active agents: ${activeAgents
+						.map((entry) => entry.id)
+						.join(", ")}`,
 				);
 				process.exitCode = 1;
 				return;
@@ -862,155 +1035,81 @@ thread
 				missionsDir: context.missionsDir,
 				missionId: options.mission,
 				taskId: options.task,
-				title: options.title,
 				authorAgentId,
-				mentionsAgentId: mentionsId,
+				mentionsAgentIds: mentions,
 				content: options.content,
 			});
-			console.log(`Thread message added: ${messageId}`);
+			console.log(`Message added: ${messageId}`);
 		} catch (error) {
 			console.error(error instanceof Error ? error.message : String(error));
 			process.exitCode = 1;
 		}
 	});
 
-thread
-	.command("resolve")
-	.description("Resolve a thread message")
-	.requiredOption("--mission <id>", "Mission ID")
-	.requiredOption("--task <taskId>", "Task ID")
-	.requiredOption("--message <messageId>", "Message ID")
-	.action(async (options, command) => {
-		const resolverAgentId = requireAgentId(command);
-		if (!resolverAgentId) {
-			return;
-		}
-
-		try {
-			await resolveThreadMessage(
-				context.missionsDir,
-				options.mission,
-				options.task,
-				options.message,
-				resolverAgentId,
-			);
-			console.log(`Thread message resolved: ${options.message}`);
-		} catch (error) {
-			console.error(error instanceof Error ? error.message : String(error));
-			process.exitCode = 1;
-		}
-	});
-
-thread
-	.command("unresolve")
-	.description("Reopen a thread message")
-	.requiredOption("--mission <id>", "Mission ID")
-	.requiredOption("--task <taskId>", "Task ID")
-	.requiredOption("--message <messageId>", "Message ID")
-	.action(async (options, command) => {
-		const reopenedByAgentId = requireAgentId(command);
-		if (!reopenedByAgentId) {
-			return;
-		}
-
-		try {
-			await unresolveThreadMessage(
-				context.missionsDir,
-				options.mission,
-				options.task,
-				options.message,
-				reopenedByAgentId,
-			);
-			console.log(`Thread message unresolved: ${options.message}`);
-		} catch (error) {
-			console.error(error instanceof Error ? error.message : String(error));
-			process.exitCode = 1;
-		}
-	});
-
-thread
-	.command("inbox")
-	.description("List unresolved mentions for an agent")
-	.requiredOption("--mission <id>", "Mission ID")
-	.action(async (options, command) => {
-		const agentId = requireAgentId(command);
-		if (!agentId) {
-			return;
-		}
-
-		try {
-			const threads = await listThreads(context.missionsDir, options.mission);
-			const inbox = threads.flatMap((threadItem) => {
-				return threadItem.messages
-					.filter(
-						(message) =>
-							!message.resolved && message.mentionsAgentId === agentId,
-					)
-					.map((message) => ({
-						taskId: threadItem.taskId,
-						threadTitle: threadItem.title,
-						messageId: message.id,
-						authorAgentId: message.authorAgentId,
-						mentionsAgentId: message.mentionsAgentId,
-						content: message.content,
-						createdAt: message.createdAt,
-					}));
-			});
-
-			console.log(JSON.stringify(inbox, null, 2));
-		} catch (error) {
-			console.error(error instanceof Error ? error.message : String(error));
-			process.exitCode = 1;
-		}
-	});
-
-thread.action(() => {
-	thread.help();
+message.action(() => {
+	message.help();
 });
 
-const log = program.command("log").description("Log management");
+const working = program.command("working").description("Working events");
 
-log
+working
 	.command("add")
-	.description("Append a log event")
+	.description("Append a working event")
 	.requiredOption("--mission <id>", "Mission ID")
-	.requiredOption("--level <level>", "Level (info|warn|error)")
-	.requiredOption("--type <type>", "Event type")
-	.requiredOption("--message <markdown>", "Message")
-	.option("--task <taskId>", "Task ID")
-	.option("--thread <threadId>", "Thread message ID")
+	.requiredOption("--content <markdown>", "Working content")
 	.action(async (options, command) => {
 		const agentId = requireAgentId(command);
 		if (!agentId) {
 			return;
 		}
 
-		const level = options.level as "info" | "warn" | "error";
-		if (!["info", "warn", "error"].includes(level)) {
-			console.error("level must be info, warn, or error.");
-			process.exitCode = 1;
-			return;
-		}
 		try {
-			const eventId = await addLogEvent({
+			const entry = await appendWorkingEvent({
 				missionsDir: context.missionsDir,
 				missionId: options.mission,
 				agentId,
-				level,
-				type: options.type,
-				message: options.message,
-				taskId: options.task,
-				threadId: options.thread,
+				content: options.content,
 			});
-			console.log(`Log event added: ${eventId}`);
+			console.log(`Working event added: ${entry.id}`);
 		} catch (error) {
 			console.error(error instanceof Error ? error.message : String(error));
 			process.exitCode = 1;
 		}
 	});
 
-log.action(() => {
-	log.help();
+working.action(() => {
+	working.help();
+});
+
+const memory = program.command("memory").description("Memory management");
+
+memory
+	.command("set")
+	.description("Replace the memory summary")
+	.requiredOption("--mission <id>", "Mission ID")
+	.requiredOption("--content <markdown>", "Memory content")
+	.action(async (options, command) => {
+		const agentId = requireAgentId(command);
+		if (!agentId) {
+			return;
+		}
+
+		try {
+			await setMemory({
+				missionsDir: context.missionsDir,
+				missionId: options.mission,
+				agentId,
+				content: options.content,
+			});
+			console.log(`Memory updated: ${agentId}`);
+		} catch (error) {
+			console.error(error instanceof Error ? error.message : String(error));
+			process.exitCode = 1;
+		}
+	});
+
+memory.action(() => {
+	memory.help();
 });
 
 await program.parseAsync(process.argv);

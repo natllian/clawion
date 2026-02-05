@@ -30,8 +30,8 @@ const defaultProps = {
 	loadingMission: false,
 	activeAgentId: null as string | null,
 	onAgentSelect: vi.fn(),
-	working: "",
-	log: null,
+	working: [],
+	memory: "",
 	loadingAgent: false,
 };
 

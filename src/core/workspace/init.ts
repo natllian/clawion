@@ -104,7 +104,8 @@ export async function ensureWorkspace(
 		"# Mission Roadmap\n\nDescribe milestones and direction here.\n",
 	);
 
-	await ensureDir(join(templateDir, "working"));
 	await ensureDir(join(templateDir, "threads"));
-	await ensureDir(join(templateDir, "logs"));
+	await ensureDir(join(templateDir, "inbox"));
+	await ensureDir(join(templateDir, "working"));
+	await ensureDir(join(templateDir, "memory"));
 }

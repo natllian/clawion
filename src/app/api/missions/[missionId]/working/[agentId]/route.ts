@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { readWorkingFile } from "@/core/workspace/agents";
 import { resolveMissionPath } from "@/core/workspace/mission";
 import { resolveMissionsDir } from "@/core/workspace/paths";
+import { listWorkingEvents } from "@/core/workspace/working";
 
 export const runtime = "nodejs";
 
@@ -15,12 +15,12 @@ export async function GET(_request: Request, context: RouteContext) {
 	try {
 		const { missionId, agentId } = await context.params;
 		const missionsDir = resolveMissionsDir();
-		const missionDir = await resolveMissionPath(missionsDir, missionId);
-		const content = await readWorkingFile(missionDir, agentId);
+		await resolveMissionPath(missionsDir, missionId);
+		const events = await listWorkingEvents(missionsDir, missionId, agentId);
 		return NextResponse.json(
 			{
 				agentId,
-				content,
+				events,
 			},
 			{
 				headers: {

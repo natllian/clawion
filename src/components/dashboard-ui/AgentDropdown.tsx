@@ -3,7 +3,6 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -13,16 +12,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { AgentsFile, LogFile } from "@/core/schemas";
-import { cn } from "@/lib/utils";
+import type { AgentsFile, WorkingEvent } from "@/core/schemas";
 
-const logLevelTone: Record<"info" | "warn" | "error", string> = {
-	info: "border-border/70 text-muted-foreground",
-	warn: "border-amber-400/50 text-amber-600 dark:text-amber-300",
-	error: "border-destructive/50 text-destructive",
-};
-
-const logSkeletons = ["log-a", "log-b", "log-c", "log-d"];
+const workingSkeletons = ["working-a", "working-b", "working-c"];
 
 function getInitials(value: string) {
 	return value
@@ -33,26 +25,29 @@ function getInitials(value: string) {
 		.toUpperCase();
 }
 
-interface LogEventProps {
-	event: LogFile["events"][number];
+function formatDate(value: string) {
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return value;
+
+	return new Intl.DateTimeFormat("en-US", {
+		dateStyle: "medium",
+		timeStyle: "short",
+	}).format(date);
 }
 
-export function LogEvent({ event }: LogEventProps) {
+interface WorkingEventProps {
+	event: WorkingEvent;
+}
+
+export function WorkingEventItem({ event }: WorkingEventProps) {
 	return (
 		<div className="rounded-lg border border-border/70 bg-background p-2">
-			<div className="flex items-center justify-between gap-2 text-[0.65rem] text-muted-foreground">
-				<span>{event.type}</span>
-				<Badge
-					variant="outline"
-					className={cn(
-						"rounded-full text-[0.6rem] uppercase tracking-wide",
-						logLevelTone[event.level],
-					)}
-				>
-					{event.level}
-				</Badge>
+			<div className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">
+				{formatDate(event.createdAt)}
 			</div>
-			<p className="mt-1 text-xs text-foreground">{event.message}</p>
+			<div className="mt-2 text-xs text-foreground">
+				<MarkdownBlock content={event.content} />
+			</div>
 		</div>
 	);
 }
@@ -62,8 +57,8 @@ interface AgentDropdownProps {
 	loadingMission: boolean;
 	activeAgentId: string | null;
 	onAgentSelect: (id: string) => void;
-	working: string;
-	log: LogFile | null;
+	working: WorkingEvent[];
+	memory: string;
 	loadingAgent: boolean;
 }
 
@@ -73,7 +68,7 @@ export function AgentDropdown({
 	activeAgentId,
 	onAgentSelect,
 	working,
-	log,
+	memory,
 	loadingAgent,
 }: AgentDropdownProps) {
 	const skeletons = ["agent-a", "agent-b", "agent-c"];
@@ -146,25 +141,13 @@ export function AgentDropdown({
 								<Tabs defaultValue="working" className="w-full">
 									<TabsList variant="line" className="gap-3">
 										<TabsTrigger value="working">Working</TabsTrigger>
-										<TabsTrigger value="logs">Logs</TabsTrigger>
+										<TabsTrigger value="memory">Memory</TabsTrigger>
 									</TabsList>
 
 									<TabsContent value="working" className="mt-2">
-										<div className="h-[160px] overflow-y-auto rounded-lg border border-border/70 bg-background p-2 scrollbar-dropdown">
-											<MarkdownBlock
-												content={
-													isActive
-														? working.trim() || "No working memory file yet."
-														: "Select an agent to load working memory."
-												}
-											/>
-										</div>
-									</TabsContent>
-
-									<TabsContent value="logs" className="mt-2">
-										<div className="flex h-[160px] flex-col gap-2 overflow-y-auto scrollbar-dropdown pr-1">
+										<div className="flex h-[180px] flex-col gap-2 overflow-y-auto rounded-lg border border-border/70 bg-background p-2 scrollbar-dropdown">
 											{loadingAgent ? (
-												logSkeletons.map((key) => (
+												workingSkeletons.map((key) => (
 													<div
 														key={key}
 														className="rounded-lg border border-border/70 bg-background p-2"
@@ -172,19 +155,33 @@ export function AgentDropdown({
 														<Skeleton className="h-3 w-24" />
 													</div>
 												))
-											) : isActive && log?.events.length ? (
-												log.events
+											) : isActive && working.length ? (
+												working
+													.slice()
+													.reverse()
 													.slice(0, 6)
 													.map((event) => (
-														<LogEvent key={event.id} event={event} />
+														<WorkingEventItem key={event.id} event={event} />
 													))
 											) : (
 												<div className="rounded-lg border border-border/70 bg-background p-2 text-xs text-muted-foreground">
 													{isActive
-														? "No logs for this agent yet."
-														: "Select an agent to load logs."}
+														? "No working events yet."
+														: "Select an agent to load working events."}
 												</div>
 											)}
+										</div>
+									</TabsContent>
+
+									<TabsContent value="memory" className="mt-2">
+										<div className="h-[180px] overflow-y-auto rounded-lg border border-border/70 bg-background p-2 scrollbar-dropdown">
+											<MarkdownBlock
+												content={
+													isActive
+														? memory.trim() || "No memory yet."
+														: "Select an agent to load memory."
+												}
+											/>
 										</div>
 									</TabsContent>
 								</Tabs>

@@ -1,72 +1,30 @@
 import { z } from "zod";
-import {
-	idSchema,
-	isoDateSchema,
-	nonEmptyTextSchema,
-	schemaVersionSchema,
-} from "./shared";
+import { idSchema, isoDateSchema, nonEmptyTextSchema } from "./shared";
 
-export const threadStatusSchema = z.enum(["open", "resolved"]);
-
-export const threadMessageSchema = z
+export const threadMessageEventSchema = z
 	.object({
+		type: z.literal("message"),
 		id: idSchema,
 		createdAt: isoDateSchema,
 		authorAgentId: idSchema,
-		mentionsAgentId: idSchema,
+		mentionsAgentIds: z.array(idSchema).min(1),
 		content: nonEmptyTextSchema,
-		resolved: z.boolean(),
-		resolvedAt: isoDateSchema.optional(),
-		resolvedByAgentId: idSchema.optional(),
-		reopenedAt: isoDateSchema.optional(),
-		reopenedByAgentId: idSchema.optional(),
-	})
-	.strict()
-	.superRefine((value, ctx) => {
-		if (value.resolved) {
-			if (!value.resolvedAt || !value.resolvedByAgentId) {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message:
-						"resolvedAt and resolvedByAgentId are required when resolved is true",
-				});
-			}
-			if (value.reopenedAt || value.reopenedByAgentId) {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message:
-						"reopenedAt/reopenedByAgentId must be absent when resolved is true",
-				});
-			}
-		} else if (value.resolvedAt || value.resolvedByAgentId) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message:
-					"resolvedAt/resolvedByAgentId must be absent when resolved is false",
-			});
-		} else if (
-			(value.reopenedAt && !value.reopenedByAgentId) ||
-			(!value.reopenedAt && value.reopenedByAgentId)
-		) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message:
-					"reopenedAt and reopenedByAgentId must either both be present or both be absent",
-			});
-		}
-	});
-
-export const threadSchema = z
-	.object({
-		schemaVersion: schemaVersionSchema,
-		taskId: idSchema,
-		title: nonEmptyTextSchema,
-		creatorAgentId: idSchema,
-		status: threadStatusSchema,
-		messages: z.array(threadMessageSchema),
 	})
 	.strict();
 
-export type ThreadStatus = z.infer<typeof threadStatusSchema>;
-export type ThreadMessage = z.infer<typeof threadMessageSchema>;
-export type ThreadFile = z.infer<typeof threadSchema>;
+export const threadSummarySchema = z
+	.object({
+		taskId: idSchema,
+		messageCount: z.number().int().nonnegative(),
+		lastMessageAt: isoDateSchema.optional(),
+		lastAuthorAgentId: idSchema.optional(),
+		lastMentionsAgentIds: z.array(idSchema),
+	})
+	.strict();
+
+export type ThreadMessageEvent = z.infer<typeof threadMessageEventSchema>;
+export type ThreadSummary = z.infer<typeof threadSummarySchema>;
+export type ThreadDetail = {
+	taskId: string;
+	messages: ThreadMessageEvent[];
+};

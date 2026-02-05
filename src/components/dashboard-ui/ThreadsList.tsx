@@ -1,23 +1,35 @@
 "use client";
 
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { ThreadFile } from "@/core/schemas";
-import { threadStatusTone } from "@/lib/status-tones";
+import type { ThreadSummary } from "@/core/schemas";
 import { cn } from "@/lib/utils";
 
 interface ThreadsListProps {
-	threads: ThreadFile[];
+	threads: ThreadSummary[];
 	agentMap: Map<string, string>;
+	taskMap: Map<string, string>;
 	loadingMission: boolean;
 	activeMissionId: string | null;
 	activeThreadId?: string | null;
 }
 
+function formatDate(value?: string) {
+	if (!value) return "—";
+
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return value;
+
+	return new Intl.DateTimeFormat("en-US", {
+		dateStyle: "medium",
+		timeStyle: "short",
+	}).format(date);
+}
+
 export function ThreadsList({
 	threads,
 	agentMap,
+	taskMap,
 	loadingMission,
 	activeMissionId,
 	activeThreadId,
@@ -52,8 +64,13 @@ export function ThreadsList({
 	return (
 		<>
 			{threads.map((thread) => {
-				const creatorName =
-					agentMap.get(thread.creatorAgentId) ?? thread.creatorAgentId;
+				const taskTitle = taskMap.get(thread.taskId) ?? thread.taskId;
+				const lastAuthor = thread.lastAuthorAgentId
+					? (agentMap.get(thread.lastAuthorAgentId) ?? thread.lastAuthorAgentId)
+					: "—";
+				const lastMessage = thread.lastMessageAt
+					? `Last: ${formatDate(thread.lastMessageAt)}`
+					: "No messages yet";
 
 				return (
 					<Link
@@ -67,20 +84,14 @@ export function ThreadsList({
 					>
 						<div className="flex items-start justify-between gap-2">
 							<span className="line-clamp-1 text-xs font-medium text-foreground">
-								{thread.title}
+								{taskTitle}
 							</span>
-							<Badge
-								variant="outline"
-								className={cn(
-									"shrink-0 rounded-full text-[0.6rem] uppercase tracking-wide",
-									threadStatusTone[thread.status],
-								)}
-							>
-								{thread.status}
-							</Badge>
+							<span className="shrink-0 rounded-full border border-border/70 bg-muted/60 px-2 py-0.5 text-[0.6rem] uppercase tracking-wide text-foreground/70">
+								{thread.messageCount}
+							</span>
 						</div>
 						<p className="mt-1 line-clamp-1 text-[0.65rem] text-muted-foreground">
-							by {creatorName}
+							by {lastAuthor} · {lastMessage}
 						</p>
 					</Link>
 				);

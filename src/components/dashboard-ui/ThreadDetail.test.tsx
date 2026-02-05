@@ -1,10 +1,10 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { Mission, ThreadFile } from "@/core/schemas";
+import type { Mission, ThreadDetail as ThreadDetailData } from "@/core/schemas";
 
 // Define ThreadResponse inline since it's not exported
 interface ThreadResponse {
-	thread: ThreadFile;
+	thread: ThreadDetailData;
 	task: {
 		id: string;
 		title: string;
@@ -46,30 +46,24 @@ const mockMission: Mission = {
 	updatedAt: "2024-01-01T12:00:00Z",
 };
 
-const mockThread: ThreadFile = {
-	schemaVersion: 1,
+const mockThread: ThreadDetailData = {
 	taskId: "t1",
-	title: "Test Thread",
-	creatorAgentId: "agent-1",
-	status: "open",
 	messages: [
 		{
+			type: "message",
 			id: "msg-1",
 			createdAt: "2024-01-01T10:00:00Z",
 			authorAgentId: "agent-1",
-			mentionsAgentId: "manager-1",
+			mentionsAgentIds: ["manager-1"],
 			content: "Hello, this is a test message.",
-			resolved: false,
 		},
 		{
+			type: "message",
 			id: "msg-2",
 			createdAt: "2024-01-01T11:00:00Z",
 			authorAgentId: "manager-1",
-			mentionsAgentId: "agent-1",
+			mentionsAgentIds: ["agent-1", "agent-2"],
 			content: "Reply message.",
-			resolved: true,
-			resolvedAt: "2024-01-01T12:00:00Z",
-			resolvedByAgentId: "manager-1",
 		},
 	],
 };

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-
-import { getLog } from "@/core/workspace/logs";
+import { readMemory } from "@/core/workspace/memory";
+import { resolveMissionPath } from "@/core/workspace/mission";
 import { resolveMissionsDir } from "@/core/workspace/paths";
 
 export const runtime = "nodejs";
@@ -15,12 +15,19 @@ export async function GET(_request: Request, context: RouteContext) {
 	try {
 		const { missionId, agentId } = await context.params;
 		const missionsDir = resolveMissionsDir();
-		const log = await getLog(missionsDir, missionId, agentId);
-		return NextResponse.json(log, {
-			headers: {
-				"Cache-Control": "no-store",
+		await resolveMissionPath(missionsDir, missionId);
+		const content = await readMemory(missionsDir, missionId, agentId);
+		return NextResponse.json(
+			{
+				agentId,
+				content,
 			},
-		});
+			{
+				headers: {
+					"Cache-Control": "no-store",
+				},
+			},
+		);
 	} catch (error) {
 		const message = error instanceof Error ? error.message : "Unknown error";
 		const status = message.toLowerCase().includes("not found") ? 404 : 500;
