@@ -556,7 +556,9 @@ message
 				mentionsRaw
 					.split(",")
 					.map((value: string) => value.trim())
-					.filter((value: string) => value.length > 0),
+					.filter(
+						(value: string) => value.length > 0 && value !== authorAgentId,
+					),
 			),
 		);
 
