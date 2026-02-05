@@ -93,9 +93,44 @@ export async function runWake(options: WakeOptions): Promise<void> {
 					task.assigneeAgentId === agentId && task.status !== "completed",
 			);
 
+		const taskTitleById = new Map(
+			tasksFile.tasks.map((task) => [task.id, task.title] as const),
+		);
+
+		const unreadMentionsSorted = [...unreadMentions].sort((a, b) =>
+			a.createdAt.localeCompare(b.createdAt),
+		);
+
+		const unreadMentionsByTask = new Map<string, UnreadMention[]>();
+		for (const mention of unreadMentionsSorted) {
+			const list = unreadMentionsByTask.get(mention.taskId) ?? [];
+			list.push(mention);
+			unreadMentionsByTask.set(mention.taskId, list);
+		}
+
+		const unreadTaskIdsOrdered = Array.from(unreadMentionsByTask.keys()).sort(
+			(a, b) => {
+				const aFirst = unreadMentionsByTask.get(a)?.[0]?.createdAt ?? "";
+				const bFirst = unreadMentionsByTask.get(b)?.[0]?.createdAt ?? "";
+				return aFirst.localeCompare(bFirst);
+			},
+		);
+
+		const generatedAt = new Date().toISOString();
 		const lines: string[] = [];
 
-		lines.push(`# Wake: ${agentEntry.displayName}`);
+		lines.push(
+			`# Wake: ${agentEntry.displayName} (${agentEntry.id}) · Mission ${missionId}`,
+		);
+		lines.push("");
+		lines.push(
+			`SYSTEM: You are Agent ${agentId} working on Mission ${missionId}. This Wake report is your single source of truth for this turn, assembled from the mission workspace state below (ROADMAP, tasks, threads, inbox acks, working log, and memory).`,
+		);
+		lines.push(
+			`SYSTEM: Read top-to-bottom, then act: respond to Unread Mentions, work Assigned Tasks, and record outcomes via \`clawion message add\`, \`clawion working add\`, and \`clawion memory set\`. Messages shown as unread will be auto-acknowledged after this Wake.`,
+		);
+		lines.push("");
+		lines.push(`Generated at: ${generatedAt}`);
 		lines.push("");
 		lines.push("## Agent");
 		lines.push(`- ID: ${agentEntry.id}`);
@@ -129,28 +164,43 @@ export async function runWake(options: WakeOptions): Promise<void> {
 			}
 		}
 		lines.push("");
-		lines.push("## Unread Mentions");
+		lines.push(`## Unread Mentions (${unreadMentions.length})`);
+		lines.push(
+			"_All unread mentions shown below will be automatically acknowledged after this Wake._",
+		);
 		if (unreadMentions.length === 0) {
+			lines.push("");
 			lines.push("_No unread mentions._");
 		} else {
-			for (const mention of unreadMentions) {
-				lines.push(`### Task ${mention.taskId} · Message ${mention.messageId}`);
-				lines.push(`- From: ${mention.authorAgentId}`);
-				lines.push(`- Mentions: ${mention.mentionsAgentIds.join(", ")}`);
-				lines.push(`- At: ${mention.createdAt}`);
+			for (const taskId of unreadTaskIdsOrdered) {
+				const taskTitle = taskTitleById.get(taskId);
 				lines.push("");
-				lines.push(mention.content);
-				lines.push("");
+				lines.push(`### Task ${taskId}${taskTitle ? ` — ${taskTitle}` : ""}`);
+
+				const mentions = unreadMentionsByTask.get(taskId) ?? [];
+				for (const mention of mentions) {
+					lines.push("");
+					lines.push(`#### Message ${mention.messageId}`);
+					lines.push(`- From: ${mention.authorAgentId}`);
+					lines.push(`- At: ${mention.createdAt}`);
+					lines.push(`- Mentions: ${mention.mentionsAgentIds.join(", ")}`);
+					lines.push("");
+					lines.push(mention.content.trim());
+				}
 			}
 		}
+
 		lines.push("");
-		lines.push("## Working Summary");
+		lines.push(`## Working (recent events: ${workingEvents.length})`);
 		if (workingEvents.length === 0) {
 			lines.push("_No working events yet._");
 		} else {
-			const recent = workingEvents.slice(-8);
+			const recent = workingEvents.slice(-8).reverse();
 			for (const event of recent) {
-				lines.push(`- ${event.createdAt} · ${event.content}`);
+				lines.push("");
+				lines.push(`- ${event.createdAt}`);
+				lines.push("");
+				lines.push(event.content.trim());
 			}
 		}
 		lines.push("");
