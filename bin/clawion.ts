@@ -221,10 +221,10 @@ const HELP_ENTRIES: HelpEntry[] = [
 		example: "clawion agent whoami --mission m1 --agent agent-1",
 	},
 	{
-		command: "wake",
+		command: "agent wake",
 		purpose: "Generate the agent prompt and acknowledge unread mentions.",
 		params: ["--mission <id>", "--agent <agentId>"],
-		example: "clawion wake --mission m1 --agent agent-1",
+		example: "clawion agent wake --mission m1 --agent agent-1",
 	},
 	{
 		command: "message add",
@@ -782,7 +782,7 @@ agent.action(() => {
 	agent.help();
 });
 
-program
+agent
 	.command("wake")
 	.description("Generate the agent prompt and acknowledge unread mentions")
 	.requiredOption("--mission <id>", "Mission ID")
