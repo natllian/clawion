@@ -106,7 +106,9 @@ export function Dashboard({
 				});
 			} catch (err) {
 				if (isAbortError(err)) return;
-				setError("Unable to read missions index. Run clawion init first.");
+				setError(
+					"Unable to read missions index. Create a mission first using the CLI.",
+				);
 			} finally {
 				setLoadingMissions(false);
 			}

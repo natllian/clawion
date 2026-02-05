@@ -1031,6 +1031,16 @@ message
 				return;
 			}
 
+			const tasksFile = await listTasks(context.missionsDir, options.mission);
+			const validTaskIds = new Set(tasksFile.tasks.map((entry) => entry.id));
+			if (!validTaskIds.has(options.task)) {
+				console.error(
+					`Error: Task not found: ${options.task}. Valid tasks: ${Array.from(validTaskIds).join(", ")}`,
+				);
+				process.exitCode = 1;
+				return;
+			}
+
 			const messageId = await addThreadMessage({
 				missionsDir: context.missionsDir,
 				missionId: options.mission,
@@ -1113,10 +1123,3 @@ memory.action(() => {
 });
 
 await program.parseAsync(process.argv);
-
-if (!context.missionsDir) {
-	const options = program.opts() as { missionsDir?: string };
-	const missionsDir = resolveMissionsDir(options.missionsDir);
-	context.missionsDir = missionsDir;
-	await ensureWorkspace({ missionsDir });
-}

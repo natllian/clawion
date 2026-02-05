@@ -16,7 +16,11 @@ export default async function Home() {
 			<div className="text-center">
 				<h1 className="text-2xl font-semibold">No missions found</h1>
 				<p className="mt-2 text-muted-foreground">
-					Run `clawion init` to initialize your workspace.
+					Use the CLI to create a mission:{" "}
+					<code>
+						clawion mission create --id m1 --name &quot;My Mission&quot;
+						--description &quot;...&quot;
+					</code>
 				</p>
 			</div>
 		</div>
