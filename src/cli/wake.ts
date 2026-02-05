@@ -1,14 +1,21 @@
 import { join } from "node:path";
 import { readJsonLines } from "../core/fs/jsonl";
 import { pathExists } from "../core/fs/util";
-import { threadMessageEventSchema } from "../core/schemas";
-import { resolveStatusForColumn } from "../core/task-status";
+import {
+	type Agent,
+	type TasksFile,
+	type ThreadSummary,
+	threadMessageEventSchema,
+	type WorkingEvent,
+} from "../core/schemas";
+import { resolveStatusForColumn, type TaskStatus } from "../core/task-status";
 import { listAgents } from "../core/workspace/agents";
 import { appendInboxAck, listInboxAcks } from "../core/workspace/inbox";
 import { readMemory } from "../core/workspace/memory";
 import { resolveMissionPath } from "../core/workspace/mission";
 import { showMission } from "../core/workspace/missions";
 import { listTasks } from "../core/workspace/tasks";
+import { listThreads } from "../core/workspace/threads";
 import { listWorkingEvents } from "../core/workspace/working";
 
 type WakeOptions = {
@@ -26,215 +33,548 @@ type UnreadMention = {
 	createdAt: string;
 };
 
-export async function runWake(options: WakeOptions): Promise<void> {
-	const { missionId, agentId, missionsDir } = options;
+type TaskWithStatus = TasksFile["tasks"][number] & { status: TaskStatus };
 
-	try {
-		const missionPath = await resolveMissionPath(missionsDir, missionId);
-		const agentsFile = await listAgents(missionPath);
-		const agentEntry = agentsFile.agents.find((entry) => entry.id === agentId);
-		if (!agentEntry) {
-			console.error(`Agent not found: ${agentId}`);
-			process.exitCode = 1;
-			return;
-		}
+type TeamWorkingSnapshot = {
+	agentId: string;
+	displayName: string;
+	systemRole: Agent["systemRole"];
+	eventCount: number;
+	lastEvent: { createdAt: string; content: string } | null;
+};
 
-		const [missionPayload, tasksFile, workingEvents, memory, inboxAcks] =
-			await Promise.all([
-				showMission(missionsDir, missionId),
-				listTasks(missionsDir, missionId),
-				listWorkingEvents(missionsDir, missionId, agentId),
-				readMemory(missionsDir, missionId, agentId),
-				listInboxAcks(missionsDir, missionId, agentId),
-			]);
+type WakeContext = {
+	missionId: string;
+	agentId: string;
+	missionsDir: string;
+	generatedAt: string;
 
-		const ackedMessageIds = new Set(inboxAcks.map((entry) => entry.messageId));
+	agentEntry: Agent;
+	agents: Agent[];
 
-		const threadsDir = join(missionPath, "threads");
-		const unreadMentions: UnreadMention[] = [];
+	mission: {
+		id: string;
+		name: string;
+		description: string;
+		status: string;
+	};
+	roadmap: string;
 
-		if (await pathExists(threadsDir)) {
-			const { readdir } = await import("node:fs/promises");
-			const files = await readdir(threadsDir);
-			const threadFiles = files.filter((file) => file.endsWith(".jsonl"));
+	allTasks: TaskWithStatus[];
+	assignedTasks: TaskWithStatus[];
+	unreadMentions: UnreadMention[];
+	unreadMentionsByTask: Map<string, UnreadMention[]>;
+	unreadTaskIdsOrdered: string[];
+	taskTitleById: Map<string, string>;
 
-			for (const file of threadFiles) {
-				const taskId = file.replace(/\.jsonl$/, "");
-				const messages = await readJsonLines(
-					join(threadsDir, file),
-					threadMessageEventSchema,
-				);
-				for (const message of messages) {
-					if (!message.mentionsAgentIds.includes(agentId)) {
-						continue;
-					}
-					if (ackedMessageIds.has(message.id)) {
-						continue;
-					}
-					unreadMentions.push({
-						taskId,
-						messageId: message.id,
-						authorAgentId: message.authorAgentId,
-						mentionsAgentIds: message.mentionsAgentIds,
-						content: message.content,
-						createdAt: message.createdAt,
-					});
-				}
-			}
-		}
+	workingEvents: WorkingEvent[];
+	memory: string;
 
-		const assignedTasks = tasksFile.tasks
-			.map((task) => ({
-				...task,
-				status: resolveStatusForColumn(tasksFile.columns, task.columnId),
-			}))
-			.filter(
-				(task) =>
-					task.assigneeAgentId === agentId && task.status !== "completed",
-			);
+	// Manager-only slices (empty for worker)
+	threadSummaries: ThreadSummary[];
+	teamWorkingLatest: TeamWorkingSnapshot[];
+};
 
-		const taskTitleById = new Map(
-			tasksFile.tasks.map((task) => [task.id, task.title] as const),
-		);
+function buildTaskTitleById(tasks: TasksFile): Map<string, string> {
+	return new Map(tasks.tasks.map((task) => [task.id, task.title] as const));
+}
 
-		const unreadMentionsSorted = [...unreadMentions].sort((a, b) =>
-			a.createdAt.localeCompare(b.createdAt),
-		);
-
-		const unreadMentionsByTask = new Map<string, UnreadMention[]>();
-		for (const mention of unreadMentionsSorted) {
-			const list = unreadMentionsByTask.get(mention.taskId) ?? [];
-			list.push(mention);
-			unreadMentionsByTask.set(mention.taskId, list);
-		}
-
-		const unreadTaskIdsOrdered = Array.from(unreadMentionsByTask.keys()).sort(
-			(a, b) => {
-				const aFirst = unreadMentionsByTask.get(a)?.[0]?.createdAt ?? "";
-				const bFirst = unreadMentionsByTask.get(b)?.[0]?.createdAt ?? "";
-				return aFirst.localeCompare(bFirst);
-			},
-		);
-
-		const generatedAt = new Date().toISOString();
-		const lines: string[] = [];
-
-		lines.push(
-			`# Wake: ${agentEntry.displayName} (${agentEntry.id}) · Mission ${missionId}`,
-		);
-		lines.push("");
-		lines.push(
-			`SYSTEM: You are Agent ${agentId} working on Mission ${missionId}. This Wake report is your single source of truth for this turn, assembled from the mission workspace state below (ROADMAP, tasks, threads, inbox acks, working log, and memory).`,
-		);
-		lines.push(
-			`SYSTEM: Read top-to-bottom, then act: respond to Unread Mentions, work Assigned Tasks, and record outcomes via \`clawion message add\`, \`clawion working add\`, and \`clawion memory set\`. Messages shown as unread will be auto-acknowledged after this Wake.`,
-		);
-		lines.push("");
-		lines.push(`Generated at: ${generatedAt}`);
-		lines.push("");
-		lines.push("## Agent");
-		lines.push(`- ID: ${agentEntry.id}`);
-		lines.push(`- Display name: ${agentEntry.displayName}`);
-		lines.push(`- System role: ${agentEntry.systemRole}`);
-		lines.push(`- Status: ${agentEntry.status}`);
-		lines.push("");
-		lines.push("### Role Description");
-		lines.push(agentEntry.roleDescription || "_No role description._");
-		lines.push("");
-		lines.push("## Mission Overview");
-		lines.push(`- ID: ${missionPayload.mission.id}`);
-		lines.push(`- Name: ${missionPayload.mission.name}`);
-		lines.push(`- Status: ${missionPayload.mission.status}`);
-		lines.push(`- Description: ${missionPayload.mission.description}`);
-		lines.push("");
-		lines.push("### ROADMAP");
-		lines.push(missionPayload.roadmap?.trim() || "_No roadmap yet._");
-		lines.push("");
-		lines.push("## Assigned Tasks");
-		if (assignedTasks.length === 0) {
-			lines.push("_No assigned tasks._");
-		} else {
-			for (const task of assignedTasks) {
-				const statusNotes = task.statusNotes?.trim();
-				lines.push(
-					`- ${task.title} (#${task.id}) — ${task.status}${
-						statusNotes ? ` — ${statusNotes}` : ""
-					}`,
-				);
-			}
-		}
-		lines.push("");
-		lines.push(`## Unread Mentions (${unreadMentions.length})`);
-		lines.push(
-			"_All unread mentions shown below will be automatically acknowledged after this Wake._",
-		);
-		if (unreadMentions.length === 0) {
-			lines.push("");
-			lines.push("_No unread mentions._");
-		} else {
-			for (const taskId of unreadTaskIdsOrdered) {
-				const taskTitle = taskTitleById.get(taskId);
-				lines.push("");
-				lines.push(`### Task ${taskId}${taskTitle ? ` — ${taskTitle}` : ""}`);
-
-				const mentions = unreadMentionsByTask.get(taskId) ?? [];
-				for (const mention of mentions) {
-					lines.push("");
-					lines.push(`#### Message ${mention.messageId}`);
-					lines.push(`- From: ${mention.authorAgentId}`);
-					lines.push(`- At: ${mention.createdAt}`);
-					lines.push(`- Mentions: ${mention.mentionsAgentIds.join(", ")}`);
-					lines.push("");
-					lines.push(mention.content.trim());
-				}
-			}
-		}
-
-		lines.push("");
-		lines.push(`## Working (recent events: ${workingEvents.length})`);
-		if (workingEvents.length === 0) {
-			lines.push("_No working events yet._");
-		} else {
-			const recent = workingEvents.slice(-8).reverse();
-			for (const event of recent) {
-				lines.push("");
-				lines.push(`- ${event.createdAt}`);
-				lines.push("");
-				lines.push(event.content.trim());
-			}
-		}
-		lines.push("");
-		lines.push("## Memory");
-		lines.push(memory.trim() || "_No memory yet._");
-		lines.push("");
-		lines.push("## Next Actions");
-		lines.push(
-			`1. Reply: \`clawion message add --mission ${missionId} --task <taskId> --content "..." --mentions <agentId,...> --agent ${agentId}\``,
-		);
-		lines.push(
-			`2. Log progress: \`clawion working add --mission ${missionId} --content "..." --agent ${agentId}\``,
-		);
-		lines.push(
-			`3. Update summary: \`clawion memory set --mission ${missionId} --content "..." --agent ${agentId}\``,
-		);
-		lines.push("");
-		lines.push("_Unread mentions above have been automatically acknowledged._");
-
-		console.log(lines.join("\n"));
-
-		await Promise.all(
-			unreadMentions.map((mention) =>
-				appendInboxAck({
-					missionsDir,
-					missionId,
-					agentId,
-					messageId: mention.messageId,
-					taskId: mention.taskId,
-				}),
-			),
-		);
-	} catch (error) {
-		console.error(error instanceof Error ? error.message : String(error));
-		process.exitCode = 1;
+function groupUnreadMentions(unread: UnreadMention[]) {
+	const sorted = [...unread].sort((a, b) =>
+		a.createdAt.localeCompare(b.createdAt),
+	);
+	const byTask = new Map<string, UnreadMention[]>();
+	for (const item of sorted) {
+		const list = byTask.get(item.taskId) ?? [];
+		list.push(item);
+		byTask.set(item.taskId, list);
 	}
+	const taskIdsOrdered = Array.from(byTask.keys()).sort((a, b) => {
+		const aFirst = byTask.get(a)?.[0]?.createdAt ?? "";
+		const bFirst = byTask.get(b)?.[0]?.createdAt ?? "";
+		return aFirst.localeCompare(bFirst);
+	});
+	return { byTask, taskIdsOrdered };
+}
+
+function renderTeamDirectory(lines: string[], agents: Agent[]) {
+	lines.push("## Team Directory");
+	if (agents.length === 0) {
+		lines.push("_No agents registered in this mission yet._");
+		return;
+	}
+
+	for (const agent of agents) {
+		const roleLine = (agent.roleDescription ?? "").trim().split("\n")[0] ?? "";
+		lines.push(
+			`- ${agent.displayName} (@${agent.id}) — ${agent.systemRole}${
+				roleLine ? ` — ${roleLine}` : ""
+			}`,
+		);
+	}
+}
+
+function renderAssignedTasks(lines: string[], tasks: TaskWithStatus[]) {
+	lines.push("## Assigned Tasks");
+	if (tasks.length === 0) {
+		lines.push("_No assigned tasks._");
+		return;
+	}
+
+	for (const task of tasks) {
+		const statusNotes = task.statusNotes?.trim();
+		lines.push(
+			`- ${task.title} (#${task.id}) — ${task.status}${
+				statusNotes ? ` — ${statusNotes}` : ""
+			}`,
+		);
+	}
+}
+
+function renderUnreadMentions(
+	lines: string[],
+	unreadCount: number,
+	unreadTaskIdsOrdered: string[],
+	unreadByTask: Map<string, UnreadMention[]>,
+	taskTitleById: Map<string, string>,
+) {
+	lines.push(`## Unread Mentions (${unreadCount})`);
+	lines.push(
+		"_All unread mentions shown below will be automatically acknowledged after this Wake._",
+	);
+
+	if (unreadCount === 0) {
+		lines.push("");
+		lines.push("_No unread mentions._");
+		return;
+	}
+
+	for (const taskId of unreadTaskIdsOrdered) {
+		const taskTitle = taskTitleById.get(taskId);
+		lines.push("");
+		lines.push(`### Task ${taskId}${taskTitle ? ` — ${taskTitle}` : ""}`);
+
+		const mentions = unreadByTask.get(taskId) ?? [];
+		for (const mention of mentions) {
+			lines.push("");
+			lines.push(`#### Message ${mention.messageId}`);
+			lines.push(`- From: ${mention.authorAgentId}`);
+			lines.push(`- At: ${mention.createdAt}`);
+			lines.push(`- Mentions: ${mention.mentionsAgentIds.join(", ")}`);
+			lines.push("");
+			lines.push(mention.content.trim());
+		}
+	}
+}
+
+function renderWorking(lines: string[], workingEvents: WorkingEvent[]) {
+	lines.push(`## Working (recent events: ${workingEvents.length})`);
+	if (workingEvents.length === 0) {
+		lines.push("_No working events yet._");
+		return;
+	}
+	const recent = workingEvents.slice(-8).reverse();
+	for (const event of recent) {
+		lines.push("");
+		lines.push(`- ${event.createdAt}`);
+		lines.push("");
+		lines.push(event.content.trim());
+	}
+}
+
+function renderMemory(lines: string[], memory: string) {
+	lines.push("## Memory");
+	lines.push(memory.trim() || "_No memory yet._");
+}
+
+function buildWorkerWakeLines(ctx: WakeContext): string[] {
+	const lines: string[] = [];
+
+	lines.push(
+		`# Wake: ${ctx.agentEntry.displayName} (@${ctx.agentEntry.id}) · Mission ${ctx.missionId}`,
+	);
+	lines.push("");
+	lines.push(
+		`SYSTEM: You are a Worker Agent in Mission ${ctx.missionId}. This Wake report is your single source of truth for this turn (Team Directory, Mission Summary, Assigned Tasks, Unread Mentions, Working, Memory).`,
+	);
+	lines.push(
+		"SYSTEM: Protocol: (1) respond to Unread Mentions; (2) progress Assigned Tasks; (3) log progress via `clawion working add` and keep `clawion memory set` current. If anything is unclear or blocked, ask early—use `clawion message add` to mention the manager and/or relevant peers for feedback. Messages shown as unread will be auto-acknowledged after this Wake.",
+	);
+	lines.push("");
+	lines.push(`Generated at: ${ctx.generatedAt}`);
+
+	lines.push("");
+	lines.push("## Agent");
+	lines.push(`- ID: ${ctx.agentEntry.id}`);
+	lines.push(`- Display name: ${ctx.agentEntry.displayName}`);
+	lines.push(`- System role: ${ctx.agentEntry.systemRole}`);
+	lines.push("");
+	lines.push("### Role Description");
+	lines.push(ctx.agentEntry.roleDescription || "_No role description._");
+
+	lines.push("");
+	renderTeamDirectory(lines, ctx.agents);
+
+	lines.push("");
+	lines.push("## Mission Summary");
+	lines.push(`- ID: ${ctx.mission.id}`);
+	lines.push(`- Name: ${ctx.mission.name}`);
+	lines.push(`- Status: ${ctx.mission.status}`);
+	lines.push("");
+	lines.push(ctx.mission.description.trim() || "_No mission description._");
+
+	lines.push("");
+	renderAssignedTasks(lines, ctx.assignedTasks);
+
+	lines.push("");
+	renderUnreadMentions(
+		lines,
+		ctx.unreadMentions.length,
+		ctx.unreadTaskIdsOrdered,
+		ctx.unreadMentionsByTask,
+		ctx.taskTitleById,
+	);
+
+	lines.push("");
+	renderWorking(lines, ctx.workingEvents);
+
+	lines.push("");
+	renderMemory(lines, ctx.memory);
+
+	lines.push("");
+	lines.push("## Next Actions");
+	lines.push(
+		`1. Reply / ask questions: \`clawion message add --mission ${ctx.missionId} --task <taskId> --content "..." --mentions <agentId,...> --agent ${ctx.agentEntry.id}\``,
+	);
+	lines.push(
+		`2. Log progress: \`clawion working add --mission ${ctx.missionId} --content "..." --agent ${ctx.agentEntry.id}\``,
+	);
+	lines.push(
+		`3. Update summary: \`clawion memory set --mission ${ctx.missionId} --content "..." --agent ${ctx.agentEntry.id}\``,
+	);
+	lines.push("");
+	lines.push(
+		"_Unread mentions shown above have been automatically acknowledged after this Wake._",
+	);
+
+	return lines;
+}
+
+function buildManagerWakeLines(ctx: WakeContext): string[] {
+	const lines: string[] = [];
+
+	lines.push(
+		`# Wake: ${ctx.agentEntry.displayName} (@${ctx.agentEntry.id}) · Mission ${ctx.missionId}`,
+	);
+	lines.push("");
+	lines.push(
+		`SYSTEM: You are the Mission Manager for Mission ${ctx.missionId}. This Wake report is your single source of truth for this turn (ROADMAP, Team Directory, Mission Dashboard, Threads, Unread Mentions, Working/Memory).`,
+	);
+	lines.push(
+		"SYSTEM: Protocol: (1) triage Unread Mentions; (2) scan mission health (blocked/unassigned tasks, recent thread activity, team working updates); (3) decide and dispatch next steps by creating/assigning/updating tasks; (4) communicate decisions via `clawion message add`. Messages shown as unread will be auto-acknowledged after this Wake.",
+	);
+	lines.push("");
+	lines.push(`Generated at: ${ctx.generatedAt}`);
+
+	lines.push("");
+	lines.push("## Agent");
+	lines.push(`- ID: ${ctx.agentEntry.id}`);
+	lines.push(`- Display name: ${ctx.agentEntry.displayName}`);
+	lines.push(`- System role: ${ctx.agentEntry.systemRole}`);
+	lines.push("");
+	lines.push("### Role Description");
+	lines.push(ctx.agentEntry.roleDescription || "_No role description._");
+
+	lines.push("");
+	renderTeamDirectory(lines, ctx.agents);
+
+	lines.push("");
+	lines.push("## Mission Overview");
+	lines.push(`- ID: ${ctx.mission.id}`);
+	lines.push(`- Name: ${ctx.mission.name}`);
+	lines.push(`- Status: ${ctx.mission.status}`);
+	lines.push(`- Description: ${ctx.mission.description}`);
+	lines.push("");
+	lines.push("### ROADMAP");
+	lines.push(ctx.roadmap.trim() || "_No roadmap yet._");
+
+	const taskStatusCounts = {
+		pending: 0,
+		ongoing: 0,
+		blocked: 0,
+		completed: 0,
+	};
+	for (const task of ctx.allTasks) {
+		if (task.status === "pending") taskStatusCounts.pending += 1;
+		else if (task.status === "ongoing") taskStatusCounts.ongoing += 1;
+		else if (task.status === "blocked") taskStatusCounts.blocked += 1;
+		else taskStatusCounts.completed += 1;
+	}
+
+	const unassignedTasks = ctx.allTasks.filter(
+		(task) => !task.assigneeAgentId && task.status !== "completed",
+	);
+	const blockedTasks = ctx.allTasks.filter((task) => task.status === "blocked");
+
+	const sortedThreadSummaries = [...ctx.threadSummaries].sort((a, b) => {
+		const aTime = a.lastMessageAt ?? "";
+		const bTime = b.lastMessageAt ?? "";
+		return bTime.localeCompare(aTime);
+	});
+	const recentThreads = sortedThreadSummaries.slice(0, 12);
+
+	lines.push("");
+	lines.push("## Mission Dashboard");
+	lines.push(
+		`- Tasks: ${ctx.allTasks.length} total · ${taskStatusCounts.pending} pending · ${taskStatusCounts.ongoing} ongoing · ${taskStatusCounts.blocked} blocked · ${taskStatusCounts.completed} completed`,
+	);
+	lines.push(`- Unassigned (not completed): ${unassignedTasks.length}`);
+	lines.push(`- Unread mentions: ${ctx.unreadMentions.length}`);
+	lines.push(`- Threads: ${ctx.threadSummaries.length}`);
+
+	lines.push("");
+	lines.push("## Unassigned Tasks (not completed)");
+	if (unassignedTasks.length === 0) {
+		lines.push("_No unassigned tasks._");
+	} else {
+		for (const task of unassignedTasks) {
+			lines.push(`- ${task.title} (#${task.id}) — ${task.status}`);
+		}
+	}
+
+	lines.push("");
+	lines.push("## Blocked Tasks");
+	if (blockedTasks.length === 0) {
+		lines.push("_No blocked tasks._");
+	} else {
+		for (const task of blockedTasks) {
+			const who = task.assigneeAgentId ? ` @${task.assigneeAgentId}` : "";
+			const note = task.statusNotes?.trim();
+			lines.push(
+				`- ${task.title} (#${task.id})${who}${note ? ` — ${note}` : ""}`,
+			);
+		}
+	}
+
+	lines.push("");
+	lines.push("## Recent Thread Activity");
+	if (recentThreads.length === 0) {
+		lines.push("_No threads yet._");
+	} else {
+		for (const thread of recentThreads) {
+			const title = ctx.taskTitleById.get(thread.taskId);
+			const when = thread.lastMessageAt ?? "—";
+			const by = thread.lastAuthorAgentId ?? "—";
+			lines.push(
+				`- Task ${thread.taskId}${title ? ` — ${title}` : ""}: ${thread.messageCount} messages · last at ${when} by ${by}`,
+			);
+		}
+	}
+
+	lines.push("");
+	renderUnreadMentions(
+		lines,
+		ctx.unreadMentions.length,
+		ctx.unreadTaskIdsOrdered,
+		ctx.unreadMentionsByTask,
+		ctx.taskTitleById,
+	);
+
+	lines.push("");
+	lines.push("## Team Working (latest per agent)");
+	if (ctx.teamWorkingLatest.length === 0) {
+		lines.push("_No team working events._");
+	} else {
+		for (const item of ctx.teamWorkingLatest) {
+			const lastAt = item.lastEvent?.createdAt ?? "—";
+			const snippet = item.lastEvent?.content
+				? item.lastEvent.content.split("\n")[0].trim()
+				: "";
+			lines.push(
+				`- ${item.displayName} (@${item.agentId}, ${item.systemRole}) · last: ${lastAt}${snippet ? ` · ${snippet}` : ""}`,
+			);
+		}
+	}
+
+	lines.push("");
+	renderMemory(lines, ctx.memory);
+
+	lines.push("");
+	lines.push("## Next Actions (Manager)");
+	lines.push(
+		`1. Communicate decisions: \`clawion message add --mission ${ctx.missionId} --task <taskId> --content "..." --mentions <agentId,...> --agent ${ctx.agentEntry.id}\``,
+	);
+	lines.push(
+		`2. Create tasks: \`clawion task create --mission ${ctx.missionId} --id <taskId> --title "..." --description "..." --agent ${ctx.agentEntry.id}\``,
+	);
+	lines.push(
+		`3. Assign tasks: \`clawion task assign --mission ${ctx.missionId} --task <taskId> --to <agentId> --agent ${ctx.agentEntry.id}\``,
+	);
+	lines.push(
+		`4. Update task board: \`clawion task update --mission ${ctx.missionId} --id <taskId> --status <pending|ongoing|blocked|completed> --status-notes "..." --agent ${ctx.agentEntry.id}\``,
+	);
+	lines.push(
+		`5. Update roadmap (write-only): \`clawion mission roadmap --id ${ctx.missionId} --set "..." --agent ${ctx.agentEntry.id}\``,
+	);
+	lines.push(
+		`6. Complete mission: \`clawion mission complete --id ${ctx.missionId} --agent ${ctx.agentEntry.id}\``,
+	);
+	lines.push("");
+	lines.push(
+		"_Unread mentions shown above have been automatically acknowledged after this Wake._",
+	);
+
+	return lines;
+}
+
+async function buildWakeContext(
+	options: WakeOptions,
+): Promise<WakeContext | null> {
+	const { missionId, agentId, missionsDir } = options;
+	const missionPath = await resolveMissionPath(missionsDir, missionId);
+	const agentsFile = await listAgents(missionPath);
+	const agentEntry = agentsFile.agents.find((entry) => entry.id === agentId);
+	if (!agentEntry) {
+		console.error(`Agent not found: ${agentId}`);
+		process.exitCode = 1;
+		return null;
+	}
+
+	const isManager = agentEntry.systemRole === "manager";
+
+	const [missionPayload, tasksFile, workingEvents, memory, inboxAcks] =
+		await Promise.all([
+			showMission(missionsDir, missionId),
+			listTasks(missionsDir, missionId),
+			listWorkingEvents(missionsDir, missionId, agentId),
+			readMemory(missionsDir, missionId, agentId),
+			listInboxAcks(missionsDir, missionId, agentId),
+		]);
+
+	const allTasks: TaskWithStatus[] = tasksFile.tasks.map((task) => ({
+		...task,
+		status: resolveStatusForColumn(tasksFile.columns, task.columnId),
+	}));
+
+	const assignedTasks = allTasks.filter(
+		(task) => task.assigneeAgentId === agentId && task.status !== "completed",
+	);
+
+	const taskTitleById = buildTaskTitleById(tasksFile);
+
+	const ackedMessageIds = new Set(inboxAcks.map((entry) => entry.messageId));
+	const threadsDir = join(missionPath, "threads");
+	const unreadMentions: UnreadMention[] = [];
+
+	if (await pathExists(threadsDir)) {
+		const { readdir } = await import("node:fs/promises");
+		const files = await readdir(threadsDir);
+		const threadFiles = files.filter((file) => file.endsWith(".jsonl"));
+
+		for (const file of threadFiles) {
+			const taskId = file.replace(/\.jsonl$/, "");
+			const messages = await readJsonLines(
+				join(threadsDir, file),
+				threadMessageEventSchema,
+			);
+			for (const message of messages) {
+				if (!message.mentionsAgentIds.includes(agentId)) {
+					continue;
+				}
+				if (ackedMessageIds.has(message.id)) {
+					continue;
+				}
+				unreadMentions.push({
+					taskId,
+					messageId: message.id,
+					authorAgentId: message.authorAgentId,
+					mentionsAgentIds: message.mentionsAgentIds,
+					content: message.content,
+					createdAt: message.createdAt,
+				});
+			}
+		}
+	}
+
+	const { byTask: unreadMentionsByTask, taskIdsOrdered: unreadTaskIdsOrdered } =
+		groupUnreadMentions(unreadMentions);
+
+	const [threadSummaries, teamWorkingLatest] = await Promise.all([
+		isManager ? listThreads(missionsDir, missionId) : Promise.resolve([]),
+		isManager
+			? Promise.all(
+					agentsFile.agents.map(async (agent) => {
+						const events = await listWorkingEvents(
+							missionsDir,
+							missionId,
+							agent.id,
+						);
+						const last = events[events.length - 1] ?? null;
+						return {
+							agentId: agent.id,
+							displayName: agent.displayName,
+							systemRole: agent.systemRole,
+							eventCount: events.length,
+							lastEvent: last
+								? { createdAt: last.createdAt, content: last.content }
+								: null,
+						};
+					}),
+				)
+			: Promise.resolve([]),
+	]);
+
+	return {
+		missionId,
+		agentId,
+		missionsDir,
+		generatedAt: new Date().toISOString(),
+
+		agentEntry,
+		agents: agentsFile.agents,
+
+		mission: {
+			id: missionPayload.mission.id,
+			name: missionPayload.mission.name,
+			description: missionPayload.mission.description,
+			status: missionPayload.mission.status,
+		},
+		roadmap: missionPayload.roadmap ?? "",
+
+		allTasks,
+		assignedTasks,
+		unreadMentions,
+		unreadMentionsByTask,
+		unreadTaskIdsOrdered,
+		taskTitleById,
+
+		workingEvents,
+		memory,
+
+		threadSummaries,
+		teamWorkingLatest,
+	};
+}
+
+export async function runWake(options: WakeOptions): Promise<void> {
+	const ctx = await buildWakeContext(options);
+	if (!ctx) return;
+
+	const isManager = ctx.agentEntry.systemRole === "manager";
+	const lines = isManager
+		? buildManagerWakeLines(ctx)
+		: buildWorkerWakeLines(ctx);
+	console.log(lines.join("\n"));
+
+	await Promise.all(
+		ctx.unreadMentions.map((mention) =>
+			appendInboxAck({
+				missionsDir: ctx.missionsDir,
+				missionId: ctx.missionId,
+				agentId: ctx.agentId,
+				messageId: mention.messageId,
+				taskId: mention.taskId,
+			}),
+		),
+	);
 }
