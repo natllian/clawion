@@ -17,7 +17,6 @@ async function setupMission(
 		displayName: string;
 		roleDescription: string;
 		systemRole: "manager" | "worker";
-		status: "active" | "paused";
 	}>,
 ): Promise<void> {
 	const missionDir = join(missionsDir, missionId);
@@ -54,7 +53,6 @@ describe("assertManager", () => {
 				displayName: "Manager",
 				roleDescription: "Lead",
 				systemRole: "manager",
-				status: "active",
 			},
 		]);
 
@@ -75,14 +73,12 @@ describe("assertManager", () => {
 				displayName: "Manager",
 				roleDescription: "Lead",
 				systemRole: "manager",
-				status: "active",
 			},
 			{
 				id: "agent-1",
 				displayName: "Agent",
 				roleDescription: "Contributor",
 				systemRole: "worker",
-				status: "active",
 			},
 		]);
 
@@ -103,7 +99,6 @@ describe("assertManager", () => {
 				displayName: "Manager",
 				roleDescription: "Lead",
 				systemRole: "manager",
-				status: "active",
 			},
 		]);
 

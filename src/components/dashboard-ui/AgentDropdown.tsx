@@ -134,7 +134,7 @@ export function AgentDropdown({
 										</div>
 									</div>
 									<p className="mt-2 text-[0.6rem] uppercase tracking-wide text-muted-foreground">
-										{agent.systemRole ?? "—"} · {agent.status ?? "—"}
+										{agent.systemRole ?? "—"}
 									</p>
 								</div>
 

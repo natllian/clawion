@@ -2,24 +2,15 @@
 import { spawn } from "node:child_process";
 import { Command } from "commander";
 import { runWake } from "../src/cli/wake";
-import {
-	resolveStatusForColumn,
-	type TaskStatus,
-} from "../src/core/task-status";
-import {
-	addAgent,
-	listAgents,
-	updateAgent,
-} from "../src/core/workspace/agents";
+import type { TaskStatus } from "../src/core/task-status";
+import { addAgent, listAgents } from "../src/core/workspace/agents";
 import { appendCliInvocation } from "../src/core/workspace/cli-invocations";
 import { ensureWorkspace } from "../src/core/workspace/init";
-import { readMemory, setMemory } from "../src/core/workspace/memory";
+import { setMemory } from "../src/core/workspace/memory";
 import { resolveMissionPath } from "../src/core/workspace/mission";
 import {
 	completeMission,
 	createMission,
-	showMission,
-	updateMission,
 	updateMissionRoadmap,
 } from "../src/core/workspace/missions";
 import { resolveMissionsDir } from "../src/core/workspace/paths";
@@ -31,10 +22,7 @@ import {
 	updateTask,
 } from "../src/core/workspace/tasks";
 import { addThreadMessage } from "../src/core/workspace/threads";
-import {
-	appendWorkingEvent,
-	listWorkingEvents,
-} from "../src/core/workspace/working";
+import { appendWorkingEvent } from "../src/core/workspace/working";
 
 type CliContext = {
 	missionsDir: string;
@@ -95,29 +83,11 @@ const HELP_ENTRIES: HelpEntry[] = [
 			"clawion mission create --id m1 --name 'Alpha' --description 'Build MVP'",
 	},
 	{
-		command: "mission show",
-		purpose: "Show mission metadata and roadmap.",
-		params: ["--id <id>"],
-		example: "clawion mission show --id m1",
-	},
-	{
 		command: "mission roadmap",
-		purpose:
-			"Show the mission roadmap, or replace it (manager only for updates).",
-		params: [
-			"--id <id>",
-			"--set <markdown> (optional)",
-			"--agent <agentId> (required for updates)",
-		],
+		purpose: "Replace the mission roadmap (manager only).",
+		params: ["--id <id>", "--set <markdown>", "--agent <agentId>"],
 		example:
 			"clawion mission roadmap --id m1 --set '# Roadmap\\n\\n- Item' --agent manager-1",
-	},
-	{
-		command: "mission update",
-		purpose: "Update a mission description (manager only).",
-		params: ["--id <id>", "--description <markdown>", "--agent <agentId>"],
-		example:
-			"clawion mission update --id m1 --description 'New scope' --agent manager-1",
 	},
 	{
 		command: "mission complete",
@@ -139,14 +109,8 @@ const HELP_ENTRIES: HelpEntry[] = [
 			"clawion task create --mission m1 --id t1 --title 'Spec' --description 'Write spec' --agent manager-1",
 	},
 	{
-		command: "task list",
-		purpose: "List tasks for a mission.",
-		params: ["--mission <id>"],
-		example: "clawion task list --mission m1",
-	},
-	{
 		command: "task update",
-		purpose: "Update task status or notes (assignee or manager).",
+		purpose: "Update task status or notes (manager only).",
 		params: [
 			"--mission <id>",
 			"--id <taskId>",
@@ -155,7 +119,7 @@ const HELP_ENTRIES: HelpEntry[] = [
 			"--status-notes <text> (optional)",
 		],
 		example:
-			"clawion task update --mission m1 --id t1 --status blocked --status-notes 'Blocked: waiting on keys' --agent agent-1",
+			"clawion task update --mission m1 --id t1 --status blocked --status-notes 'Blocked: waiting on keys' --agent manager-1",
 	},
 	{
 		command: "task assign",
@@ -170,12 +134,6 @@ const HELP_ENTRIES: HelpEntry[] = [
 			"clawion task assign --mission m1 --task t1 --to agent-1 --agent manager-1",
 	},
 	{
-		command: "task mine",
-		purpose: "List tasks assigned to the acting agent.",
-		params: ["--mission <id>", "--agent <agentId>"],
-		example: "clawion task mine --mission m1 --agent agent-1",
-	},
-	{
 		command: "agent add",
 		purpose: "Register an agent for a mission (manager only).",
 		params: [
@@ -184,37 +142,10 @@ const HELP_ENTRIES: HelpEntry[] = [
 			"--name <displayName>",
 			"--system-role <manager|worker>",
 			"--role-description <markdown>",
-			"--status <active|paused> (optional)",
 			"--agent <agentId>",
 		],
 		example:
 			"clawion agent add --mission m1 --id manager-1 --name Manager --system-role manager --agent manager-1",
-	},
-	{
-		command: "agent update",
-		purpose: "Update an agent profile (manager only).",
-		params: [
-			"--mission <id>",
-			"--id <agentId>",
-			"--name <displayName> (optional)",
-			"--role-description <markdown> (optional)",
-			"--status <active|paused> (optional)",
-			"--agent <agentId>",
-		],
-		example:
-			"clawion agent update --mission m1 --id agent-1 --status paused --agent manager-1",
-	},
-	{
-		command: "agent list",
-		purpose: "List agents for a mission.",
-		params: ["--mission <id>"],
-		example: "clawion agent list --mission m1",
-	},
-	{
-		command: "agent whoami",
-		purpose: "Show the acting agent profile, working events, and memory.",
-		params: ["--mission <id>", "--agent <agentId>"],
-		example: "clawion agent whoami --mission m1 --agent agent-1",
 	},
 	{
 		command: "agent wake",
@@ -349,29 +280,15 @@ mission
 	});
 
 mission
-	.command("show")
-	.description("Show mission metadata and roadmap")
-	.requiredOption("--id <id>", "Mission ID")
-	.action(async (options) => {
-		try {
-			const data = await showMission(context.missionsDir, options.id);
-			console.log(JSON.stringify(data, null, 2));
-		} catch (error) {
-			console.error(error instanceof Error ? error.message : String(error));
-			process.exitCode = 1;
-		}
-	});
-
-mission
 	.command("roadmap")
-	.description("Show or update mission roadmap (manager only for updates)")
+	.description("Replace mission roadmap contents (manager only)")
 	.requiredOption("--id <id>", "Mission ID")
 	.option("--set <markdown>", "Replace roadmap contents")
 	.action(async (options, command) => {
 		try {
 			if (!options.set) {
-				const data = await showMission(context.missionsDir, options.id);
-				console.log(data.roadmap);
+				console.error("read via wake");
+				process.exitCode = 1;
 				return;
 			}
 
@@ -388,29 +305,6 @@ mission
 				roadmap,
 			});
 			console.log(`Mission roadmap updated: ${options.id}`);
-		} catch (error) {
-			console.error(error instanceof Error ? error.message : String(error));
-			process.exitCode = 1;
-		}
-	});
-
-mission
-	.command("update")
-	.description("Update a mission description (manager only)")
-	.requiredOption("--id <id>", "Mission ID")
-	.requiredOption("--description <markdown>", "New description")
-	.action(async (options, command) => {
-		const allowed = await requireManager(command, options.id);
-		if (!allowed) {
-			return;
-		}
-		try {
-			await updateMission({
-				missionsDir: context.missionsDir,
-				id: options.id,
-				description: options.description,
-			});
-			console.log(`Mission updated: ${options.id}`);
 		} catch (error) {
 			console.error(error instanceof Error ? error.message : String(error));
 			process.exitCode = 1;
@@ -469,22 +363,8 @@ task
 	});
 
 task
-	.command("list")
-	.description("List tasks")
-	.requiredOption("--mission <id>", "Mission ID")
-	.action(async (options) => {
-		try {
-			const tasksFile = await listTasks(context.missionsDir, options.mission);
-			console.log(JSON.stringify(tasksFile, null, 2));
-		} catch (error) {
-			console.error(error instanceof Error ? error.message : String(error));
-			process.exitCode = 1;
-		}
-	});
-
-task
 	.command("update")
-	.description("Update task status or notes (assignee or manager)")
+	.description("Update task status or notes (manager only)")
 	.requiredOption("--mission <id>", "Mission ID")
 	.requiredOption("--id <taskId>", "Task ID")
 	.option("--status-notes <text>", "Status notes")
@@ -496,32 +376,27 @@ task
 		}
 
 		try {
+			await assertManager({
+				missionsDir: context.missionsDir,
+				missionId: options.mission,
+				agentId,
+			});
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			if (message.toLowerCase().includes("not found")) {
+				console.error(message);
+			} else {
+				console.error("manager only");
+			}
+			process.exitCode = 1;
+			return;
+		}
+
+		try {
 			const tasksFile = await listTasks(context.missionsDir, options.mission);
 			const taskItem = tasksFile.tasks.find((entry) => entry.id === options.id);
 			if (!taskItem) {
 				throw new Error(`Task not found: ${options.id}`);
-			}
-
-			let manager = false;
-			try {
-				await assertManager({
-					missionsDir: context.missionsDir,
-					missionId: options.mission,
-					agentId,
-				});
-				manager = true;
-			} catch (error) {
-				const message = error instanceof Error ? error.message : String(error);
-				if (message.toLowerCase().includes("not found")) {
-					throw error;
-				}
-				manager = false;
-			}
-
-			if (!manager && taskItem.assigneeAgentId !== agentId) {
-				throw new Error(
-					`Permission denied. Only the assignee or a manager can update task ${options.id}.`,
-				);
 			}
 
 			const rawStatus = (options.status as string | undefined)?.trim();
@@ -574,40 +449,6 @@ task
 		}
 	});
 
-task
-	.command("mine")
-	.description("List tasks assigned to the acting agent")
-	.requiredOption("--mission <id>", "Mission ID")
-	.action(async (options, command) => {
-		const agentId = requireAgentId(command);
-		if (!agentId) {
-			return;
-		}
-
-		try {
-			const tasksFile = await listTasks(context.missionsDir, options.mission);
-			const mine = tasksFile.tasks
-				.filter((taskItem) => taskItem.assigneeAgentId === agentId)
-				.map((taskItem) => ({
-					id: taskItem.id,
-					title: taskItem.title,
-					description: taskItem.description,
-					status: resolveStatusForColumn(tasksFile.columns, taskItem.columnId),
-					statusNotes: taskItem.statusNotes,
-					columnId: taskItem.columnId,
-					assigneeAgentId: taskItem.assigneeAgentId ?? null,
-					createdAt: taskItem.createdAt,
-					updatedAt: taskItem.updatedAt,
-				}))
-				.filter((entry) => entry.status !== "completed");
-
-			console.log(JSON.stringify(mine, null, 2));
-		} catch (error) {
-			console.error(error instanceof Error ? error.message : String(error));
-			process.exitCode = 1;
-		}
-	});
-
 task.action(() => {
 	task.help();
 });
@@ -625,7 +466,6 @@ agent
 		"--role-description <markdown>",
 		"Role description for the agent",
 	)
-	.option("--status <status>", "Status (active|paused)", "active")
 	.action(async (options, command) => {
 		const actingAgentId = requireAgentId(command);
 		if (!actingAgentId) {
@@ -640,13 +480,6 @@ agent
 		const systemRole = options.systemRole as "manager" | "worker";
 		if (systemRole !== "manager" && systemRole !== "worker") {
 			console.error("system-role must be manager or worker.");
-			process.exitCode = 1;
-			return;
-		}
-
-		const status = options.status as "active" | "paused";
-		if (status !== "active" && status !== "paused") {
-			console.error("status must be active or paused.");
 			process.exitCode = 1;
 			return;
 		}
@@ -669,105 +502,8 @@ agent
 				displayName: options.name,
 				roleDescription: options.roleDescription,
 				systemRole,
-				status,
 			});
 			console.log(`Agent registered: ${options.id}`);
-		} catch (error) {
-			console.error(error instanceof Error ? error.message : String(error));
-			process.exitCode = 1;
-		}
-	});
-
-agent
-	.command("update")
-	.description("Update an agent profile (manager only)")
-	.requiredOption("--mission <id>", "Mission ID")
-	.requiredOption("--id <agentId>", "Agent ID")
-	.option("--name <displayName>", "Display name")
-	.option("--role-description <markdown>", "Role description")
-	.option("--status <status>", "Status (active|paused)")
-	.action(async (options, command) => {
-		const allowed = await requireManager(command, options.mission);
-		if (!allowed) {
-			return;
-		}
-
-		try {
-			const missionPath = await resolveMissionPath(
-				context.missionsDir,
-				options.mission,
-			);
-			await updateAgent(missionPath, options.id, {
-				displayName: options.name,
-				roleDescription: options.roleDescription,
-				status: options.status,
-			});
-			console.log(`Agent updated: ${options.id}`);
-		} catch (error) {
-			console.error(error instanceof Error ? error.message : String(error));
-			process.exitCode = 1;
-		}
-	});
-
-agent
-	.command("list")
-	.description("List agents")
-	.requiredOption("--mission <id>", "Mission ID")
-	.action(async (options) => {
-		try {
-			const missionPath = await resolveMissionPath(
-				context.missionsDir,
-				options.mission,
-			);
-			const agentsFile = await listAgents(missionPath);
-			console.log(JSON.stringify(agentsFile, null, 2));
-		} catch (error) {
-			console.error(error instanceof Error ? error.message : String(error));
-			process.exitCode = 1;
-		}
-	});
-
-agent
-	.command("whoami")
-	.description("Show details for the acting agent")
-	.requiredOption("--mission <id>", "Mission ID")
-	.action(async (options, command) => {
-		const actingAgentId = requireAgentId(command);
-		if (!actingAgentId) {
-			return;
-		}
-
-		try {
-			const missionPath = await resolveMissionPath(
-				context.missionsDir,
-				options.mission,
-			);
-			const agentsFile = await listAgents(missionPath);
-			const agentEntry = agentsFile.agents.find(
-				(entry) => entry.id === actingAgentId,
-			);
-			if (!agentEntry) {
-				console.error(`Agent not found: ${actingAgentId}`);
-				process.exitCode = 1;
-				return;
-			}
-
-			const [working, memory] = await Promise.all([
-				listWorkingEvents(context.missionsDir, options.mission, actingAgentId),
-				readMemory(context.missionsDir, options.mission, actingAgentId),
-			]);
-
-			console.log(
-				JSON.stringify(
-					{
-						agent: agentEntry,
-						working,
-						memory,
-					},
-					null,
-					2,
-				),
-			);
 		} catch (error) {
 			console.error(error instanceof Error ? error.message : String(error));
 			process.exitCode = 1;
@@ -836,21 +572,14 @@ message
 				options.mission,
 			);
 			const agentsFile = await listAgents(missionPath);
-			const activeAgents = agentsFile.agents.filter(
-				(entry) => entry.status === "active",
-			);
-			const activeAgentIds = new Set(activeAgents.map((entry) => entry.id));
-			const invalidMentions = mentions.filter(
-				(entry) => !activeAgentIds.has(entry),
-			);
+			const agentIds = new Set(agentsFile.agents.map((entry) => entry.id));
+			const invalidMentions = mentions.filter((entry) => !agentIds.has(entry));
 
 			if (invalidMentions.length > 0) {
 				console.error(
 					`Error: Invalid mentions: ${invalidMentions.join(
 						", ",
-					)}. Active agents: ${activeAgents
-						.map((entry) => entry.id)
-						.join(", ")}`,
+					)}. Check agents via wake.`,
 				);
 				process.exitCode = 1;
 				return;

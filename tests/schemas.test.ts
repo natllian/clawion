@@ -86,7 +86,6 @@ describe("schemas", () => {
 					displayName: "Agent One",
 					roleDescription: "Lead",
 					systemRole: "manager",
-					status: "active",
 				},
 			],
 		});
@@ -102,7 +101,6 @@ describe("schemas", () => {
 					displayName: "Agent One",
 					roleDescription: "Contributor",
 					systemRole: "worker",
-					status: "active",
 				},
 			],
 		});
@@ -115,6 +113,22 @@ describe("schemas", () => {
 			agents: [],
 		});
 		expect(result.success).toBe(true);
+	});
+
+	it("rejects agents with status field", () => {
+		const result = agentsSchema.safeParse({
+			schemaVersion: 1,
+			agents: [
+				{
+					id: "a1",
+					displayName: "Agent One",
+					roleDescription: "Lead",
+					systemRole: "manager",
+					status: "active",
+				},
+			],
+		});
+		expect(result.success).toBe(false);
 	});
 
 	it("requires mentions to be a list", () => {

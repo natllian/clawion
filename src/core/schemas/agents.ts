@@ -7,7 +7,6 @@ export const agentSchema = z
 		displayName: nonEmptyTextSchema,
 		roleDescription: nonEmptyTextSchema,
 		systemRole: z.enum(["manager", "worker"]),
-		status: z.enum(["active", "paused"]),
 	})
 	.strict();
 

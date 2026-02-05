@@ -4,11 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { readJson, writeJsonAtomic } from "../src/core/fs/json";
 import { agentsSchema } from "../src/core/schemas";
-import {
-	addAgent,
-	listAgents,
-	updateAgent,
-} from "../src/core/workspace/agents";
+import { addAgent, listAgents } from "../src/core/workspace/agents";
 import { DEFAULT_MANAGER_ROLE_DESCRIPTION } from "../src/core/workspace/roles";
 import { createMissionFixture, createWorkspace } from "./helpers";
 
@@ -79,8 +75,8 @@ describe("addAgent", () => {
 	});
 });
 
-describe("agent updates", () => {
-	it("updates agent data and lists agents", async () => {
+describe("listAgents", () => {
+	it("lists agents after creation", async () => {
 		const missionsDir = await createWorkspace();
 		await createMissionFixture(missionsDir, "m1");
 		const missionDir = join(missionsDir, "m1");
@@ -98,30 +94,9 @@ describe("agent updates", () => {
 			systemRole: "worker",
 		});
 
-		await updateAgent(missionDir, "agent-1", {
-			displayName: "Agent Updated",
-			status: "paused",
-		});
-		await updateAgent(missionDir, "agent-1", {
-			roleDescription: "Updated role",
-		});
-
 		const agentsFile = await listAgents(missionDir);
-		expect(agentsFile.agents[0].displayName).toBe("Agent Updated");
-		expect(agentsFile.agents[0].status).toBe("paused");
-		expect(agentsFile.agents[0].roleDescription).toBe("Updated role");
+		const ids = agentsFile.agents.map((agent) => agent.id).sort();
+		expect(ids).toEqual(["agent-1", "agent-2"]);
 		expect(agentsFile.agents).toHaveLength(2);
-	});
-
-	it("rejects updates for missing agents", async () => {
-		const missionsDir = await createWorkspace();
-		await createMissionFixture(missionsDir, "m1");
-		const missionDir = join(missionsDir, "m1");
-
-		await expect(
-			updateAgent(missionDir, "missing", {
-				displayName: "Nope",
-			}),
-		).rejects.toThrow("Agent not found");
 	});
 });

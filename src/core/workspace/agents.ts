@@ -8,7 +8,6 @@ export type AgentInput = {
 	displayName: string;
 	roleDescription?: string;
 	systemRole: "manager" | "worker";
-	status?: "active" | "paused";
 };
 
 export async function addAgent(
@@ -23,14 +22,11 @@ export async function addAgent(
 	}
 
 	const normalizedRoleDescription = normalizeRoleDescription(agent);
-	const normalizedStatus = agent.status ?? "active";
-
 	const nextAgent = agentSchema.parse({
 		id: agent.id,
 		displayName: agent.displayName,
 		roleDescription: normalizedRoleDescription,
 		systemRole: agent.systemRole,
-		status: normalizedStatus,
 	});
 
 	const nextFile = agentsSchema.parse({
@@ -52,36 +48,6 @@ function normalizeRoleDescription(agent: AgentInput): string {
 	}
 
 	throw new Error("roleDescription is required for non-manager agents.");
-}
-
-export async function updateAgent(
-	missionDir: string,
-	agentId: string,
-	updates: Partial<Omit<AgentInput, "id" | "systemRole">>,
-): Promise<void> {
-	const agentsPath = join(missionDir, "agents.json");
-	const agentsFile = await readJson(agentsPath, agentsSchema);
-	const agent = agentsFile.agents.find((entry) => entry.id === agentId);
-
-	if (!agent) {
-		throw new Error(`Agent not found: ${agentId}`);
-	}
-
-	const nextAgent = agentSchema.parse({
-		...agent,
-		displayName: updates.displayName ?? agent.displayName,
-		roleDescription: updates.roleDescription ?? agent.roleDescription,
-		status: updates.status ?? agent.status,
-	});
-
-	const nextFile = agentsSchema.parse({
-		...agentsFile,
-		agents: agentsFile.agents.map((entry) =>
-			entry.id === agentId ? nextAgent : entry,
-		),
-	});
-
-	await writeJsonAtomic(agentsPath, nextFile);
 }
 
 export async function listAgents(missionDir: string) {

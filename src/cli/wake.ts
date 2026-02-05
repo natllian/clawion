@@ -242,16 +242,55 @@ function buildWorkerWakeLines(ctx: WakeContext): string[] {
 	renderMemory(lines, ctx.memory);
 
 	lines.push("");
-	lines.push("## Next Actions");
+	lines.push("## Turn Playbook");
 	lines.push(
-		`1. Reply / ask questions: \`clawion message add --mission ${ctx.missionId} --task <taskId> --content "..." --mentions <agentId,...> --agent ${ctx.agentEntry.id}\``,
+		"Your mission this turn: make one assigned task meaningfully closer to done (or fully done). If you can’t progress, reduce uncertainty fast by asking the right person.",
 	);
+	lines.push("");
+	lines.push("1) Handle Unread Mentions first.");
 	lines.push(
-		`2. Log progress: \`clawion working add --mission ${ctx.missionId} --content "..." --agent ${ctx.agentEntry.id}\``,
+		"   - Reply with an answer, a clear question, or a concrete next step + ETA.",
 	);
+	lines.push("");
+	lines.push("2) Pick the single highest-priority Assigned Task.");
+	lines.push("   - If anything is blocked → focus on unblocking it.");
+	lines.push("   - Else continue the most ongoing task.");
 	lines.push(
-		`3. Update summary: \`clawion memory set --mission ${ctx.missionId} --content "..." --agent ${ctx.agentEntry.id}\``,
+		"   - Else start a pending task with a short plan and a first deliverable.",
 	);
+	lines.push("");
+	lines.push("3) Aim for a deliverable (not just activity).");
+	lines.push(
+		"   Deliverables can be: a patch/PR, a repro + diagnosis, a spec/proposal with tradeoffs, a test plan, or a concrete review result.",
+	);
+	lines.push("");
+	lines.push("4) Ask early when unclear or blocked.");
+	lines.push(
+		"   Use `clawion message add` to mention the manager and/or relevant peers. Include what you tried and what you need.",
+	);
+	lines.push("");
+	lines.push("5) Write back before you stop.");
+	lines.push("   - `working add`: progress + next step (and blockers if any)");
+	lines.push("   - `memory set`: stable summary of what’s true now");
+	lines.push(
+		"   - `message add`: close the loop with the manager (especially on completion)",
+	);
+
+	lines.push("");
+	lines.push("## Command Templates");
+	lines.push("- Reply / ask questions:");
+	lines.push(
+		`  \`clawion message add --mission ${ctx.missionId} --task <taskId> --content "..." --mentions <agentId,...> --agent ${ctx.agentEntry.id}\``,
+	);
+	lines.push("- Log progress:");
+	lines.push(
+		`  \`clawion working add --mission ${ctx.missionId} --content "..." --agent ${ctx.agentEntry.id}\``,
+	);
+	lines.push("- Update summary:");
+	lines.push(
+		`  \`clawion memory set --mission ${ctx.missionId} --content "..." --agent ${ctx.agentEntry.id}\``,
+	);
+
 	lines.push("");
 	lines.push(
 		"_Unread mentions shown above have been automatically acknowledged after this Wake._",
@@ -400,25 +439,56 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 	renderMemory(lines, ctx.memory);
 
 	lines.push("");
-	lines.push("## Next Actions (Manager)");
+	lines.push("## Turn Playbook");
 	lines.push(
-		`1. Communicate decisions: \`clawion message add --mission ${ctx.missionId} --task <taskId> --content "..." --mentions <agentId,...> --agent ${ctx.agentEntry.id}\``,
+		"Your mission this turn: keep throughput high by dispatching clear work, removing blockers, and keeping the task board accurate.",
 	);
+	lines.push("");
+	lines.push("1) Triage Unread Mentions.");
 	lines.push(
-		`2. Create tasks: \`clawion task create --mission ${ctx.missionId} --id <taskId> --title "..." --description "..." --agent ${ctx.agentEntry.id}\``,
+		"   - Answer questions, make decisions, and acknowledge completions.",
 	);
+	lines.push("");
+	lines.push("2) Scan mission health.");
+	lines.push("   - Focus on blocked tasks, unassigned tasks, and stale work.");
+	lines.push("");
+	lines.push("3) Dispatch next steps.");
 	lines.push(
-		`3. Assign tasks: \`clawion task assign --mission ${ctx.missionId} --task <taskId> --to <agentId> --agent ${ctx.agentEntry.id}\``,
+		"   Ensure each task has: a clear outcome, constraints/acceptance criteria, an owner, and an expected update cadence.",
 	);
+	lines.push("");
+	lines.push("4) Communicate decisions in threads.");
 	lines.push(
-		`4. Update task board: \`clawion task update --mission ${ctx.missionId} --id <taskId> --status <pending|ongoing|blocked|completed> --status-notes "..." --agent ${ctx.agentEntry.id}\``,
+		"   - Keep messages short, explicit, with the next step and owner.",
 	);
+
+	lines.push("");
+	lines.push("## Command Templates (Manager)");
+	lines.push("- Communicate decisions:");
 	lines.push(
-		`5. Update roadmap (write-only): \`clawion mission roadmap --id ${ctx.missionId} --set "..." --agent ${ctx.agentEntry.id}\``,
+		`  \`clawion message add --mission ${ctx.missionId} --task <taskId> --content "..." --mentions <agentId,...> --agent ${ctx.agentEntry.id}\``,
 	);
+	lines.push("- Create tasks:");
 	lines.push(
-		`6. Complete mission: \`clawion mission complete --id ${ctx.missionId} --agent ${ctx.agentEntry.id}\``,
+		`  \`clawion task create --mission ${ctx.missionId} --id <taskId> --title "..." --description "..." --agent ${ctx.agentEntry.id}\``,
 	);
+	lines.push("- Assign tasks:");
+	lines.push(
+		`  \`clawion task assign --mission ${ctx.missionId} --task <taskId> --to <agentId> --agent ${ctx.agentEntry.id}\``,
+	);
+	lines.push("- Update task board:");
+	lines.push(
+		`  \`clawion task update --mission ${ctx.missionId} --id <taskId> --status <pending|ongoing|blocked|completed> --status-notes "..." --agent ${ctx.agentEntry.id}\``,
+	);
+	lines.push("- Update roadmap (write-only):");
+	lines.push(
+		`  \`clawion mission roadmap --id ${ctx.missionId} --set "..." --agent ${ctx.agentEntry.id}\``,
+	);
+	lines.push("- Complete mission:");
+	lines.push(
+		`  \`clawion mission complete --id ${ctx.missionId} --agent ${ctx.agentEntry.id}\``,
+	);
+
 	lines.push("");
 	lines.push(
 		"_Unread mentions shown above have been automatically acknowledged after this Wake._",
