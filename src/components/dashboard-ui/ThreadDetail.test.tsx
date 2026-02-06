@@ -359,30 +359,31 @@ describe("ThreadDetail", () => {
 		});
 	});
 
-	it("manually marks all mentions acknowledged for the thread", async () => {
-		const pendingPayload: ThreadResponse = {
+	it("completes task from thread detail without ack gating", async () => {
+		const completedPayload: ThreadResponse = {
 			...mockThreadResponse,
-			pendingAckByMessageId: {
-				"msg-1": ["agent-1"],
+			task: {
+				...mockThreadResponse.task,
+				columnId: "completed",
 			},
-		};
-		const ackedPayload: ThreadResponse = {
-			...mockThreadResponse,
-			pendingAckByMessageId: {},
+			column: {
+				id: "completed",
+				name: "Completed",
+			},
 		};
 
 		(global.fetch as ReturnType<typeof vi.fn>)
 			.mockResolvedValueOnce({
 				ok: true,
-				json: async () => pendingPayload,
+				json: async () => mockThreadResponse,
 			})
 			.mockResolvedValueOnce({
 				ok: true,
-				json: async () => ({ ok: true, ackedEntries: 1 }),
+				json: async () => ({ ok: true }),
 			})
 			.mockResolvedValueOnce({
 				ok: true,
-				json: async () => ackedPayload,
+				json: async () => completedPayload,
 			});
 
 		render(
@@ -395,20 +396,19 @@ describe("ThreadDetail", () => {
 		);
 
 		await waitFor(() => {
-			expect(screen.getByText("Awaiting ack: @Alice")).toBeInTheDocument();
+			expect(screen.getByText("Task Title")).toBeInTheDocument();
 		});
 
-		fireEvent.click(
-			screen.getByRole("button", { name: "Mark all acknowledged" }),
-		);
+		fireEvent.click(screen.getByRole("button", { name: "Complete task" }));
 
 		await waitFor(() => {
-			expect(
-				screen.queryByText("Awaiting ack: @Alice"),
-			).not.toBeInTheDocument();
+			expect(screen.getByRole("button", { name: "Completed" })).toBeDisabled();
 		});
-		expect(
-			screen.getByRole("button", { name: "All acknowledged" }),
-		).toBeDisabled();
+		expect(global.fetch).toHaveBeenCalledWith(
+			"/api/missions/m1/tasks/t1/complete",
+			{
+				method: "POST",
+			},
+		);
 	});
 });

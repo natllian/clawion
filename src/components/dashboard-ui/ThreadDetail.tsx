@@ -141,8 +141,7 @@ export function ThreadDetail({
 	const [snapshotSecret, setSnapshotSecret] = React.useState("");
 	const [loadingSnapshot, setLoadingSnapshot] = React.useState(false);
 	const [savingSnapshot, setSavingSnapshot] = React.useState(false);
-	const [markingAllAcknowledged, setMarkingAllAcknowledged] =
-		React.useState(false);
+	const [completingTask, setCompletingTask] = React.useState(false);
 
 	const loadThread = React.useCallback(
 		async (signal?: AbortSignal) => {
@@ -268,11 +267,12 @@ export function ThreadDetail({
 
 	const { thread, task, column } = data;
 	const pendingAckByMessageId = data.pendingAckByMessageId ?? {};
-	const hasPendingAcks = Object.values(pendingAckByMessageId).some(
-		(ids) => ids.length > 0,
-	);
 	const isTaskBlocked = isBlocked(task.statusNotes);
 	const columnBadgeTone = resolveColumnBadgeTone(task.columnId, column?.name);
+	const isTaskCompleted =
+		`${task.columnId} ${column?.name ?? ""}`
+			.toLowerCase()
+			.match(/complete|done/) !== null;
 	const assigneeLabel = task.assigneeAgentId
 		? `@${agentMap.get(task.assigneeAgentId) ?? task.assigneeAgentId}`
 		: "Unassigned";
@@ -334,27 +334,28 @@ export function ThreadDetail({
 		);
 	}
 
-	async function handleMarkAllAcknowledged() {
-		if (markingAllAcknowledged || !hasPendingAcks) {
+	async function handleCompleteTask() {
+		if (completingTask || isTaskCompleted) {
 			return;
 		}
 
-		setMarkingAllAcknowledged(true);
+		setCompletingTask(true);
 		try {
 			const response = await fetch(
-				`/api/missions/${missionId}/threads/${threadId}/ack-all`,
+				`/api/missions/${missionId}/tasks/${threadId}/complete`,
 				{
 					method: "POST",
 				},
 			);
 			if (!response.ok) {
-				throw new Error("Failed to acknowledge thread mentions.");
+				const payload = (await response.json()) as { error?: string };
+				throw new Error(payload.error ?? "Failed to complete task.");
 			}
 			await loadThread();
 		} catch (error) {
 			console.error(error);
 		} finally {
-			setMarkingAllAcknowledged(false);
+			setCompletingTask(false);
 		}
 	}
 
@@ -437,14 +438,14 @@ export function ThreadDetail({
 								type="button"
 								variant="outline"
 								size="xs"
-								disabled={markingAllAcknowledged || !hasPendingAcks}
-								onClick={handleMarkAllAcknowledged}
+								disabled={completingTask || isTaskCompleted}
+								onClick={handleCompleteTask}
 							>
-								{markingAllAcknowledged
-									? "Marking..."
-									: hasPendingAcks
-										? "Mark all acknowledged"
-										: "All acknowledged"}
+								{completingTask
+									? "Completing..."
+									: isTaskCompleted
+										? "Completed"
+										: "Complete task"}
 							</Button>
 							<span className="text-xs text-muted-foreground">
 								{thread.messages.length} messages

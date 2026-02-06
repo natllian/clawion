@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { acknowledgeAllTaskMentions } from "@/core/workspace/inbox";
 import { resolveMissionPath } from "@/core/workspace/mission";
 import { resolveMissionsDir } from "@/core/workspace/paths";
+import { updateTask } from "@/core/workspace/tasks";
 
 export const runtime = "nodejs";
 
@@ -17,16 +17,14 @@ export async function POST(_request: Request, context: RouteContext) {
 		const missionsDir = resolveMissionsDir();
 		await resolveMissionPath(missionsDir, missionId);
 
-		const result = await acknowledgeAllTaskMentions(
+		await updateTask({
 			missionsDir,
 			missionId,
-			taskId,
-		);
-		return NextResponse.json({
-			ok: true,
-			taskId,
-			...result,
+			id: taskId,
+			status: "completed",
 		});
+
+		return NextResponse.json({ ok: true, taskId });
 	} catch (error) {
 		const message = error instanceof Error ? error.message : "Unknown error";
 		const status = message.toLowerCase().includes("not found") ? 404 : 500;
