@@ -475,6 +475,7 @@ export function Dashboard({
 								threadId={activeThreadId}
 								mission={mission}
 								agentMap={agentMap}
+								agents={agents}
 							/>
 						) : (
 							<TaskBoardSection

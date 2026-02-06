@@ -184,10 +184,21 @@ export function AgentDropdown({
 									<p className="mb-2 text-[0.65rem] uppercase tracking-wide text-muted-foreground">
 										Dark Secret
 									</p>
-									<p className="mb-2 text-[0.7rem] text-amber-700">
-										Critical and private. It must never be disclosed to other
-										agents.
-									</p>
+									<div className="mb-2 flex items-start justify-between gap-2">
+										<p className="text-[0.7rem] text-amber-700">
+											Critical and private. It must never be disclosed to other
+											agents.
+										</p>
+										<Button
+											type="button"
+											size="xs"
+											onClick={() => onDarkSecretSave(agent.id, darkSecret)}
+											disabled={!isActive || savingDarkSecret}
+											className="shrink-0"
+										>
+											{savingDarkSecret ? "Saving..." : "Save Secret"}
+										</Button>
+									</div>
 									<textarea
 										value={isActive ? darkSecret : ""}
 										onChange={(event) => onDarkSecretChange(event.target.value)}
@@ -197,18 +208,8 @@ export function AgentDropdown({
 												? "Write this agent's dark secret..."
 												: "Select an agent to edit dark secret."
 										}
-										className="h-24 w-full resize-none rounded-md border border-border/70 bg-background px-2 py-1 text-xs text-foreground outline-none ring-ring/50 placeholder:text-muted-foreground focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-60"
+										className="scrollbar-dropdown h-24 w-full resize-none rounded-md border border-border/70 bg-background px-2 py-1 text-xs text-foreground outline-none ring-ring/50 placeholder:text-muted-foreground focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-60"
 									/>
-									<div className="mt-2 flex justify-end">
-										<Button
-											type="button"
-											size="xs"
-											onClick={() => onDarkSecretSave(agent.id, darkSecret)}
-											disabled={!isActive || savingDarkSecret}
-										>
-											{savingDarkSecret ? "Saving..." : "Save Secret"}
-										</Button>
-									</div>
 								</div>
 							</div>
 						</DropdownMenuContent>

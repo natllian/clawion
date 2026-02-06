@@ -1,4 +1,10 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Mission, ThreadDetail as ThreadDetailData } from "@/core/schemas";
 
@@ -277,5 +283,42 @@ describe("ThreadDetail", () => {
 			expect(screen.getByText("Awaiting ack: @Alice")).toBeInTheDocument();
 		});
 		expect(screen.getByText("Acknowledged")).toBeInTheDocument();
+	});
+
+	it("opens agent snapshot when clicking avatar", async () => {
+		(global.fetch as ReturnType<typeof vi.fn>)
+			.mockResolvedValueOnce({
+				ok: true,
+				json: async () => mockThreadResponse,
+			})
+			.mockResolvedValueOnce({
+				ok: true,
+				json: async () => ({ agentId: "agent-1", events: [] }),
+			})
+			.mockResolvedValueOnce({
+				ok: true,
+				json: async () => ({ agentId: "agent-1", content: "" }),
+			});
+
+		render(
+			<ThreadDetail
+				missionId="m1"
+				threadId="t1"
+				mission={mockMission}
+				agentMap={agentMap}
+			/>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByText("Task Title")).toBeInTheDocument();
+		});
+
+		fireEvent.pointerDown(
+			screen.getByRole("button", { name: /open snapshot for alice/i }),
+			{ button: 0, ctrlKey: false },
+		);
+		await waitFor(() => {
+			expect(screen.getByText("Agent Snapshot")).toBeInTheDocument();
+		});
 	});
 });
