@@ -352,12 +352,17 @@ export function ThreadDetail({
 					collisionPadding={12}
 					sideOffset={10}
 				>
-					<DropdownMenuLabel className="text-xs uppercase tracking-wide text-muted-foreground">
-						Agent Profile
+					<DropdownMenuLabel className="flex items-center justify-between gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+						<span>Agent Profile</span>
+						<span className="flex items-center gap-2 normal-case tracking-normal">
+							<span className="font-medium text-foreground">{agentLabel}</span>
+							<span className="rounded-full border border-border/70 bg-muted/60 px-2 py-0.5 text-[0.6rem] font-medium uppercase tracking-wide text-foreground/80">
+								{agent?.systemRole ?? "—"}
+							</span>
+						</span>
 					</DropdownMenuLabel>
 					<DropdownMenuSeparator />
 					<AgentSnapshotPanel
-						agentLabel={agentLabel}
 						roleDescription={
 							isSnapshotActive
 								? snapshotRoleDescription
@@ -370,7 +375,6 @@ export function ThreadDetail({
 							handleSnapshotRoleDescriptionSave(agentId)
 						}
 						savingRoleDescription={savingSnapshotRole}
-						systemRole={agent?.systemRole}
 						isActive={isSnapshotActive}
 						working={snapshotWorking}
 						loadingWorking={loadingSnapshot}

@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { WorkingEvent } from "@/core/schemas";
@@ -18,12 +19,10 @@ function formatDate(value: string) {
 }
 
 interface AgentSnapshotPanelProps {
-	agentLabel: string;
 	roleDescription: string;
 	onRoleDescriptionChange: (value: string) => void;
 	onRoleDescriptionSave: () => void | Promise<void>;
 	savingRoleDescription: boolean;
-	systemRole?: string | null;
 	isActive: boolean;
 	working: WorkingEvent[];
 	loadingWorking: boolean;
@@ -51,12 +50,10 @@ export function WorkingEventItem({ event }: WorkingEventItemProps) {
 }
 
 export function AgentSnapshotPanel({
-	agentLabel,
 	roleDescription,
 	onRoleDescriptionChange,
 	onRoleDescriptionSave,
 	savingRoleDescription,
-	systemRole,
 	isActive,
 	working,
 	loadingWorking,
@@ -65,36 +62,76 @@ export function AgentSnapshotPanel({
 	onDarkSecretSave,
 	savingDarkSecret,
 }: AgentSnapshotPanelProps) {
+	const [isEditingRole, setIsEditingRole] = React.useState(false);
+	const [isEditingSecret, setIsEditingSecret] = React.useState(false);
+
+	const canEditRole = isActive && isEditingRole;
+	const canEditSecret = isActive && isEditingSecret;
+
+	async function handleSaveRole() {
+		await onRoleDescriptionSave();
+		setIsEditingRole(false);
+	}
+
+	function handleCancelRole() {
+		setIsEditingRole(false);
+	}
+
+	async function handleSaveSecret() {
+		await onDarkSecretSave();
+		setIsEditingSecret(false);
+	}
+
+	function handleCancelSecret() {
+		setIsEditingSecret(false);
+	}
+
 	return (
 		<div className="space-y-3">
-			<div className="rounded-lg border border-border/70 bg-background p-3">
-				<div className="flex items-center justify-between gap-2">
-					<p className="text-sm font-medium text-foreground">{agentLabel}</p>
-					<p className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">
-						{systemRole ?? "—"}
-					</p>
-				</div>
-			</div>
-
 			<div className="mt-2">
 				<div className="mb-2 flex items-center justify-between gap-2">
 					<p className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">
 						Role Description
 					</p>
-					<Button
-						type="button"
-						size="xs"
-						onClick={onRoleDescriptionSave}
-						disabled={!isActive || savingRoleDescription}
-						className="shrink-0"
-					>
-						{savingRoleDescription ? "Saving..." : "Save"}
-					</Button>
+					<div className="flex items-center gap-2">
+						{isEditingRole ? (
+							<>
+								<Button
+									type="button"
+									size="xs"
+									variant="ghost"
+									onClick={handleCancelRole}
+									disabled={savingRoleDescription}
+								>
+									Cancel
+								</Button>
+								<Button
+									type="button"
+									size="xs"
+									onClick={handleSaveRole}
+									disabled={!isActive || savingRoleDescription}
+									className="shrink-0"
+								>
+									{savingRoleDescription ? "Saving..." : "Save"}
+								</Button>
+							</>
+						) : (
+							<Button
+								type="button"
+								size="xs"
+								variant="outline"
+								onClick={() => setIsEditingRole(true)}
+								disabled={!isActive}
+							>
+								Edit
+							</Button>
+						)}
+					</div>
 				</div>
 				<textarea
 					value={isActive ? roleDescription : ""}
 					onChange={(event) => onRoleDescriptionChange(event.target.value)}
-					disabled={!isActive || savingRoleDescription}
+					disabled={!canEditRole || savingRoleDescription}
 					placeholder={
 						isActive
 							? "Describe this agent's role and constraints..."
@@ -109,15 +146,40 @@ export function AgentSnapshotPanel({
 					<p className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">
 						Dark Secret
 					</p>
-					<Button
-						type="button"
-						size="xs"
-						onClick={onDarkSecretSave}
-						disabled={!isActive || savingDarkSecret}
-						className="shrink-0"
-					>
-						{savingDarkSecret ? "Saving..." : "Save"}
-					</Button>
+					<div className="flex items-center gap-2">
+						{isEditingSecret ? (
+							<>
+								<Button
+									type="button"
+									size="xs"
+									variant="ghost"
+									onClick={handleCancelSecret}
+									disabled={savingDarkSecret}
+								>
+									Cancel
+								</Button>
+								<Button
+									type="button"
+									size="xs"
+									onClick={handleSaveSecret}
+									disabled={!isActive || savingDarkSecret}
+									className="shrink-0"
+								>
+									{savingDarkSecret ? "Saving..." : "Save"}
+								</Button>
+							</>
+						) : (
+							<Button
+								type="button"
+								size="xs"
+								variant="outline"
+								onClick={() => setIsEditingSecret(true)}
+								disabled={!isActive}
+							>
+								Edit
+							</Button>
+						)}
+					</div>
 				</div>
 				<p className="mb-2 text-[0.7rem] text-amber-700">
 					Critical and private. It must never be disclosed to other agents.
@@ -125,7 +187,7 @@ export function AgentSnapshotPanel({
 				<textarea
 					value={isActive ? darkSecret : ""}
 					onChange={(event) => onDarkSecretChange(event.target.value)}
-					disabled={!isActive || savingDarkSecret}
+					disabled={!canEditSecret || savingDarkSecret}
 					placeholder={
 						isActive
 							? "Write this agent's dark secret..."
