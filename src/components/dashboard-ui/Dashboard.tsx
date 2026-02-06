@@ -38,11 +38,6 @@ type WorkingResponse = {
 	events: WorkingEvent[];
 };
 
-type MemoryResponse = {
-	agentId: string;
-	content: string;
-};
-
 function isAbortError(error: unknown) {
 	return error instanceof DOMException && error.name === "AbortError";
 }
@@ -72,7 +67,6 @@ export function Dashboard({
 	const [activeTaskId, setActiveTaskId] = React.useState<string | null>(null);
 	const [activeAgentId, setActiveAgentId] = React.useState<string | null>(null);
 	const [working, setWorking] = React.useState<WorkingEvent[]>([]);
-	const [memory, setMemory] = React.useState<string>("");
 	const [error, setError] = React.useState<string | null>(null);
 	const [loadingMissions, setLoadingMissions] = React.useState(true);
 	const [loadingMission, setLoadingMission] = React.useState(false);
@@ -254,7 +248,6 @@ export function Dashboard({
 	React.useEffect(() => {
 		if (!activeMissionId || !activeAgentId) {
 			setWorking([]);
-			setMemory("");
 			return;
 		}
 
@@ -263,32 +256,25 @@ export function Dashboard({
 
 		async function loadAgent() {
 			try {
-				const [workingResponse, memoryResponse] = await Promise.all([
-					fetch(`/api/missions/${activeMissionId}/working/${activeAgentId}`, {
+				const workingResponse = await fetch(
+					`/api/missions/${activeMissionId}/working/${activeAgentId}`,
+					{
 						cache: "no-store",
 						signal: controller.signal,
-					}),
-					fetch(`/api/missions/${activeMissionId}/memory/${activeAgentId}`, {
-						cache: "no-store",
-						signal: controller.signal,
-					}),
-				]);
+					},
+				);
 
-				if (!workingResponse.ok || !memoryResponse.ok) {
+				if (!workingResponse.ok) {
 					setWorking([]);
-					setMemory("");
 					return;
 				}
 
 				const workingPayload =
 					(await workingResponse.json()) as WorkingResponse;
-				const memoryPayload = (await memoryResponse.json()) as MemoryResponse;
 				setWorking(workingPayload.events);
-				setMemory(memoryPayload.content);
 			} catch (err) {
 				if (isAbortError(err)) return;
 				setWorking([]);
-				setMemory("");
 			} finally {
 				setLoadingAgent(false);
 			}
@@ -476,7 +462,6 @@ export function Dashboard({
 										activeAgentId={activeAgentId}
 										onAgentSelect={setActiveAgentId}
 										working={working}
-										memory={memory}
 										loadingAgent={loadingAgent}
 									/>
 								</div>

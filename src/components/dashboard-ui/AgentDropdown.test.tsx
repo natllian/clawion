@@ -31,7 +31,6 @@ const defaultProps = {
 	activeAgentId: "agent-1" as string | null,
 	onAgentSelect: vi.fn(),
 	working: [] as WorkingEvent[],
-	memory: "",
 	loadingAgent: false,
 };
 

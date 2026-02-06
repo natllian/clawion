@@ -12,7 +12,6 @@ import { resolveStatusForColumn, type TaskStatus } from "../core/task-status";
 import { formatLocalTime, nowLocal } from "../core/time";
 import { listAgents } from "../core/workspace/agents";
 import { appendInboxAck, listInboxAcks } from "../core/workspace/inbox";
-import { readMemory } from "../core/workspace/memory";
 import { resolveMissionPath } from "../core/workspace/mission";
 import { showMission } from "../core/workspace/missions";
 import { listTasks } from "../core/workspace/tasks";
@@ -70,7 +69,6 @@ type WakeContext = {
 	taskTitleById: Map<string, string>;
 
 	workingEvents: WorkingEvent[];
-	memory: string;
 
 	// Manager-only slices (empty for worker)
 	threadSummaries: ThreadSummary[];
@@ -208,9 +206,7 @@ function buildWorkerWakeLines(ctx: WakeContext): string[] {
 	lines.push("## Mission Overview");
 	lines.push(`- ID: ${ctx.mission.id}`);
 	lines.push(`- Status: ${ctx.mission.status}`);
-
-	lines.push("### ROADMAP");
-	lines.push(ctx.roadmap.trim() || "_No roadmap yet._");
+	lines.push(`- ROADMAP: ${ctx.roadmap.trim() || "_No roadmap yet._"}`);
 
 	lines.push("");
 	renderAssignedTasks(lines, ctx.assignedTasks);
@@ -267,7 +263,6 @@ function buildWorkerWakeLines(ctx: WakeContext): string[] {
 	lines.push("");
 	lines.push("6) Write back before you stop.");
 	lines.push("   - `working add`: progress + next step (and blockers if any)");
-	lines.push("   - `memory set`: stable summary of what’s true now");
 	lines.push(
 		"   - `message add`: close the loop with the manager (especially on completion)",
 	);
@@ -282,10 +277,6 @@ function buildWorkerWakeLines(ctx: WakeContext): string[] {
 	lines.push(
 		`  \`clawion working add --mission ${ctx.missionId} --content "..." --agent ${ctx.agentEntry.id}\``,
 	);
-	lines.push("- Update summary:");
-	lines.push(
-		`  \`clawion memory set --mission ${ctx.missionId} --content "..." --agent ${ctx.agentEntry.id}\``,
-	);
 
 	return lines;
 }
@@ -294,7 +285,7 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 	const lines: string[] = [];
 
 	lines.push(
-		`SYSTEM: You are the Mission Manager for Mission ${ctx.missionId}. This Wake report is your single source of truth for this turn (ROADMAP, Team Directory, Mission Dashboard, Threads, Unread Mentions, Working/Memory).`,
+		`SYSTEM: You are the Mission Manager for Mission ${ctx.missionId}. This Wake report is your single source of truth for this turn (ROADMAP, Team Directory, Mission Dashboard, Threads, Unread Mentions, Working).`,
 	);
 	lines.push(
 		"SYSTEM: Protocol: (1) triage Unread Mentions; (2) scan mission health (blocked/unassigned tasks, recent thread activity, team working updates); (3) decide and dispatch next steps by creating/assigning/updating tasks; (4) communicate decisions via `clawion message add`. Messages shown as unread will be auto-acknowledged after this Wake.",
@@ -316,10 +307,7 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 	lines.push("## Mission Overview");
 	lines.push(`- ID: ${ctx.mission.id}`);
 	lines.push(`- Status: ${ctx.mission.status}`);
-	lines.push(`- Description: ${ctx.mission.description}`);
-	lines.push("");
-	lines.push("### ROADMAP");
-	lines.push(ctx.roadmap.trim() || "_No roadmap yet._");
+	lines.push(`- ROADMAP: ${ctx.roadmap.trim() || "_No roadmap yet._"}`);
 
 	const taskStatusCounts = {
 		pending: 0,
@@ -511,12 +499,11 @@ async function buildWakeContext(
 
 	const isManager = agentEntry.systemRole === "manager";
 
-	const [missionPayload, tasksFile, workingEvents, memory, inboxAcks] =
+	const [missionPayload, tasksFile, workingEvents, inboxAcks] =
 		await Promise.all([
 			showMission(missionsDir, missionId),
 			listTasks(missionsDir, missionId),
 			listWorkingEvents(missionsDir, missionId, agentId),
-			readMemory(missionsDir, missionId, agentId),
 			listInboxAcks(missionsDir, missionId, agentId),
 		]);
 
@@ -619,7 +606,6 @@ async function buildWakeContext(
 		taskTitleById,
 
 		workingEvents,
-		memory,
 
 		threadSummaries,
 		teamWorkingLatest,

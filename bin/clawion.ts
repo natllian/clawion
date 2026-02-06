@@ -6,7 +6,6 @@ import type { TaskStatus } from "../src/core/task-status";
 import { addAgent, listAgents } from "../src/core/workspace/agents";
 import { appendCliInvocation } from "../src/core/workspace/cli-invocations";
 import { ensureWorkspace } from "../src/core/workspace/init";
-import { setMemory } from "../src/core/workspace/memory";
 import { resolveMissionPath } from "../src/core/workspace/mission";
 import {
 	completeMission,
@@ -176,13 +175,6 @@ const HELP_ENTRIES: HelpEntry[] = [
 		params: ["--mission <id>", "--content <markdown>", "--agent <agentId>"],
 		example:
 			"clawion working add --mission m1 --content 'Investigating API error' --agent agent-1",
-	},
-	{
-		command: "memory set",
-		purpose: "Replace the memory summary for the acting agent.",
-		params: ["--mission <id>", "--content <markdown>", "--agent <agentId>"],
-		example:
-			"clawion memory set --mission m1 --content '# Summary\\n- ...' --agent agent-1",
 	},
 ];
 
@@ -653,37 +645,6 @@ working
 
 working.action(() => {
 	working.help();
-});
-
-const memory = program.command("memory").description("Memory management");
-
-memory
-	.command("set")
-	.description("Replace the memory summary")
-	.requiredOption("--mission <id>", "Mission ID")
-	.requiredOption("--content <markdown>", "Memory content")
-	.action(async (options, command) => {
-		const agentId = requireAgentId(command);
-		if (!agentId) {
-			return;
-		}
-
-		try {
-			await setMemory({
-				missionsDir: context.missionsDir,
-				missionId: options.mission,
-				agentId,
-				content: options.content,
-			});
-			console.log(`Memory updated: ${agentId}`);
-		} catch (error) {
-			console.error(error instanceof Error ? error.message : String(error));
-			process.exitCode = 1;
-		}
-	});
-
-memory.action(() => {
-	memory.help();
 });
 
 await program.parseAsync(process.argv);
