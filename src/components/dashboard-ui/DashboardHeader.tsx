@@ -23,7 +23,7 @@ export function DashboardHeader({
 		: roadmap.trim() || "No roadmap yet.";
 
 	return (
-		<header className="flex flex-wrap items-start justify-between gap-4 border-b border-border/70 bg-background/95 px-6 py-4">
+		<header className="relative z-40 flex flex-wrap items-start justify-between gap-4 border-b border-border/70 bg-background px-6 py-4">
 			<div className="min-w-0">
 				<p className="text-[0.6rem] uppercase tracking-widest text-muted-foreground">
 					Mission Overview

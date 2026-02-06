@@ -404,7 +404,7 @@ export function ThreadDetail({
 													</button>
 												</DropdownMenuTrigger>
 												<DropdownMenuContent
-													className="w-[420px] p-3"
+													className="z-30 w-[420px] p-3"
 													side="right"
 													align="start"
 													collisionPadding={12}
