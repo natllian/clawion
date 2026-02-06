@@ -137,7 +137,7 @@ export function AgentSnapshotPanel({
 							? "Describe this agent's role and constraints..."
 							: "Select an agent to edit role description."
 					}
-					className="scrollbar-dropdown h-24 w-full resize-none rounded-md border border-border/70 bg-background px-2 py-1 text-xs text-foreground outline-none ring-ring/50 placeholder:text-muted-foreground focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-60"
+					className="scrollbar-dropdown h-24 w-full resize-none rounded-md border border-border/70 bg-background px-2 py-1 text-xs text-foreground outline-none ring-ring/50 placeholder:text-muted-foreground focus-visible:ring-[3px] disabled:opacity-60"
 				/>
 			</div>
 
@@ -193,7 +193,7 @@ export function AgentSnapshotPanel({
 							? "Write this agent's dark secret..."
 							: "Select an agent to edit dark secret."
 					}
-					className="scrollbar-dropdown h-24 w-full resize-none rounded-md border border-border/70 bg-background px-2 py-1 text-xs text-foreground outline-none ring-ring/50 placeholder:text-muted-foreground focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-60"
+					className="scrollbar-dropdown h-24 w-full resize-none rounded-md border border-border/70 bg-background px-2 py-1 text-xs text-foreground outline-none ring-ring/50 placeholder:text-muted-foreground focus-visible:ring-[3px] disabled:opacity-60"
 				/>
 			</div>
 

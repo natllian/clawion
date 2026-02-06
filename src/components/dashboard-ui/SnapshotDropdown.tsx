@@ -120,7 +120,7 @@ export function SnapshotDropdown({
 										? "Write roadmap markdown..."
 										: "Select a mission to edit roadmap."
 								}
-								className="scrollbar-dropdown min-h-[300px] h-[52vh] max-h-[540px] w-full resize-none rounded-md border border-border/70 bg-background px-2 py-1 text-xs text-foreground outline-none ring-ring/50 placeholder:text-muted-foreground focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-60"
+								className="scrollbar-dropdown min-h-[300px] h-[52vh] max-h-[540px] w-full resize-none rounded-md border border-border/70 bg-background px-2 py-1 text-xs text-foreground outline-none ring-ring/50 placeholder:text-muted-foreground focus-visible:ring-[3px] disabled:opacity-60"
 							/>
 						) : (
 							<div className="rounded-lg border border-border/70 bg-background p-2">
