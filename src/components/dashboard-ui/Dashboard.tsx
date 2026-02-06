@@ -555,7 +555,6 @@ export function Dashboard({
 							<ThreadDetail
 								missionId={activeMissionId ?? ""}
 								threadId={activeThreadId}
-								mission={mission}
 								agentMap={agentMap}
 								agents={agents}
 							/>

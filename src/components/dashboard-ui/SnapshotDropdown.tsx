@@ -6,8 +6,6 @@ import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Mission } from "@/core/schemas";
@@ -71,14 +69,13 @@ export function SnapshotDropdown({
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent className="w-[380px] p-3" sideOffset={8}>
-				<DropdownMenuLabel className="text-xs uppercase tracking-wide text-muted-foreground">
-					Roadmap
-				</DropdownMenuLabel>
-				<DropdownMenuSeparator />
 				<div className="space-y-2">
 					<div className="space-y-2">
 						<div className="flex items-center justify-between gap-2">
-							<div className="ml-auto flex items-center gap-2">
+							<p className="text-xs uppercase tracking-wide text-muted-foreground">
+								Roadmap
+							</p>
+							<div className="flex items-center gap-2">
 								{isEditingRoadmap ? (
 									<>
 										<Button

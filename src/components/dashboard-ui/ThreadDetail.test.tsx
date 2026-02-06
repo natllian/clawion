@@ -6,7 +6,7 @@ import {
 	waitFor,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { Mission, ThreadDetail as ThreadDetailData } from "@/core/schemas";
+import type { ThreadDetail as ThreadDetailData } from "@/core/schemas";
 
 // Define ThreadResponse inline since it's not exported
 interface ThreadResponse {
@@ -42,15 +42,6 @@ vi.mock("next/navigation", () => ({
 
 // Mock fetch
 global.fetch = vi.fn();
-
-const mockMission: Mission = {
-	schemaVersion: 1,
-	id: "m1",
-	name: "Test Mission",
-	status: "active",
-	createdAt: "2024-01-01T08:00:00Z",
-	updatedAt: "2024-01-01T12:00:00Z",
-};
 
 const mockThread: ThreadDetailData = {
 	taskId: "t1",
@@ -111,14 +102,7 @@ describe("ThreadDetail", () => {
 			() => new Promise(() => {}), // Never resolve
 		);
 
-		render(
-			<ThreadDetail
-				missionId="m1"
-				threadId="t1"
-				mission={mockMission}
-				agentMap={agentMap}
-			/>,
-		);
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
 
 		// Should show skeleton elements
 		const skeletons = document.querySelectorAll("[data-slot='skeleton']");
@@ -132,12 +116,7 @@ describe("ThreadDetail", () => {
 		});
 
 		render(
-			<ThreadDetail
-				missionId="m1"
-				threadId="missing"
-				mission={mockMission}
-				agentMap={agentMap}
-			/>,
+			<ThreadDetail missionId="m1" threadId="missing" agentMap={agentMap} />,
 		);
 
 		await waitFor(() => {
@@ -151,14 +130,7 @@ describe("ThreadDetail", () => {
 			json: async () => mockThreadResponse,
 		});
 
-		render(
-			<ThreadDetail
-				missionId="m1"
-				threadId="t1"
-				mission={mockMission}
-				agentMap={agentMap}
-			/>,
-		);
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
 
 		await waitFor(() => {
 			expect(screen.getByText("Task Title")).toBeInTheDocument();
@@ -171,14 +143,7 @@ describe("ThreadDetail", () => {
 			json: async () => mockThreadResponse,
 		});
 
-		render(
-			<ThreadDetail
-				missionId="m1"
-				threadId="t1"
-				mission={mockMission}
-				agentMap={agentMap}
-			/>,
-		);
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
 
 		await waitFor(() => {
 			expect(screen.getByText("Task description")).toBeInTheDocument();
@@ -192,14 +157,7 @@ describe("ThreadDetail", () => {
 			json: async () => mockThreadResponse,
 		});
 
-		render(
-			<ThreadDetail
-				missionId="m1"
-				threadId="t1"
-				mission={mockMission}
-				agentMap={agentMap}
-			/>,
-		);
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
 
 		await waitFor(() => {
 			expect(screen.getByText("Back to board")).toBeInTheDocument();
@@ -212,14 +170,7 @@ describe("ThreadDetail", () => {
 			json: async () => mockThreadResponse,
 		});
 
-		render(
-			<ThreadDetail
-				missionId="m1"
-				threadId="t1"
-				mission={mockMission}
-				agentMap={agentMap}
-			/>,
-		);
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
 
 		await waitFor(() => {
 			expect(screen.getByText("2 messages")).toBeInTheDocument();
@@ -240,14 +191,7 @@ describe("ThreadDetail", () => {
 			json: async () => payload,
 		});
 
-		render(
-			<ThreadDetail
-				missionId="m1"
-				threadId="t1"
-				mission={mockMission}
-				agentMap={agentMap}
-			/>,
-		);
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
 
 		await waitFor(() => {
 			expect(screen.getByRole("heading", { level: 3 })).toHaveTextContent(
@@ -269,14 +213,7 @@ describe("ThreadDetail", () => {
 			json: async () => payload,
 		});
 
-		render(
-			<ThreadDetail
-				missionId="m1"
-				threadId="t1"
-				mission={mockMission}
-				agentMap={agentMap}
-			/>,
-		);
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
 
 		await waitFor(() => {
 			expect(screen.getByText("Awaiting ack: @Alice")).toBeInTheDocument();
@@ -299,14 +236,7 @@ describe("ThreadDetail", () => {
 				json: async () => ({ agentId: "agent-1", content: "" }),
 			});
 
-		render(
-			<ThreadDetail
-				missionId="m1"
-				threadId="t1"
-				mission={mockMission}
-				agentMap={agentMap}
-			/>,
-		);
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
 
 		await waitFor(() => {
 			expect(screen.getByText("Task Title")).toBeInTheDocument();
@@ -336,14 +266,7 @@ describe("ThreadDetail", () => {
 				json: async () => ({ agentId: "agent-1", content: "" }),
 			});
 
-		render(
-			<ThreadDetail
-				missionId="m1"
-				threadId="t1"
-				mission={mockMission}
-				agentMap={agentMap}
-			/>,
-		);
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
 
 		await waitFor(() => {
 			expect(screen.getByText("Task Title")).toBeInTheDocument();
@@ -385,14 +308,7 @@ describe("ThreadDetail", () => {
 				json: async () => completedPayload,
 			});
 
-		render(
-			<ThreadDetail
-				missionId="m1"
-				threadId="t1"
-				mission={mockMission}
-				agentMap={agentMap}
-			/>,
-		);
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
 
 		await waitFor(() => {
 			expect(screen.getByText("Task Title")).toBeInTheDocument();

@@ -18,12 +18,10 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import type {
 	AgentsFile,
-	Mission,
 	ThreadDetail as ThreadDetailData,
 	ThreadMessageEvent,
 	WorkingEvent,
 } from "@/core/schemas";
-import { missionStatusTone } from "@/lib/status-tones";
 import { cn } from "@/lib/utils";
 import { AgentSnapshotPanel } from "./AgentSnapshotPanel";
 import { MarkdownBlock } from "./MarkdownBlock";
@@ -31,7 +29,6 @@ import { MarkdownBlock } from "./MarkdownBlock";
 interface ThreadDetailProps {
 	missionId: string;
 	threadId: string;
-	mission: Mission | null;
 	agentMap: Map<string, string>;
 	agents?: AgentsFile | null;
 }
@@ -125,7 +122,6 @@ function ThreadSkeleton() {
 export function ThreadDetail({
 	missionId,
 	threadId,
-	mission,
 	agentMap,
 	agents = null,
 }: ThreadDetailProps) {
@@ -584,24 +580,6 @@ export function ThreadDetail({
 				</main>
 
 				<aside className="space-y-4">
-					<Card className="border-border/70 gap-0">
-						<CardHeader className="pb-3">
-							<CardTitle className="text-sm">Mission</CardTitle>
-						</CardHeader>
-						<CardContent className="space-y-2 text-sm text-muted-foreground">
-							<p className="font-medium text-foreground">{mission?.name}</p>
-							<Badge
-								variant="outline"
-								className={cn(
-									"rounded-full border-border/70 bg-muted/60 px-2 py-0.5 text-[0.65rem] font-medium",
-									mission && missionStatusTone[mission.status],
-								)}
-							>
-								{mission?.status}
-							</Badge>
-						</CardContent>
-					</Card>
-
 					<Card className="border-border/70 gap-0">
 						<CardHeader className="pb-3">
 							<CardTitle className="text-sm">Assignee</CardTitle>
