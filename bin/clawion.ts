@@ -225,7 +225,7 @@ program
 
 program
 	.command("log")
-	.description("Show CLI invocation logs (Ctrl+C to exit)")
+	.description("Show CLI invocation logs")
 	.action(async () => {
 		const workspaceDir = resolveWorkspaceDir();
 		const logPath = resolveCliInvocationsPath(workspaceDir);
