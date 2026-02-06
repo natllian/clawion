@@ -141,16 +141,16 @@ export function ThreadDetail({
 	const [snapshotSecret, setSnapshotSecret] = React.useState("");
 	const [loadingSnapshot, setLoadingSnapshot] = React.useState(false);
 	const [savingSnapshot, setSavingSnapshot] = React.useState(false);
+	const [markingAllAcknowledged, setMarkingAllAcknowledged] =
+		React.useState(false);
 
-	React.useEffect(() => {
-		const controller = new AbortController();
-
-		async function loadThread() {
+	const loadThread = React.useCallback(
+		async (signal?: AbortSignal) => {
 			setLoading(true);
 			try {
 				const response = await fetch(
 					`/api/missions/${missionId}/threads/${threadId}`,
-					{ cache: "no-store", signal: controller.signal },
+					{ cache: "no-store", signal },
 				);
 				if (!response.ok) {
 					throw new Error("Thread not found");
@@ -162,16 +162,23 @@ export function ThreadDetail({
 					console.error("Failed to load thread:", err);
 				}
 			} finally {
-				setLoading(false);
+				if (!signal || !signal.aborted) {
+					setLoading(false);
+				}
 			}
-		}
+		},
+		[missionId, threadId],
+	);
 
-		void loadThread();
+	React.useEffect(() => {
+		const controller = new AbortController();
+
+		void loadThread(controller.signal);
 
 		return () => {
 			controller.abort();
 		};
-	}, [missionId, threadId]);
+	}, [loadThread]);
 
 	React.useEffect(() => {
 		if (!snapshotAgentId) {
@@ -261,6 +268,9 @@ export function ThreadDetail({
 
 	const { thread, task, column } = data;
 	const pendingAckByMessageId = data.pendingAckByMessageId ?? {};
+	const hasPendingAcks = Object.values(pendingAckByMessageId).some(
+		(ids) => ids.length > 0,
+	);
 	const isTaskBlocked = isBlocked(task.statusNotes);
 	const columnBadgeTone = resolveColumnBadgeTone(task.columnId, column?.name);
 	const assigneeLabel = task.assigneeAgentId
@@ -322,6 +332,30 @@ export function ThreadDetail({
 				</DropdownMenuContent>
 			</DropdownMenu>
 		);
+	}
+
+	async function handleMarkAllAcknowledged() {
+		if (markingAllAcknowledged || !hasPendingAcks) {
+			return;
+		}
+
+		setMarkingAllAcknowledged(true);
+		try {
+			const response = await fetch(
+				`/api/missions/${missionId}/threads/${threadId}/ack-all`,
+				{
+					method: "POST",
+				},
+			);
+			if (!response.ok) {
+				throw new Error("Failed to acknowledge thread mentions.");
+			}
+			await loadThread();
+		} catch (error) {
+			console.error(error);
+		} finally {
+			setMarkingAllAcknowledged(false);
+		}
 	}
 
 	return (
@@ -398,9 +432,24 @@ export function ThreadDetail({
 				<main className="space-y-4">
 					<div className="flex items-center justify-between">
 						<h2 className="text-sm font-semibold">Thread</h2>
-						<span className="text-xs text-muted-foreground">
-							{thread.messages.length} messages
-						</span>
+						<div className="flex items-center gap-2">
+							<Button
+								type="button"
+								variant="outline"
+								size="xs"
+								disabled={markingAllAcknowledged || !hasPendingAcks}
+								onClick={handleMarkAllAcknowledged}
+							>
+								{markingAllAcknowledged
+									? "Marking..."
+									: hasPendingAcks
+										? "Mark all acknowledged"
+										: "All acknowledged"}
+							</Button>
+							<span className="text-xs text-muted-foreground">
+								{thread.messages.length} messages
+							</span>
+						</div>
 					</div>
 					<div className="relative">
 						<div className="absolute left-4 top-0 h-full w-px bg-border" />

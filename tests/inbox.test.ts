@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+	acknowledgeAllTaskMentions,
 	appendInboxAck,
 	listInboxAcks,
 	listUnackedTaskMentions,
@@ -76,5 +77,43 @@ describe("inbox ack", () => {
 		expect(pending[0]?.unackedAgentIds).toEqual(["agent-2"]);
 		expect(pending[1]?.messageId).toBe(secondMessageId);
 		expect(pending[1]?.unackedAgentIds).toEqual(["agent-1"]);
+	});
+
+	it("manually acknowledges all pending mentions in a thread", async () => {
+		const missionsDir = await createWorkspace();
+		await createMissionFixture(missionsDir, "m1");
+
+		const firstMessageId = await addThreadMessage({
+			missionsDir,
+			missionId: "m1",
+			taskId: "t1",
+			authorAgentId: "manager-1",
+			mentionsAgentIds: ["agent-1", "agent-2"],
+			content: "Please confirm.",
+		});
+		await addThreadMessage({
+			missionsDir,
+			missionId: "m1",
+			taskId: "t1",
+			authorAgentId: "manager-1",
+			mentionsAgentIds: ["agent-1"],
+			content: "Need your update.",
+		});
+
+		await appendInboxAck({
+			missionsDir,
+			missionId: "m1",
+			agentId: "agent-1",
+			messageId: firstMessageId,
+			taskId: "t1",
+		});
+
+		const result = await acknowledgeAllTaskMentions(missionsDir, "m1", "t1");
+		expect(result.ackedMessages).toBe(2);
+		expect(result.ackedEntries).toBe(2);
+		expect(result.ackedAgents).toBe(2);
+
+		const pendingAfter = await listUnackedTaskMentions(missionsDir, "m1", "t1");
+		expect(pendingAfter).toEqual([]);
 	});
 });

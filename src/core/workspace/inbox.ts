@@ -107,3 +107,54 @@ export async function listUnackedTaskMentions(
 
 	return unackedMentions;
 }
+
+export async function acknowledgeAllTaskMentions(
+	missionsDir: string,
+	missionId: string,
+	taskId: string,
+): Promise<{
+	ackedEntries: number;
+	ackedMessages: number;
+	ackedAgents: number;
+}> {
+	const pendingMentions = await listUnackedTaskMentions(
+		missionsDir,
+		missionId,
+		taskId,
+	);
+	if (pendingMentions.length === 0) {
+		return {
+			ackedEntries: 0,
+			ackedMessages: 0,
+			ackedAgents: 0,
+		};
+	}
+
+	await Promise.all(
+		pendingMentions.flatMap((item) =>
+			item.unackedAgentIds.map((agentId) =>
+				appendInboxAck({
+					missionsDir,
+					missionId,
+					agentId,
+					messageId: item.messageId,
+					taskId,
+				}),
+			),
+		),
+	);
+
+	const ackedEntries = pendingMentions.reduce(
+		(count, item) => count + item.unackedAgentIds.length,
+		0,
+	);
+	const ackedAgents = new Set(
+		pendingMentions.flatMap((item) => item.unackedAgentIds),
+	).size;
+
+	return {
+		ackedEntries,
+		ackedMessages: pendingMentions.length,
+		ackedAgents,
+	};
+}

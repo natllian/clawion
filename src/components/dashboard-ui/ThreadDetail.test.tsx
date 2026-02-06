@@ -358,4 +358,57 @@ describe("ThreadDetail", () => {
 			expect(screen.getByText("Agent Snapshot")).toBeInTheDocument();
 		});
 	});
+
+	it("manually marks all mentions acknowledged for the thread", async () => {
+		const pendingPayload: ThreadResponse = {
+			...mockThreadResponse,
+			pendingAckByMessageId: {
+				"msg-1": ["agent-1"],
+			},
+		};
+		const ackedPayload: ThreadResponse = {
+			...mockThreadResponse,
+			pendingAckByMessageId: {},
+		};
+
+		(global.fetch as ReturnType<typeof vi.fn>)
+			.mockResolvedValueOnce({
+				ok: true,
+				json: async () => pendingPayload,
+			})
+			.mockResolvedValueOnce({
+				ok: true,
+				json: async () => ({ ok: true, ackedEntries: 1 }),
+			})
+			.mockResolvedValueOnce({
+				ok: true,
+				json: async () => ackedPayload,
+			});
+
+		render(
+			<ThreadDetail
+				missionId="m1"
+				threadId="t1"
+				mission={mockMission}
+				agentMap={agentMap}
+			/>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByText("Awaiting ack: @Alice")).toBeInTheDocument();
+		});
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Mark all acknowledged" }),
+		);
+
+		await waitFor(() => {
+			expect(
+				screen.queryByText("Awaiting ack: @Alice"),
+			).not.toBeInTheDocument();
+		});
+		expect(
+			screen.getByRole("button", { name: "All acknowledged" }),
+		).toBeDisabled();
+	});
 });
