@@ -11,15 +11,15 @@ function nowIso(): string {
 	return nowLocal();
 }
 
-export function resolveCliInvocationsPath(missionsDir: string): string {
-	return join(missionsDir, "cli-invocations.jsonl");
+export function resolveCliInvocationsPath(workspaceDir: string): string {
+	return join(workspaceDir, "cli-invocations.jsonl");
 }
 
 export async function appendCliInvocation(
-	missionsDir: string,
+	workspaceDir: string,
 	command: string,
 ): Promise<void> {
-	const path = resolveCliInvocationsPath(missionsDir);
+	const path = resolveCliInvocationsPath(workspaceDir);
 	await mkdir(dirname(path), { recursive: true });
 
 	const entry: CliInvocationEntry = {

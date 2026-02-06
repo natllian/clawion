@@ -8,12 +8,12 @@ import {
 } from "../src/core/workspace/cli-invocations";
 
 describe("cli invocation logging", () => {
-	it("appends jsonl entries to the missions dir", async () => {
-		const missionsDir = await mkdtemp(join(tmpdir(), "clawion-cli-"));
-		await appendCliInvocation(missionsDir, "clawion agent list --mission m1");
-		await appendCliInvocation(missionsDir, "clawion where");
+	it("appends jsonl entries to the workspace dir", async () => {
+		const workspaceDir = await mkdtemp(join(tmpdir(), "clawion-cli-"));
+		await appendCliInvocation(workspaceDir, "clawion agent list --mission m1");
+		await appendCliInvocation(workspaceDir, "clawion where");
 
-		const path = resolveCliInvocationsPath(missionsDir);
+		const path = resolveCliInvocationsPath(workspaceDir);
 		const content = await readFile(path, "utf8");
 		const lines = content.trim().split("\n");
 

@@ -13,7 +13,10 @@ import {
 	createMission,
 	updateMissionRoadmap,
 } from "../src/core/workspace/missions";
-import { resolveMissionsDir } from "../src/core/workspace/paths";
+import {
+	resolveMissionsDir,
+	resolveWorkspaceDir,
+} from "../src/core/workspace/paths";
 import { assertManager } from "../src/core/workspace/permissions";
 import {
 	assignTask,
@@ -44,8 +47,9 @@ program.hook("preAction", async (_thisCommand, _actionCommand) => {
 	const missionsDir = resolveMissionsDir();
 	context.missionsDir = missionsDir;
 	await ensureWorkspace({ missionsDir });
+	const workspaceDir = resolveWorkspaceDir();
 	const command = `clawion ${process.argv.slice(2).join(" ")}`;
-	await appendCliInvocation(missionsDir, command);
+	await appendCliInvocation(workspaceDir, command);
 });
 
 program
