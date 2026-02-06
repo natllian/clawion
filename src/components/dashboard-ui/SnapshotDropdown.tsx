@@ -1,6 +1,7 @@
 "use client";
 
 import { BookOpen } from "lucide-react";
+import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,8 +33,7 @@ function formatDate(value?: string) {
 interface SnapshotDropdownProps {
 	mission: Mission | null;
 	roadmapContent: string;
-	onRoadmapChange: (value: string) => void;
-	onRoadmapSave: () => void | Promise<void>;
+	onRoadmapSave: (content: string) => void | Promise<void>;
 	savingRoadmap: boolean;
 	loadingMission: boolean;
 }
@@ -41,12 +41,29 @@ interface SnapshotDropdownProps {
 export function SnapshotDropdown({
 	mission,
 	roadmapContent,
-	onRoadmapChange,
 	onRoadmapSave,
 	savingRoadmap,
 	loadingMission,
 }: SnapshotDropdownProps) {
 	const isEditable = Boolean(mission) && !loadingMission;
+	const [isEditingRoadmap, setIsEditingRoadmap] = React.useState(false);
+	const [roadmapDraft, setRoadmapDraft] = React.useState(roadmapContent);
+
+	React.useEffect(() => {
+		if (!isEditingRoadmap) {
+			setRoadmapDraft(roadmapContent);
+		}
+	}, [isEditingRoadmap, roadmapContent]);
+
+	async function handleSaveRoadmap() {
+		await onRoadmapSave(roadmapDraft);
+		setIsEditingRoadmap(false);
+	}
+
+	function handleCancelRoadmap() {
+		setRoadmapDraft(roadmapContent);
+		setIsEditingRoadmap(false);
+	}
 
 	return (
 		<DropdownMenu modal={false}>
@@ -79,35 +96,56 @@ export function SnapshotDropdown({
 							<p className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">
 								Roadmap
 							</p>
-							<Button
-								type="button"
-								size="xs"
-								onClick={onRoadmapSave}
-								disabled={!isEditable || savingRoadmap}
-								className="shrink-0"
-							>
-								{savingRoadmap ? "Saving..." : "Save"}
-							</Button>
+							{isEditingRoadmap ? (
+								<div className="flex items-center gap-2">
+									<Button
+										type="button"
+										size="xs"
+										variant="ghost"
+										onClick={handleCancelRoadmap}
+										disabled={savingRoadmap}
+									>
+										Cancel
+									</Button>
+									<Button
+										type="button"
+										size="xs"
+										onClick={handleSaveRoadmap}
+										disabled={!isEditable || savingRoadmap}
+										className="shrink-0"
+									>
+										{savingRoadmap ? "Saving..." : "Save"}
+									</Button>
+								</div>
+							) : (
+								<Button
+									type="button"
+									size="xs"
+									variant="outline"
+									onClick={() => setIsEditingRoadmap(true)}
+									disabled={!isEditable}
+								>
+									Edit
+								</Button>
+							)}
 						</div>
-						<textarea
-							value={isEditable ? roadmapContent : ""}
-							onChange={(event) => onRoadmapChange(event.target.value)}
-							disabled={!isEditable || savingRoadmap}
-							placeholder={
-								isEditable
-									? "Write roadmap markdown..."
-									: "Select a mission to edit roadmap."
-							}
-							className="scrollbar-dropdown h-28 w-full resize-none rounded-md border border-border/70 bg-background px-2 py-1 text-xs text-foreground outline-none ring-ring/50 placeholder:text-muted-foreground focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-60"
-						/>
-						{isEditable ? (
+						{isEditingRoadmap ? (
+							<textarea
+								value={isEditable ? roadmapDraft : ""}
+								onChange={(event) => setRoadmapDraft(event.target.value)}
+								disabled={!isEditable || savingRoadmap}
+								placeholder={
+									isEditable
+										? "Write roadmap markdown..."
+										: "Select a mission to edit roadmap."
+								}
+								className="scrollbar-dropdown h-28 w-full resize-none rounded-md border border-border/70 bg-background px-2 py-1 text-xs text-foreground outline-none ring-ring/50 placeholder:text-muted-foreground focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-60"
+							/>
+						) : (
 							<div className="rounded-lg border border-border/70 bg-background p-2">
-								<p className="mb-2 text-[0.6rem] uppercase tracking-wide text-muted-foreground">
-									Live Preview
-								</p>
 								<MarkdownBlock content={roadmapContent} />
 							</div>
-						) : null}
+						)}
 					</div>
 					<p className="text-[0.65rem] text-muted-foreground">
 						Created {formatDate(mission?.createdAt)} · Updated{" "}

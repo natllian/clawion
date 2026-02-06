@@ -399,31 +399,34 @@ export function Dashboard({
 		[activeMissionId],
 	);
 
-	const saveRoadmap = React.useCallback(async () => {
-		if (!activeMissionId) return;
-		setSavingRoadmap(true);
-		try {
-			const response = await fetch(`/api/missions/${activeMissionId}`, {
-				method: "PUT",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({ roadmap }),
-			});
-			if (!response.ok) {
-				throw new Error("Failed to save roadmap.");
+	const saveRoadmap = React.useCallback(
+		async (nextRoadmap: string) => {
+			if (!activeMissionId) return;
+			setSavingRoadmap(true);
+			try {
+				const response = await fetch(`/api/missions/${activeMissionId}`, {
+					method: "PUT",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({ roadmap: nextRoadmap }),
+				});
+				if (!response.ok) {
+					throw new Error("Failed to save roadmap.");
+				}
+				const payload = (await response.json()) as MissionResponse;
+				setMission(payload.mission);
+				setRoadmap(payload.roadmap);
+			} catch (err) {
+				if (!isAbortError(err)) {
+					setError("Unable to save roadmap.");
+				}
+			} finally {
+				setSavingRoadmap(false);
 			}
-			const payload = (await response.json()) as MissionResponse;
-			setMission(payload.mission);
-			setRoadmap(payload.roadmap);
-		} catch (err) {
-			if (!isAbortError(err)) {
-				setError("Unable to save roadmap.");
-			}
-		} finally {
-			setSavingRoadmap(false);
-		}
-	}, [activeMissionId, roadmap]);
+		},
+		[activeMissionId],
+	);
 
 	// Derived state
 	const tasksColumns = React.useMemo(
@@ -541,7 +544,6 @@ export function Dashboard({
 						mission={mission}
 						roadmap={roadmap}
 						loadingMission={loadingMission}
-						onRoadmapChange={setRoadmap}
 						onRoadmapSave={saveRoadmap}
 						savingRoadmap={savingRoadmap}
 					/>

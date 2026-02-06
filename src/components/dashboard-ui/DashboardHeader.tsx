@@ -11,8 +11,7 @@ interface DashboardHeaderProps {
 	mission: Mission | null;
 	roadmap: string;
 	loadingMission: boolean;
-	onRoadmapChange: (value: string) => void;
-	onRoadmapSave: () => void | Promise<void>;
+	onRoadmapSave: (content: string) => void | Promise<void>;
 	savingRoadmap: boolean;
 }
 
@@ -20,7 +19,6 @@ export function DashboardHeader({
 	mission,
 	roadmap,
 	loadingMission,
-	onRoadmapChange,
 	onRoadmapSave,
 	savingRoadmap,
 }: DashboardHeaderProps) {
@@ -59,7 +57,6 @@ export function DashboardHeader({
 				<SnapshotDropdown
 					mission={mission}
 					roadmapContent={roadmapContent}
-					onRoadmapChange={onRoadmapChange}
 					onRoadmapSave={onRoadmapSave}
 					savingRoadmap={savingRoadmap}
 					loadingMission={loadingMission}
