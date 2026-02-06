@@ -7,10 +7,6 @@ type CliInvocationEntry = {
 	command: string;
 };
 
-function nowIso(): string {
-	return nowLocal();
-}
-
 export function resolveCliInvocationsPath(workspaceDir: string): string {
 	return join(workspaceDir, "cli-invocations.jsonl");
 }
@@ -23,7 +19,7 @@ export async function appendCliInvocation(
 	await mkdir(dirname(path), { recursive: true });
 
 	const entry: CliInvocationEntry = {
-		timestamp: nowIso(),
+		timestamp: nowLocal(),
 		command,
 	};
 
