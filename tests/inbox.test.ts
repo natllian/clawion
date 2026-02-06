@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { appendInboxAck, listInboxAcks } from "../src/core/workspace/inbox";
+import {
+	appendInboxAck,
+	listInboxAcks,
+	listUnackedTaskMentions,
+} from "../src/core/workspace/inbox";
+import { addThreadMessage } from "../src/core/workspace/threads";
 import { createMissionFixture, createWorkspace } from "./helpers";
 
 describe("inbox ack", () => {
@@ -33,5 +38,43 @@ describe("inbox ack", () => {
 
 		const acks = await listInboxAcks(missionsDir, "m1", "ghost-agent");
 		expect(acks).toEqual([]);
+	});
+
+	it("lists unacknowledged mentions by message and agent", async () => {
+		const missionsDir = await createWorkspace();
+		await createMissionFixture(missionsDir, "m1");
+
+		const firstMessageId = await addThreadMessage({
+			missionsDir,
+			missionId: "m1",
+			taskId: "t1",
+			authorAgentId: "manager-1",
+			mentionsAgentIds: ["agent-1", "agent-2"],
+			content: "Please confirm.",
+		});
+
+		const secondMessageId = await addThreadMessage({
+			missionsDir,
+			missionId: "m1",
+			taskId: "t1",
+			authorAgentId: "manager-1",
+			mentionsAgentIds: ["agent-1"],
+			content: "Need your update.",
+		});
+
+		await appendInboxAck({
+			missionsDir,
+			missionId: "m1",
+			agentId: "agent-1",
+			messageId: firstMessageId,
+			taskId: "t1",
+		});
+
+		const pending = await listUnackedTaskMentions(missionsDir, "m1", "t1");
+		expect(pending).toHaveLength(2);
+		expect(pending[0]?.messageId).toBe(firstMessageId);
+		expect(pending[0]?.unackedAgentIds).toEqual(["agent-2"]);
+		expect(pending[1]?.messageId).toBe(secondMessageId);
+		expect(pending[1]?.unackedAgentIds).toEqual(["agent-1"]);
 	});
 });

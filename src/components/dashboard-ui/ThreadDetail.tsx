@@ -27,6 +27,7 @@ interface ThreadDetailProps {
 
 interface ThreadResponse {
 	thread: ThreadDetailData;
+	pendingAckByMessageId?: Record<string, string[]>;
 	task: {
 		id: string;
 		title: string;
@@ -149,6 +150,7 @@ export function ThreadDetail({
 	}
 
 	const { thread, task, column } = data;
+	const pendingAckByMessageId = data.pendingAckByMessageId ?? {};
 	const isTaskBlocked = isBlocked(task.statusNotes);
 	const assigneeLabel = task.assigneeAgentId
 		? `@${agentMap.get(task.assigneeAgentId) ?? task.assigneeAgentId}`
@@ -253,6 +255,12 @@ export function ThreadDetail({
 										.map((id) => agentMap.get(id) ?? id)
 										.map((label) => `@${label}`)
 										.join(", ");
+									const pendingAckLabels = (
+										pendingAckByMessageId[message.id] ?? []
+									)
+										.map((id) => agentMap.get(id) ?? id)
+										.map((label) => `@${label}`);
+									const hasPendingAck = pendingAckLabels.length > 0;
 									return (
 										<div key={message.id} className="relative flex gap-3">
 											<Avatar className="z-10 mt-1">
@@ -270,6 +278,18 @@ export function ThreadDetail({
 															to {mentionsLabel}
 														</span>
 													</div>
+													<span
+														className={cn(
+															"rounded-full border px-2 py-0.5 text-[0.6rem] font-medium",
+															hasPendingAck
+																? "border-amber-500/40 bg-amber-500/10 text-amber-700"
+																: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700",
+														)}
+													>
+														{hasPendingAck
+															? `Awaiting ack: ${pendingAckLabels.join(", ")}`
+															: "Acknowledged"}
+													</span>
 												</div>
 												<div className="px-3 py-3">
 													<MarkdownBlock content={message.content} />

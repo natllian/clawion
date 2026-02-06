@@ -5,6 +5,7 @@ import type { Mission, ThreadDetail as ThreadDetailData } from "@/core/schemas";
 // Define ThreadResponse inline since it's not exported
 interface ThreadResponse {
 	thread: ThreadDetailData;
+	pendingAckByMessageId?: Record<string, string[]>;
 	task: {
 		id: string;
 		title: string;
@@ -248,5 +249,33 @@ describe("ThreadDetail", () => {
 				"Budget",
 			);
 		});
+	});
+
+	it("shows acknowledgment state for each message", async () => {
+		const payload: ThreadResponse = {
+			...mockThreadResponse,
+			pendingAckByMessageId: {
+				"msg-1": ["agent-1"],
+			},
+		};
+
+		(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+			ok: true,
+			json: async () => payload,
+		});
+
+		render(
+			<ThreadDetail
+				missionId="m1"
+				threadId="t1"
+				mission={mockMission}
+				agentMap={agentMap}
+			/>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByText("Awaiting ack: @Alice")).toBeInTheDocument();
+		});
+		expect(screen.getByText("Acknowledged")).toBeInTheDocument();
 	});
 });

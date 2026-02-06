@@ -5,8 +5,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { ThreadSummary } from "@/core/schemas";
 import { cn } from "@/lib/utils";
 
+export type ThreadListItem = ThreadSummary & {
+	unackedMentionCount: number;
+	pendingAckAgentIds: string[];
+};
+
 interface ThreadsListProps {
-	threads: ThreadSummary[];
+	threads: ThreadListItem[];
 	agentMap: Map<string, string>;
 	taskMap: Map<string, string>;
 	loadingMission: boolean;
@@ -71,6 +76,17 @@ export function ThreadsList({
 				const lastMessage = thread.lastMessageAt
 					? `Last: ${formatDate(thread.lastMessageAt)}`
 					: "No messages yet";
+				const ackSummary =
+					thread.unackedMentionCount > 0
+						? `Ack pending: ${thread.unackedMentionCount}`
+						: "All acknowledged";
+				const pendingAckLabel =
+					thread.unackedMentionCount > 0
+						? thread.pendingAckAgentIds
+								.map((id) => agentMap.get(id) ?? id)
+								.map((label) => `@${label}`)
+								.join(", ")
+						: "";
 
 				return (
 					<Link
@@ -92,6 +108,17 @@ export function ThreadsList({
 						</div>
 						<p className="mt-1 line-clamp-1 text-[0.65rem] text-muted-foreground">
 							by {lastAuthor} · {lastMessage}
+						</p>
+						<p
+							className={cn(
+								"mt-1 text-[0.62rem]",
+								thread.unackedMentionCount > 0
+									? "text-amber-700"
+									: "text-muted-foreground",
+							)}
+						>
+							{ackSummary}
+							{pendingAckLabel ? ` · ${pendingAckLabel}` : ""}
 						</p>
 					</Link>
 				);

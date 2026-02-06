@@ -2,6 +2,7 @@ import { join } from "node:path";
 import { NextResponse } from "next/server";
 import { readJson } from "@/core/fs/json";
 import { tasksSchema } from "@/core/schemas";
+import { listUnackedTaskMentions } from "@/core/workspace/inbox";
 import { resolveMissionPath } from "@/core/workspace/mission";
 import { resolveMissionsDir } from "@/core/workspace/paths";
 import { getThread } from "@/core/workspace/threads";
@@ -20,9 +21,10 @@ export async function GET(_request: Request, context: RouteContext) {
 		const missionsDir = resolveMissionsDir();
 		const missionPath = await resolveMissionPath(missionsDir, missionId);
 
-		const [tasksFile, thread] = await Promise.all([
+		const [tasksFile, thread, pendingMentions] = await Promise.all([
 			readJson(join(missionPath, "tasks.json"), tasksSchema),
 			getThread(missionsDir, missionId, taskId),
+			listUnackedTaskMentions(missionsDir, missionId, taskId),
 		]);
 
 		const task = tasksFile.tasks.find((entry) => entry.id === taskId);
@@ -34,9 +36,15 @@ export async function GET(_request: Request, context: RouteContext) {
 			(entry) => entry.id === task.columnId,
 		);
 
+		const pendingAckByMessageId: Record<string, string[]> = {};
+		for (const item of pendingMentions) {
+			pendingAckByMessageId[item.messageId] = item.unackedAgentIds;
+		}
+
 		return NextResponse.json(
 			{
 				thread,
+				pendingAckByMessageId,
 				task: {
 					id: task.id,
 					title: task.title,

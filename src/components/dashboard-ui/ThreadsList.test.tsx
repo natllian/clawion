@@ -1,16 +1,17 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import type { ThreadSummary } from "@/core/schemas";
-import { ThreadsList } from "./ThreadsList";
+import { type ThreadListItem, ThreadsList } from "./ThreadsList";
 
 describe("ThreadsList", () => {
-	const mockThreads: ThreadSummary[] = [
+	const mockThreads: ThreadListItem[] = [
 		{
 			taskId: "t1",
 			messageCount: 1,
 			lastMessageAt: new Date().toISOString(),
 			lastAuthorAgentId: "manager-1",
 			lastMentionsAgentIds: ["agent-1"],
+			unackedMentionCount: 1,
+			pendingAckAgentIds: ["agent-1"],
 		},
 		{
 			taskId: "t2",
@@ -18,6 +19,8 @@ describe("ThreadsList", () => {
 			lastMessageAt: new Date().toISOString(),
 			lastAuthorAgentId: "agent-1",
 			lastMentionsAgentIds: ["manager-1"],
+			unackedMentionCount: 0,
+			pendingAckAgentIds: [],
 		},
 	];
 
@@ -54,6 +57,13 @@ describe("ThreadsList", () => {
 		expect(screen.getByText(/by Alice/)).toBeInTheDocument();
 	});
 
+	it("shows acknowledgment state", () => {
+		render(<ThreadsList {...defaultProps} />);
+		expect(screen.getByText(/Ack pending: 1/)).toBeInTheDocument();
+		expect(screen.getByText(/@Alice/)).toBeInTheDocument();
+		expect(screen.getByText("All acknowledged")).toBeInTheDocument();
+	});
+
 	it("shows loading skeletons when loading", () => {
 		const props = { ...defaultProps, loadingMission: true };
 		const { container } = render(<ThreadsList {...props} />);
@@ -74,13 +84,15 @@ describe("ThreadsList", () => {
 	});
 
 	it("shows unknown creator when agent not in map", () => {
-		const threadsWithUnknownCreator: ThreadSummary[] = [
+		const threadsWithUnknownCreator: ThreadListItem[] = [
 			{
 				taskId: "t1",
 				messageCount: 0,
 				lastMessageAt: undefined,
 				lastAuthorAgentId: "unknown-agent",
 				lastMentionsAgentIds: [],
+				unackedMentionCount: 0,
+				pendingAckAgentIds: [],
 			},
 		];
 		const props = { ...defaultProps, threads: threadsWithUnknownCreator };

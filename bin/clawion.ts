@@ -5,6 +5,7 @@ import { runWake } from "../src/cli/wake";
 import type { TaskStatus } from "../src/core/task-status";
 import { addAgent, listAgents } from "../src/core/workspace/agents";
 import { appendCliInvocation } from "../src/core/workspace/cli-invocations";
+import { listUnackedTaskMentions } from "../src/core/workspace/inbox";
 import { ensureWorkspace } from "../src/core/workspace/init";
 import { resolveMissionPath } from "../src/core/workspace/mission";
 import {
@@ -404,6 +405,33 @@ task
 				throw new Error(
 					"status must be pending, ongoing, blocked, or completed.",
 				);
+			}
+
+			if (status === "completed") {
+				const pendingAcks = await listUnackedTaskMentions(
+					context.missionsDir,
+					options.mission,
+					options.id,
+				);
+				if (pendingAcks.length > 0) {
+					const details = pendingAcks.map((item) => {
+						const agents = item.unackedAgentIds
+							.map((id) => `@${id}`)
+							.join(", ");
+						return `- message ${item.messageId} (from @${item.authorAgentId}): ${agents}`;
+					});
+					console.error(
+						[
+							`Cannot mark task as completed: ${options.id}`,
+							"Unacknowledged mentions still exist in this task thread.",
+							"Pending acknowledgements:",
+							...details,
+							"Ask the listed agents to acknowledge first (for example via `clawion agent wake`).",
+						].join("\n"),
+					);
+					process.exitCode = 1;
+					return;
+				}
 			}
 
 			await updateTask({

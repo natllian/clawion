@@ -38,6 +38,11 @@ type WorkingResponse = {
 	events: WorkingEvent[];
 };
 
+type ThreadListItem = ThreadSummary & {
+	unackedMentionCount: number;
+	pendingAckAgentIds: string[];
+};
+
 function isAbortError(error: unknown) {
 	return error instanceof DOMException && error.name === "AbortError";
 }
@@ -62,7 +67,7 @@ export function Dashboard({
 	const [mission, setMission] = React.useState<Mission | null>(null);
 	const [roadmap, setRoadmap] = React.useState<string>("");
 	const [tasks, setTasks] = React.useState<TasksFile | null>(null);
-	const [threads, setThreads] = React.useState<ThreadSummary[]>([]);
+	const [threads, setThreads] = React.useState<ThreadListItem[]>([]);
 	const [agents, setAgents] = React.useState<AgentsFile | null>(null);
 	const [activeTaskId, setActiveTaskId] = React.useState<string | null>(null);
 	const [activeAgentId, setActiveAgentId] = React.useState<string | null>(null);
@@ -181,8 +186,21 @@ export function Dashboard({
 				const missionPayload =
 					(await missionResponse.json()) as MissionResponse;
 				const tasksPayload = (await tasksResponse.json()) as TasksFile;
-				const threadsPayload =
-					(await threadsResponse.json()) as ThreadSummary[];
+				const threadsPayloadRaw = (await threadsResponse.json()) as Array<
+					ThreadSummary &
+						Partial<
+							Pick<ThreadListItem, "unackedMentionCount" | "pendingAckAgentIds">
+						>
+				>;
+				const threadsPayload: ThreadListItem[] = threadsPayloadRaw.map(
+					(thread) => ({
+						...thread,
+						unackedMentionCount: thread.unackedMentionCount ?? 0,
+						pendingAckAgentIds: Array.isArray(thread.pendingAckAgentIds)
+							? thread.pendingAckAgentIds
+							: [],
+					}),
+				);
 
 				let agentsPayload: AgentsFile = { schemaVersion: 1, agents: [] };
 				let agentsWarning: string | null = null;
