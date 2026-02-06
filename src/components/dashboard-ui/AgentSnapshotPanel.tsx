@@ -129,7 +129,6 @@ export function AgentSnapshotPanel({
 						working
 							.slice()
 							.reverse()
-							.slice(0, 6)
 							.map((event) => <WorkingEventItem key={event.id} event={event} />)
 					) : (
 						<div className="rounded-lg border border-border/70 bg-background p-2 text-xs text-muted-foreground">
