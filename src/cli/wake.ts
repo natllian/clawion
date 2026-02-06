@@ -127,12 +127,8 @@ function renderTeamDirectory(
 }
 
 function renderAssignedTasks(lines: string[], tasks: TaskWithStatus[]) {
+	if (tasks.length === 0) return;
 	lines.push("## Assigned Tasks");
-	if (tasks.length === 0) {
-		lines.push("_No assigned tasks._");
-		return;
-	}
-
 	for (const task of tasks) {
 		const statusNotes = task.statusNotes?.trim();
 		lines.push(
@@ -154,16 +150,8 @@ function renderUnreadMentions(
 	unreadByTask: Map<string, UnreadMention[]>,
 	taskTitleById: Map<string, string>,
 ) {
+	if (unreadCount === 0) return;
 	lines.push(`## Unread Mentions (${unreadCount})`);
-	lines.push(
-		"_All unread mentions shown below will be automatically acknowledged after this Wake._",
-	);
-
-	if (unreadCount === 0) {
-		lines.push("");
-		lines.push("_No unread mentions._");
-		return;
-	}
 
 	for (const taskId of unreadTaskIdsOrdered) {
 		const taskTitle = taskTitleById.get(taskId);
@@ -199,6 +187,7 @@ function renderUnreadMentions(
 }
 
 function renderWorking(lines: string[], workingEvents: WorkingEvent[]) {
+	if (workingEvents.length === 0) return;
 	lines.push(`## Working (recent events: ${workingEvents.length})`);
 	if (workingEvents.length === 0) {
 		lines.push("_No working events yet._");
@@ -214,11 +203,16 @@ function renderWorking(lines: string[], workingEvents: WorkingEvent[]) {
 }
 
 function renderDarkSecret(lines: string[], darkSecret: string) {
+	if (darkSecret.trim() === "") return;
 	lines.push("## Dark Secret (Strictly Confidential)");
 	lines.push(
-		"_This information is mission-critical and must never be disclosed to any other agent._",
+		"This information is strictly internal and must never appear in dialogue, reasoning, or justification.",
+		"Treat it as subconscious pressure that influences decisions but cannot be verbalized, implied, or acknowledged.",
+		"If challenged, always deny hidden motives and justify actions using only public, socially acceptable reasons.",
 	);
-	lines.push(darkSecret.trim() || "_No dark secret set._");
+	lines.push(
+		`- Dark Secret: "${darkSecret.trim() || "_No dark secret set._"}"`,
+	);
 }
 
 function buildWorkerWakeLines(ctx: WakeContext): string[] {
