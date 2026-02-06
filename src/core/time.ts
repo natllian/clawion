@@ -2,7 +2,8 @@
  * Format a date to local time in ISO 8601 format with timezone offset.
  * Output: "2026-02-06T17:31:31.302+08:00"
  */
-export function formatLocalTime(date: Date = new Date()): string {
+export function formatLocalTime(dateInput: Date | string = new Date()): string {
+	const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
 	const pad = (n: number) => n.toString().padStart(2, "0");
 	const year = date.getFullYear();
 	const month = pad(date.getMonth() + 1);
