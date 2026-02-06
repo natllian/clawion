@@ -77,6 +77,16 @@ type WakeContext = {
 	teamWorkingLatest: TeamWorkingSnapshot[];
 };
 
+export function buildReplyHereCommand(
+	missionId: string,
+	taskId: string,
+	agentId: string,
+	replyMentions: string[],
+): string {
+	const mentions = replyMentions.join(",");
+	return `clawion message add --mission ${missionId} --task ${taskId} --content "..." --mentions ${mentions} --agent ${agentId}`;
+}
+
 function buildTaskTitleById(tasks: TasksFile): Map<string, string> {
 	return new Map(tasks.tasks.map((task) => [task.id, task.title] as const));
 }
@@ -136,6 +146,8 @@ function renderAssignedTasks(lines: string[], tasks: TaskWithStatus[]) {
 
 function renderUnreadMentions(
 	lines: string[],
+	missionId: string,
+	agentId: string,
 	unreadCount: number,
 	unreadTaskIdsOrdered: string[],
 	unreadByTask: Map<string, UnreadMention[]>,
@@ -159,12 +171,22 @@ function renderUnreadMentions(
 
 		const mentions = unreadByTask.get(taskId) ?? [];
 		for (const mention of mentions) {
+			const replyMentions = Array.from(new Set([mention.authorAgentId]));
+			const replyHere = buildReplyHereCommand(
+				missionId,
+				mention.taskId,
+				agentId,
+				replyMentions,
+			);
 			lines.push("");
 			lines.push(`#### Message ${mention.messageId}`);
 			lines.push(`- From: ${mention.authorAgentId}`);
 			lines.push(`- At: ${formatLocalTime(mention.createdAt)}`);
 			lines.push("");
 			lines.push(mention.content.trim());
+			lines.push("");
+			lines.push("- Reply here (copy/paste):");
+			lines.push(`  \`${replyHere}\``);
 		}
 	}
 }
@@ -226,6 +248,8 @@ function buildWorkerWakeLines(ctx: WakeContext): string[] {
 	lines.push("");
 	renderUnreadMentions(
 		lines,
+		ctx.missionId,
+		ctx.agentEntry.id,
 		ctx.unreadMentions.length,
 		ctx.unreadTaskIdsOrdered,
 		ctx.unreadMentionsByTask,
@@ -393,6 +417,8 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 	lines.push("");
 	renderUnreadMentions(
 		lines,
+		ctx.missionId,
+		ctx.agentEntry.id,
 		ctx.unreadMentions.length,
 		ctx.unreadTaskIdsOrdered,
 		ctx.unreadMentionsByTask,
