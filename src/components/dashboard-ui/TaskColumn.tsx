@@ -7,21 +7,17 @@ import { TaskCard } from "./TaskCard";
 interface TaskColumnProps {
 	column: { id: string; name: string; order: number };
 	tasks: TaskItem[];
-	activeTaskId: string | null;
 	activeMissionId: string | null;
 	agentMap: Map<string, string>;
 	threadTaskIds?: Set<string>;
-	onTaskSelect: (id: string) => void;
 }
 
 export function TaskColumn({
 	column,
 	tasks: columnTasks,
-	activeTaskId,
 	activeMissionId,
 	agentMap,
 	threadTaskIds,
-	onTaskSelect,
 }: TaskColumnProps) {
 	const threadIds = threadTaskIds ?? new Set<string>();
 	return (
@@ -40,11 +36,9 @@ export function TaskColumn({
 						<TaskCard
 							key={task.id}
 							task={task}
-							activeTaskId={activeTaskId}
 							activeMissionId={activeMissionId}
 							agentMap={agentMap}
 							hasThread={threadIds.has(task.id)}
-							onTaskSelect={onTaskSelect}
 						/>
 					))
 				)}

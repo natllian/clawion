@@ -74,7 +74,6 @@ export function Dashboard({
 	const [tasks, setTasks] = React.useState<TasksFile | null>(null);
 	const [threads, setThreads] = React.useState<ThreadListItem[]>([]);
 	const [agents, setAgents] = React.useState<AgentsFile | null>(null);
-	const [activeTaskId, setActiveTaskId] = React.useState<string | null>(null);
 	const [activeAgentId, setActiveAgentId] = React.useState<string | null>(null);
 	const [working, setWorking] = React.useState<WorkingEvent[]>([]);
 	const [darkSecret, setDarkSecret] = React.useState<string>("");
@@ -145,7 +144,6 @@ export function Dashboard({
 			setTasks(null);
 			setThreads([]);
 			setAgents(null);
-			setActiveTaskId(null);
 			setActiveAgentId(null);
 			return;
 		}
@@ -231,15 +229,6 @@ export function Dashboard({
 					setError(agentsWarning);
 				}
 
-				setActiveTaskId((current) => {
-					if (
-						current &&
-						tasksPayload.tasks.some((task) => task.id === current)
-					) {
-						return current;
-					}
-					return null;
-				});
 				setActiveAgentId((current) => {
 					if (
 						current &&
@@ -483,10 +472,8 @@ export function Dashboard({
 								tasksColumns={tasksColumns}
 								tasksFile={tasks}
 								threads={threads}
-								activeTaskId={activeTaskId}
 								activeMissionId={activeMissionId}
 								agentMap={agentMap}
-								onTaskSelect={setActiveTaskId}
 							>
 								{/* Progress stats with agent panel */}
 								<div className="flex flex-wrap items-center justify-between gap-4">

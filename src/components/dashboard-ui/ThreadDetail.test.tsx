@@ -321,4 +321,41 @@ describe("ThreadDetail", () => {
 			expect(screen.getByText("Agent Snapshot")).toBeInTheDocument();
 		});
 	});
+
+	it("opens agent snapshot when clicking assignee badge", async () => {
+		(global.fetch as ReturnType<typeof vi.fn>)
+			.mockResolvedValueOnce({
+				ok: true,
+				json: async () => mockThreadResponse,
+			})
+			.mockResolvedValueOnce({
+				ok: true,
+				json: async () => ({ agentId: "agent-1", events: [] }),
+			})
+			.mockResolvedValueOnce({
+				ok: true,
+				json: async () => ({ agentId: "agent-1", content: "" }),
+			});
+
+		render(
+			<ThreadDetail
+				missionId="m1"
+				threadId="t1"
+				mission={mockMission}
+				agentMap={agentMap}
+			/>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByText("Task Title")).toBeInTheDocument();
+		});
+
+		fireEvent.pointerDown(screen.getByRole("button", { name: "@Alice" }), {
+			button: 0,
+			ctrlKey: false,
+		});
+		await waitFor(() => {
+			expect(screen.getByText("Agent Snapshot")).toBeInTheDocument();
+		});
+	});
 });

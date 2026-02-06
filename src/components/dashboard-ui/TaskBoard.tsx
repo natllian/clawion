@@ -11,10 +11,8 @@ interface TaskBoardSectionProps {
 	tasksColumns: Array<{ id: string; name: string; order: number }>;
 	tasksFile: TasksFile | null;
 	threads: ThreadSummary[];
-	activeTaskId: string | null;
 	activeMissionId: string | null;
 	agentMap: Map<string, string>;
-	onTaskSelect: (id: string) => void;
 }
 
 export function TaskBoardSection({
@@ -23,10 +21,8 @@ export function TaskBoardSection({
 	tasksColumns,
 	tasksFile,
 	threads,
-	activeTaskId,
 	activeMissionId,
 	agentMap,
-	onTaskSelect,
 }: TaskBoardSectionProps) {
 	const threadTaskIds = new Set<string>(threads.map((thread) => thread.taskId));
 
@@ -67,11 +63,9 @@ export function TaskBoardSection({
 									key={column.id}
 									column={column}
 									tasks={columnTasks}
-									activeTaskId={activeTaskId}
 									activeMissionId={activeMissionId}
 									agentMap={agentMap}
 									threadTaskIds={threadTaskIds}
-									onTaskSelect={onTaskSelect}
 								/>
 							);
 						})}

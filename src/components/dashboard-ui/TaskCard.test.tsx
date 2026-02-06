@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { TaskItem } from "@/core/schemas/tasks";
 
@@ -36,11 +36,9 @@ describe("TaskCard", () => {
 
 	const defaultProps = {
 		task: mockTask,
-		activeTaskId: null as string | null,
 		activeMissionId: null as string | null,
 		agentMap: new Map<string, string>(),
 		hasThread: false,
-		onTaskSelect: vi.fn(),
 	};
 
 	afterEach(() => {
@@ -99,24 +97,11 @@ describe("TaskCard", () => {
 		expect(screen.getByText("@alice")).toBeInTheDocument();
 	});
 
-	it("calls onTaskSelect when clicked", () => {
+	it("keeps task body non-clickable", () => {
 		render(<TaskCard {...defaultProps} />);
-		fireEvent.click(
-			screen.getByRole("button", { name: /select task: test task/i }),
-		);
-		expect(defaultProps.onTaskSelect).toHaveBeenCalledWith("1");
-	});
-
-	it("applies active styling when selected", () => {
-		const props = { ...defaultProps, activeTaskId: "1" };
-		render(<TaskCard {...props} />);
-		expect(screen.getByTestId("task-card")).toHaveClass("bg-primary/10");
-		expect(screen.getByTestId("task-card")).toHaveClass("shadow-none");
-	});
-
-	it("does not apply active styling when not selected", () => {
-		render(<TaskCard {...defaultProps} />);
-		expect(screen.getByTestId("task-card")).not.toHaveClass("bg-primary/10");
+		expect(
+			screen.queryByRole("button", { name: /select task:/i }),
+		).not.toBeInTheDocument();
 	});
 
 	it("shows Blocked badge when statusNotes starts with blocked:", () => {

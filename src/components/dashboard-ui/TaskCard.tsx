@@ -10,24 +10,19 @@ import { cn } from "@/lib/utils";
 
 interface TaskCardProps {
 	task: TaskItem;
-	activeTaskId: string | null;
 	activeMissionId: string | null;
 	agentMap: Map<string, string>;
 	hasThread: boolean;
-	onTaskSelect: (id: string) => void;
 }
 
 export function TaskCard({
 	task,
-	activeTaskId,
 	activeMissionId,
 	agentMap,
 	hasThread,
-	onTaskSelect,
 }: TaskCardProps) {
 	const statusNotes = task.statusNotes ?? "";
 	const isBlocked = statusNotes.toLowerCase().startsWith("blocked:");
-	const isActive = task.id === activeTaskId;
 	const normalizedDescription = normalizeMarkdownContent(task.description);
 
 	return (
@@ -36,21 +31,15 @@ export function TaskCard({
 				"group relative w-full overflow-hidden rounded-xl border border-border/70 bg-background p-3 shadow-sm transition will-change-transform hover:-translate-y-0.5 hover:shadow-md",
 				"before:absolute before:left-0 before:top-0 before:h-full before:w-1 before:bg-border/60 before:content-['']",
 				isBlocked && "before:bg-destructive/60",
-				isActive &&
-					"border-primary/60 bg-primary/10 before:bg-primary/70 shadow-none hover:shadow-none",
 			)}
 			data-testid="task-card"
 		>
 			<div className="flex items-start justify-between gap-2">
-				<button
-					type="button"
-					onClick={() => onTaskSelect(task.id)}
-					className="min-w-0 flex-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-				>
+				<div className="min-w-0 flex-1 text-left">
 					<p className="truncate text-sm font-semibold leading-snug text-foreground">
 						{task.title}
 					</p>
-				</button>
+				</div>
 
 				{activeMissionId && hasThread ? (
 					<Link
@@ -63,12 +52,7 @@ export function TaskCard({
 				) : null}
 			</div>
 
-			<button
-				type="button"
-				onClick={() => onTaskSelect(task.id)}
-				aria-label={`Select task: ${task.title}`}
-				className="mt-1 w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-			>
+			<div className="mt-1 w-full text-left">
 				<div className="relative max-h-30 overflow-y-auto pr-2 scrollbar-none overscroll-contain">
 					<div className="markdown markdown-compact">
 						<ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -78,7 +62,7 @@ export function TaskCard({
 					<div
 						className={cn(
 							"pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-linear-to-t to-transparent opacity-90",
-							isActive ? "from-primary/10" : "from-background",
+							"from-background",
 						)}
 					/>
 				</div>
@@ -112,7 +96,7 @@ export function TaskCard({
 							: "Unassigned"}
 					</span>
 				</div>
-			</button>
+			</div>
 		</div>
 	);
 }

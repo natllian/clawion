@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { TaskItem, TasksFile, ThreadSummary } from "@/core/schemas";
 import { TaskBoardSection } from "./TaskBoard";
@@ -46,10 +46,8 @@ describe("TaskBoardSection", () => {
 		tasksColumns: mockTasksFile.columns,
 		tasksFile: mockTasksFile,
 		threads: [] as ThreadSummary[],
-		activeTaskId: null as string | null,
 		activeMissionId: "m1",
 		agentMap: mockAgentMap,
-		onTaskSelect: vi.fn(),
 	};
 
 	afterEach(() => {
@@ -121,11 +119,9 @@ describe("TaskColumn", () => {
 	const defaultProps = {
 		column: mockColumn,
 		tasks: mockTasks,
-		activeTaskId: null as string | null,
 		activeMissionId: "m1",
 		agentMap: new Map<string, string>(),
 		threadTaskIds: new Set<string>(),
-		onTaskSelect: vi.fn(),
 	};
 
 	afterEach(() => {
@@ -142,12 +138,10 @@ describe("TaskColumn", () => {
 		expect(screen.getByText("Test Task")).toBeInTheDocument();
 	});
 
-	it("calls onTaskSelect when task is clicked", () => {
-		const onSelect = vi.fn();
-		render(<TaskColumn {...defaultProps} onTaskSelect={onSelect} />);
-		fireEvent.click(
-			screen.getByRole("button", { name: /select task: test task/i }),
-		);
-		expect(onSelect).toHaveBeenCalledWith("t1");
+	it("renders task card without click-to-select button", () => {
+		render(<TaskColumn {...defaultProps} />);
+		expect(
+			screen.queryByRole("button", { name: /select task:/i }),
+		).not.toBeInTheDocument();
 	});
 });

@@ -266,6 +266,9 @@ export function ThreadDetail({
 	const assigneeLabel = task.assigneeAgentId
 		? `@${agentMap.get(task.assigneeAgentId) ?? task.assigneeAgentId}`
 		: "Unassigned";
+	const agentsById = new Map(
+		(agents?.agents ?? []).map((agent) => [agent.id, agent]),
+	);
 
 	const participants = new Set<string>();
 	thread.messages.forEach((message: ThreadMessageEvent) => {
@@ -274,6 +277,52 @@ export function ThreadDetail({
 			participants.add(id);
 		});
 	});
+
+	function renderAgentSnapshotDropdown(
+		agentId: string,
+		agentLabel: string,
+		trigger: React.ReactNode,
+	) {
+		const agent = agentsById.get(agentId);
+		const isSnapshotActive = snapshotAgentId === agentId;
+
+		return (
+			<DropdownMenu
+				modal={false}
+				onOpenChange={(open) => {
+					if (open) {
+						setSnapshotAgentId(agentId);
+					}
+				}}
+			>
+				<DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
+				<DropdownMenuContent
+					className="z-30 w-[420px] p-3"
+					side="right"
+					align="start"
+					collisionPadding={12}
+					sideOffset={10}
+				>
+					<DropdownMenuLabel className="text-xs uppercase tracking-wide text-muted-foreground">
+						Agent Snapshot
+					</DropdownMenuLabel>
+					<DropdownMenuSeparator />
+					<AgentSnapshotPanel
+						agentLabel={agentLabel}
+						roleDescription={agent?.roleDescription}
+						systemRole={agent?.systemRole}
+						isActive={isSnapshotActive}
+						working={snapshotWorking}
+						loadingWorking={loadingSnapshot}
+						darkSecret={snapshotSecret}
+						onDarkSecretChange={setSnapshotSecret}
+						onDarkSecretSave={() => handleSnapshotSecretSave(agentId)}
+						savingDarkSecret={savingSnapshot}
+					/>
+				</DropdownMenuContent>
+			</DropdownMenu>
+		);
+	}
 
 	return (
 		<div className="space-y-6">
@@ -375,61 +424,23 @@ export function ThreadDetail({
 										.map((id) => agentMap.get(id) ?? id)
 										.map((label) => `@${label}`);
 									const hasPendingAck = pendingAckLabels.length > 0;
-									const messageAgent = agents?.agents.find(
-										(agent) => agent.id === message.authorAgentId,
-									);
-									const isSnapshotActive =
-										snapshotAgentId === message.authorAgentId;
 									return (
 										<div key={message.id} className="relative flex gap-3">
-											<DropdownMenu
-												modal={false}
-												onOpenChange={(open) => {
-													if (open) {
-														setSnapshotAgentId(message.authorAgentId);
-													}
-												}}
-											>
-												<DropdownMenuTrigger asChild>
-													<button
-														type="button"
-														aria-label={`Open snapshot for ${authorLabel}`}
-														className="z-10 mt-1 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-													>
-														<Avatar>
-															<AvatarFallback>
-																{getInitials(authorLabel)}
-															</AvatarFallback>
-														</Avatar>
-													</button>
-												</DropdownMenuTrigger>
-												<DropdownMenuContent
-													className="z-30 w-[420px] p-3"
-													side="right"
-													align="start"
-													collisionPadding={12}
-													sideOffset={10}
+											{renderAgentSnapshotDropdown(
+												message.authorAgentId,
+												authorLabel,
+												<button
+													type="button"
+													aria-label={`Open snapshot for ${authorLabel}`}
+													className="z-10 mt-1 inline-flex size-8 shrink-0 items-center justify-center rounded-full p-0 leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
 												>
-													<DropdownMenuLabel className="text-xs uppercase tracking-wide text-muted-foreground">
-														Agent Snapshot
-													</DropdownMenuLabel>
-													<DropdownMenuSeparator />
-													<AgentSnapshotPanel
-														agentLabel={authorLabel}
-														roleDescription={messageAgent?.roleDescription}
-														systemRole={messageAgent?.systemRole}
-														isActive={isSnapshotActive}
-														working={snapshotWorking}
-														loadingWorking={loadingSnapshot}
-														darkSecret={snapshotSecret}
-														onDarkSecretChange={setSnapshotSecret}
-														onDarkSecretSave={() =>
-															handleSnapshotSecretSave(message.authorAgentId)
-														}
-														savingDarkSecret={savingSnapshot}
-													/>
-												</DropdownMenuContent>
-											</DropdownMenu>
+													<Avatar>
+														<AvatarFallback>
+															{getInitials(authorLabel)}
+														</AvatarFallback>
+													</Avatar>
+												</button>,
+											)}
 											<div className="flex-1 rounded-xl border border-border/70 bg-card">
 												<div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/70 px-3 py-2 text-xs">
 													<div className="flex flex-wrap items-center gap-2">
@@ -493,15 +504,22 @@ export function ThreadDetail({
 							<CardTitle className="text-sm">Assignee</CardTitle>
 						</CardHeader>
 						<CardContent className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-							<span
-								className={cn(
-									"inline-flex items-center rounded-full border border-border/70 bg-background px-2 py-0.5 text-[0.65rem] font-medium text-foreground",
-									assigneeLabel === "Unassigned" &&
-										"border-dashed text-muted-foreground",
-								)}
-							>
-								{assigneeLabel}
-							</span>
+							{task.assigneeAgentId ? (
+								renderAgentSnapshotDropdown(
+									task.assigneeAgentId,
+									agentMap.get(task.assigneeAgentId) ?? task.assigneeAgentId,
+									<button
+										type="button"
+										className="inline-flex items-center rounded-full border border-border/70 bg-background px-2 py-0.5 text-[0.65rem] font-medium text-foreground hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+									>
+										{assigneeLabel}
+									</button>,
+								)
+							) : (
+								<span className="inline-flex items-center rounded-full border border-border/70 border-dashed bg-background px-2 py-0.5 text-[0.65rem] font-medium text-muted-foreground">
+									Unassigned
+								</span>
+							)}
 						</CardContent>
 					</Card>
 
@@ -515,15 +533,24 @@ export function ThreadDetail({
 									No participants yet.
 								</div>
 							) : (
-								Array.from(participants).map((id) => (
-									<Badge
-										key={id}
-										variant="outline"
-										className="rounded-full border-border/70 bg-background px-2 py-0.5 text-[0.6rem] font-medium text-foreground/80"
-									>
-										{agentMap.get(id ?? "") ?? id}
-									</Badge>
-								))
+								Array.from(participants).map((id) => {
+									const participantLabel = agentMap.get(id ?? "") ?? id;
+
+									return (
+										<div key={id}>
+											{renderAgentSnapshotDropdown(
+												id,
+												participantLabel,
+												<button
+													type="button"
+													className="inline-flex items-center rounded-full border border-border/70 bg-background px-2 py-0.5 text-[0.6rem] font-medium text-foreground/80 hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+												>
+													{participantLabel}
+												</button>,
+											)}
+										</div>
+									);
+								})
 							)}
 						</CardContent>
 					</Card>
