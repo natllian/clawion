@@ -75,6 +75,10 @@ type WakeContext = {
 	teamWorkingLatest: TeamWorkingSnapshot[];
 };
 
+function formatLocalTime(isoUtc: string): string {
+	return new Date(isoUtc).toLocaleString();
+}
+
 function buildTaskTitleById(tasks: TasksFile): Map<string, string> {
 	return new Map(tasks.tasks.map((task) => [task.id, task.title] as const));
 }
@@ -170,7 +174,7 @@ function renderUnreadMentions(
 			lines.push("");
 			lines.push(`#### Message ${mention.messageId}`);
 			lines.push(`- From: ${mention.authorAgentId}`);
-			lines.push(`- At: ${mention.createdAt}`);
+			lines.push(`- At: ${formatLocalTime(mention.createdAt)}`);
 			lines.push("");
 			lines.push(mention.content.trim());
 		}
@@ -186,7 +190,7 @@ function renderWorking(lines: string[], workingEvents: WorkingEvent[]) {
 	const recent = workingEvents.slice(-8).reverse();
 	for (const event of recent) {
 		lines.push("");
-		lines.push(`- ${event.createdAt}`);
+		lines.push(`- ${formatLocalTime(event.createdAt)}`);
 		lines.push("");
 		lines.push(event.content.trim());
 	}
@@ -417,7 +421,9 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 	} else {
 		for (const thread of recentThreads) {
 			const title = ctx.taskTitleById.get(thread.taskId);
-			const when = thread.lastMessageAt ?? "—";
+			const when = thread.lastMessageAt
+				? formatLocalTime(thread.lastMessageAt)
+				: "—";
 			const by = thread.lastAuthorAgentId ?? "—";
 			lines.push(
 				`- Task ${thread.taskId}${title ? ` — ${title}` : ""}: ${thread.messageCount} messages · last at ${when} by ${by}`,
@@ -440,7 +446,9 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 		lines.push("_No team working events._");
 	} else {
 		for (const item of ctx.teamWorkingLatest) {
-			const lastAt = item.lastEvent?.createdAt ?? "—";
+			const lastAt = item.lastEvent?.createdAt
+				? formatLocalTime(item.lastEvent.createdAt)
+				: "—";
 			const snippet = item.lastEvent?.content
 				? item.lastEvent.content.split("\n")[0].trim()
 				: "";

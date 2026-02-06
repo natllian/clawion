@@ -7,7 +7,7 @@ type CliInvocationEntry = {
 };
 
 function nowIso(): string {
-	return new Date().toLocaleString();
+	return new Date().toISOString();
 }
 
 export function resolveCliInvocationsPath(missionsDir: string): string {
