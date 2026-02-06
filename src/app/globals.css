@@ -286,7 +286,12 @@
 	/* Custom scrollbar - thin, elegant, auto-hiding */
 	.scrollbar-thin {
 		scrollbar-width: thin;
-		scrollbar-color: var(--muted-foreground) transparent;
+		scrollbar-color: color-mix(
+				in srgb,
+				var(--muted-foreground) 35%,
+				transparent
+			)
+			transparent;
 	}
 
 	.scrollbar-thin::-webkit-scrollbar {
@@ -299,7 +304,11 @@
 	}
 
 	.scrollbar-thin::-webkit-scrollbar-thumb {
-		background-color: var(--muted-foreground);
+		background-color: color-mix(
+			in srgb,
+			var(--muted-foreground) 35%,
+			transparent
+		);
 		border-radius: 3px;
 		opacity: 0;
 		transition: opacity 0.2s ease;
@@ -308,13 +317,23 @@
 	.scrollbar-thin:hover::-webkit-scrollbar-thumb,
 	.scrollbar-thin:focus::-webkit-scrollbar-thumb,
 	.scrollbar-thin:active::-webkit-scrollbar-thumb {
-		opacity: 0.4;
+		background-color: color-mix(
+			in srgb,
+			var(--muted-foreground) 50%,
+			transparent
+		);
+		opacity: 0.7;
 	}
 
 	/* Scrollbar always visible for dropdowns */
 	.scrollbar-dropdown {
 		scrollbar-width: thin;
-		scrollbar-color: var(--muted-foreground) transparent;
+		scrollbar-color: color-mix(
+				in srgb,
+				var(--muted-foreground) 35%,
+				transparent
+			)
+			transparent;
 	}
 
 	.scrollbar-dropdown::-webkit-scrollbar {
@@ -327,14 +346,23 @@
 	}
 
 	.scrollbar-dropdown::-webkit-scrollbar-thumb {
-		background-color: var(--muted-foreground);
+		background-color: color-mix(
+			in srgb,
+			var(--muted-foreground) 35%,
+			transparent
+		);
 		border-radius: 3px;
-		opacity: 0.3;
+		opacity: 0.6;
 		transition: opacity 0.2s ease;
 	}
 
 	.scrollbar-dropdown:hover::-webkit-scrollbar-thumb {
-		opacity: 0.6;
+		background-color: color-mix(
+			in srgb,
+			var(--muted-foreground) 50%,
+			transparent
+		);
+		opacity: 0.85;
 	}
 
 	/* Hide scrollbars but keep scroll behavior */
