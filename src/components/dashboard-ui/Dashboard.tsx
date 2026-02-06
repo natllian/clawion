@@ -354,8 +354,8 @@ export function Dashboard({
 	const showAgentsSkeleton = loadingMission && !agents;
 
 	return (
-		<div className="min-h-screen bg-background text-foreground">
-			<div className="flex min-h-screen">
+		<div className="h-screen overflow-hidden bg-background text-foreground">
+			<div className="flex h-full">
 				<Sidebar
 					missionsDir={missionsDir}
 					sidebarCollapsed={sidebarCollapsed}
@@ -410,14 +410,14 @@ export function Dashboard({
 					)}
 				</Sidebar>
 
-				<section className="flex min-h-screen flex-1 flex-col">
+				<section className="flex min-h-0 h-full flex-1 flex-col">
 					<DashboardHeader
 						mission={mission}
 						roadmap={roadmap}
 						loadingMission={loadingMission}
 					/>
 
-					<main className="flex flex-1 flex-col gap-6 px-6 py-6">
+					<main className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 py-6">
 						<ErrorBanner error={error} />
 
 						{activeThreadId && mission ? (
