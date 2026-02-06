@@ -108,4 +108,5 @@ export async function ensureWorkspace(
 	await ensureDir(join(templateDir, "threads"));
 	await ensureDir(join(templateDir, "inbox"));
 	await ensureDir(join(templateDir, "working"));
+	await ensureDir(join(templateDir, "secrets"));
 }

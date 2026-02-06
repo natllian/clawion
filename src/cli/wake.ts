@@ -14,6 +14,7 @@ import { listAgents } from "../core/workspace/agents";
 import { appendInboxAck, listInboxAcks } from "../core/workspace/inbox";
 import { resolveMissionPath } from "../core/workspace/mission";
 import { showMission } from "../core/workspace/missions";
+import { readAgentSecret } from "../core/workspace/secrets";
 import { listTasks } from "../core/workspace/tasks";
 import { listThreads } from "../core/workspace/threads";
 import { listWorkingEvents } from "../core/workspace/working";
@@ -69,6 +70,7 @@ type WakeContext = {
 	taskTitleById: Map<string, string>;
 
 	workingEvents: WorkingEvent[];
+	darkSecret: string;
 
 	// Manager-only slices (empty for worker)
 	threadSummaries: ThreadSummary[];
@@ -182,6 +184,14 @@ function renderWorking(lines: string[], workingEvents: WorkingEvent[]) {
 	}
 }
 
+function renderDarkSecret(lines: string[], darkSecret: string) {
+	lines.push("## Dark Secret (Strictly Confidential)");
+	lines.push(
+		"_This information is mission-critical and must never be disclosed to any other agent._",
+	);
+	lines.push(darkSecret.trim() || "_No dark secret set._");
+}
+
 function buildWorkerWakeLines(ctx: WakeContext): string[] {
 	const lines: string[] = [];
 
@@ -198,6 +208,8 @@ function buildWorkerWakeLines(ctx: WakeContext): string[] {
 	lines.push(
 		`- Role Description: ${ctx.agentEntry.roleDescription || "_No role description._"}`,
 	);
+	lines.push("");
+	renderDarkSecret(lines, ctx.darkSecret);
 
 	lines.push("");
 	renderTeamDirectory(ctx, lines, ctx.agents);
@@ -289,6 +301,8 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 	lines.push(
 		`- Role Description: ${ctx.agentEntry.roleDescription || "_No role description._"}`,
 	);
+	lines.push("");
+	renderDarkSecret(lines, ctx.darkSecret);
 
 	lines.push("");
 	renderTeamDirectory(ctx, lines, ctx.agents);
@@ -482,11 +496,12 @@ async function buildWakeContext(
 
 	const isManager = agentEntry.systemRole === "manager";
 
-	const [missionPayload, tasksFile, workingEvents, inboxAcks] =
+	const [missionPayload, tasksFile, workingEvents, darkSecret, inboxAcks] =
 		await Promise.all([
 			showMission(missionsDir, missionId),
 			listTasks(missionsDir, missionId),
 			listWorkingEvents(missionsDir, missionId, agentId),
+			readAgentSecret(missionsDir, missionId, agentId),
 			listInboxAcks(missionsDir, missionId, agentId),
 		]);
 
@@ -589,6 +604,7 @@ async function buildWakeContext(
 		taskTitleById,
 
 		workingEvents,
+		darkSecret,
 
 		threadSummaries,
 		teamWorkingLatest,

@@ -38,6 +38,11 @@ type WorkingResponse = {
 	events: WorkingEvent[];
 };
 
+type SecretResponse = {
+	agentId: string;
+	content: string;
+};
+
 type ThreadListItem = ThreadSummary & {
 	unackedMentionCount: number;
 	pendingAckAgentIds: string[];
@@ -72,6 +77,8 @@ export function Dashboard({
 	const [activeTaskId, setActiveTaskId] = React.useState<string | null>(null);
 	const [activeAgentId, setActiveAgentId] = React.useState<string | null>(null);
 	const [working, setWorking] = React.useState<WorkingEvent[]>([]);
+	const [darkSecret, setDarkSecret] = React.useState<string>("");
+	const [savingDarkSecret, setSavingDarkSecret] = React.useState(false);
 	const [error, setError] = React.useState<string | null>(null);
 	const [loadingMissions, setLoadingMissions] = React.useState(true);
 	const [loadingMission, setLoadingMission] = React.useState(false);
@@ -266,6 +273,7 @@ export function Dashboard({
 	React.useEffect(() => {
 		if (!activeMissionId || !activeAgentId) {
 			setWorking([]);
+			setDarkSecret("");
 			return;
 		}
 
@@ -274,25 +282,32 @@ export function Dashboard({
 
 		async function loadAgent() {
 			try {
-				const workingResponse = await fetch(
-					`/api/missions/${activeMissionId}/working/${activeAgentId}`,
-					{
+				const [workingResponse, secretResponse] = await Promise.all([
+					fetch(`/api/missions/${activeMissionId}/working/${activeAgentId}`, {
 						cache: "no-store",
 						signal: controller.signal,
-					},
-				);
+					}),
+					fetch(`/api/missions/${activeMissionId}/secrets/${activeAgentId}`, {
+						cache: "no-store",
+						signal: controller.signal,
+					}),
+				]);
 
-				if (!workingResponse.ok) {
+				if (!workingResponse.ok || !secretResponse.ok) {
 					setWorking([]);
+					setDarkSecret("");
 					return;
 				}
 
 				const workingPayload =
 					(await workingResponse.json()) as WorkingResponse;
+				const secretPayload = (await secretResponse.json()) as SecretResponse;
 				setWorking(workingPayload.events);
+				setDarkSecret(secretPayload.content);
 			} catch (err) {
 				if (isAbortError(err)) return;
 				setWorking([]);
+				setDarkSecret("");
 			} finally {
 				setLoadingAgent(false);
 			}
@@ -304,6 +319,36 @@ export function Dashboard({
 			controller.abort();
 		};
 	}, [activeMissionId, activeAgentId]);
+
+	const saveDarkSecret = React.useCallback(
+		async (agentId: string, content: string) => {
+			if (!activeMissionId) return;
+			setSavingDarkSecret(true);
+			try {
+				const response = await fetch(
+					`/api/missions/${activeMissionId}/secrets/${agentId}`,
+					{
+						method: "PUT",
+						headers: {
+							"Content-Type": "application/json",
+						},
+						body: JSON.stringify({ content }),
+					},
+				);
+				if (!response.ok) {
+					throw new Error("Failed to save dark secret.");
+				}
+				setDarkSecret(content);
+			} catch (err) {
+				if (!isAbortError(err)) {
+					setError("Unable to save dark secret.");
+				}
+			} finally {
+				setSavingDarkSecret(false);
+			}
+		},
+		[activeMissionId],
+	);
 
 	// Derived state
 	const tasksColumns = React.useMemo(
@@ -480,6 +525,10 @@ export function Dashboard({
 										activeAgentId={activeAgentId}
 										onAgentSelect={setActiveAgentId}
 										working={working}
+										darkSecret={darkSecret}
+										onDarkSecretChange={setDarkSecret}
+										onDarkSecretSave={saveDarkSecret}
+										savingDarkSecret={savingDarkSecret}
 										loadingAgent={loadingAgent}
 									/>
 								</div>

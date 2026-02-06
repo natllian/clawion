@@ -31,6 +31,10 @@ const defaultProps = {
 	activeAgentId: "agent-1" as string | null,
 	onAgentSelect: vi.fn(),
 	working: [] as WorkingEvent[],
+	darkSecret: "",
+	onDarkSecretChange: vi.fn(),
+	onDarkSecretSave: vi.fn(),
+	savingDarkSecret: false,
 	loadingAgent: false,
 };
 
