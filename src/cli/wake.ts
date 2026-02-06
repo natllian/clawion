@@ -47,6 +47,7 @@ type WakeContext = {
 	missionId: string;
 	agentId: string;
 	missionsDir: string;
+	missionPath: string;
 	generatedAt: string;
 
 	agentEntry: Agent;
@@ -232,6 +233,7 @@ function buildWorkerWakeLines(ctx: WakeContext): string[] {
 	lines.push(`- ID: ${ctx.mission.id}`);
 	lines.push(`- Name: ${ctx.mission.name}`);
 	lines.push(`- Status: ${ctx.mission.status}`);
+	lines.push(`- Shared artifacts: ${join(ctx.missionPath, "artifacts")}`);
 	lines.push("");
 	lines.push(ctx.mission.description.trim() || "_No mission description._");
 
@@ -277,6 +279,14 @@ function buildWorkerWakeLines(ctx: WakeContext): string[] {
 	lines.push("3) Aim for a deliverable (not just activity).");
 	lines.push(
 		"   Deliverables can be: a patch/PR, a repro + diagnosis, a spec/proposal with tradeoffs, a test plan, or a concrete review result.",
+	);
+	lines.push("");
+	lines.push("3.5) If your output is long, write it to a file for review.");
+	lines.push(
+		`   - Put long reports/specs in: ${join(ctx.missionPath, "artifacts")} (Markdown preferred).`,
+	);
+	lines.push(
+		"   - Then post a short thread message with the file path so other agents can review.",
 	);
 	lines.push("");
 	lines.push("4) Ask early when unclear or blocked.");
@@ -345,6 +355,7 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 	lines.push(`- ID: ${ctx.mission.id}`);
 	lines.push(`- Name: ${ctx.mission.name}`);
 	lines.push(`- Status: ${ctx.mission.status}`);
+	lines.push(`- Shared artifacts: ${join(ctx.missionPath, "artifacts")}`);
 	lines.push(`- Description: ${ctx.mission.description}`);
 	lines.push("");
 	lines.push("### ROADMAP");
@@ -478,6 +489,16 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 	lines.push("3) Dispatch next steps.");
 	lines.push(
 		"   Ensure each task has: a clear outcome, constraints/acceptance criteria, an owner.",
+	);
+	lines.push("");
+	lines.push(
+		"3.5) If you’re about to produce a long report, write it to a file for review.",
+	);
+	lines.push(
+		`   - Put long reports/specs in: ${join(ctx.missionPath, "artifacts")} (Markdown preferred).`,
+	);
+	lines.push(
+		"   - Then post a short thread message with the file path so other agents can review.",
 	);
 	lines.push("");
 	lines.push("4) Communicate decisions in threads.");
@@ -621,6 +642,7 @@ async function buildWakeContext(
 		missionId,
 		agentId,
 		missionsDir,
+		missionPath,
 		generatedAt: new Date().toISOString(),
 
 		agentEntry,
