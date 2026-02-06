@@ -1,10 +1,14 @@
 #!/usr/bin/env tsx
 import { spawn } from "node:child_process";
 import { Command } from "commander";
+import { logInvocations } from "../src/cli/log";
 import { runWake } from "../src/cli/wake";
 import type { TaskStatus } from "../src/core/task-status";
 import { addAgent, listAgents } from "../src/core/workspace/agents";
-import { appendCliInvocation } from "../src/core/workspace/cli-invocations";
+import {
+	appendCliInvocation,
+	resolveCliInvocationsPath,
+} from "../src/core/workspace/cli-invocations";
 import { listUnackedTaskMentions } from "../src/core/workspace/inbox";
 import { ensureWorkspace } from "../src/core/workspace/init";
 import { resolveMissionPath } from "../src/core/workspace/mission";
@@ -78,6 +82,12 @@ const HELP_ENTRIES: HelpEntry[] = [
 		purpose: "Start the web UI dev server.",
 		params: ["(no params)"],
 		example: "clawion ui",
+	},
+	{
+		command: "log",
+		purpose: "Show CLI invocation logs (tail -f).",
+		params: ["--follow (optional)"],
+		example: "clawion log --follow",
 	},
 	{
 		command: "mission create",
@@ -211,6 +221,16 @@ program
 	.action((topics: string[] | undefined) => {
 		const topic = topics && topics.length > 0 ? topics.join(" ") : undefined;
 		renderHelp(topic);
+	});
+
+program
+	.command("log")
+	.description("Show CLI invocation logs")
+	.option("-f, --follow", "Follow the log file (like tail -f)")
+	.action(async (options) => {
+		const workspaceDir = resolveWorkspaceDir();
+		const logPath = resolveCliInvocationsPath(workspaceDir);
+		await logInvocations(logPath, { follow: !!options.follow });
 	});
 
 function resolveAgentId(command: Command): string | null {
