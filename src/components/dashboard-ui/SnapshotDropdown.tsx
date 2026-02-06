@@ -100,9 +100,14 @@ export function SnapshotDropdown({
 							}
 							className="scrollbar-dropdown h-28 w-full resize-none rounded-md border border-border/70 bg-background px-2 py-1 text-xs text-foreground outline-none ring-ring/50 placeholder:text-muted-foreground focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-60"
 						/>
-					</div>
-					<div className="rounded-lg border border-border/70 bg-background p-2">
-						<MarkdownBlock content={roadmapContent} />
+						{isEditable ? (
+							<div className="rounded-lg border border-border/70 bg-background p-2">
+								<p className="mb-2 text-[0.6rem] uppercase tracking-wide text-muted-foreground">
+									Live Preview
+								</p>
+								<MarkdownBlock content={roadmapContent} />
+							</div>
+						) : null}
 					</div>
 					<p className="text-[0.65rem] text-muted-foreground">
 						Created {formatDate(mission?.createdAt)} · Updated{" "}

@@ -1,11 +1,8 @@
 "use client";
 
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { WorkingEvent } from "@/core/schemas";
-import { normalizeMarkdownContent } from "@/lib/markdown";
 import { MarkdownBlock } from "./MarkdownBlock";
 
 const workingSkeletons = ["working-a", "working-b", "working-c"];
@@ -105,15 +102,6 @@ export function AgentSnapshotPanel({
 					}
 					className="scrollbar-dropdown h-24 w-full resize-none rounded-md border border-border/70 bg-background px-2 py-1 text-xs text-foreground outline-none ring-ring/50 placeholder:text-muted-foreground focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-60"
 				/>
-				<div className="mt-2 max-h-[120px] overflow-y-auto scrollbar-dropdown rounded-md border border-border/70 bg-background p-2">
-					<div className="markdown text-xs text-muted-foreground">
-						<ReactMarkdown remarkPlugins={[remarkGfm]}>
-							{normalizeMarkdownContent(
-								roleDescription || "No role description provided.",
-							)}
-						</ReactMarkdown>
-					</div>
-				</div>
 			</div>
 
 			<div className="mt-2">
