@@ -219,4 +219,34 @@ describe("ThreadDetail", () => {
 			expect(screen.getByText("2 messages")).toBeInTheDocument();
 		});
 	});
+
+	it("renders task description as markdown", async () => {
+		const payload: ThreadResponse = {
+			...mockThreadResponse,
+			task: {
+				...mockThreadResponse.task,
+				description: "Overview\\n\\n### Budget",
+			},
+		};
+
+		(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+			ok: true,
+			json: async () => payload,
+		});
+
+		render(
+			<ThreadDetail
+				missionId="m1"
+				threadId="t1"
+				mission={mockMission}
+				agentMap={agentMap}
+			/>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByRole("heading", { level: 3 })).toHaveTextContent(
+				"Budget",
+			);
+		});
+	});
 });

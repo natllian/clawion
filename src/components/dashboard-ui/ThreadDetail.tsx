@@ -185,9 +185,9 @@ export function ThreadDetail({
 							</h1>
 							<span className="text-sm text-muted-foreground">#{task.id}</span>
 						</div>
-						<p className="mt-2 text-sm text-muted-foreground">
-							{task.description}
-						</p>
+						<div className="mt-2">
+							<MarkdownBlock content={task.description} />
+						</div>
 					</div>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge

@@ -188,6 +188,26 @@
 		margin: 0.5rem 0;
 	}
 
+	.markdown table {
+		width: 100%;
+		border-collapse: collapse;
+		margin: 0.6rem 0;
+	}
+
+	.markdown th,
+	.markdown td {
+		border: 1px solid var(--border);
+		padding: 0.35rem 0.5rem;
+		text-align: left;
+		vertical-align: top;
+	}
+
+	.markdown th {
+		color: var(--foreground);
+		background: color-mix(in srgb, var(--muted) 60%, transparent);
+		font-weight: 600;
+	}
+
 	.magic-grid {
 		background-image:
 			linear-gradient(
