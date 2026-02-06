@@ -36,7 +36,8 @@ export function TaskCard({
 				"group relative w-full overflow-hidden rounded-xl border border-border/70 bg-background p-3 shadow-sm transition will-change-transform hover:-translate-y-0.5 hover:shadow-md",
 				"before:absolute before:left-0 before:top-0 before:h-full before:w-1 before:bg-border/60 before:content-['']",
 				isBlocked && "before:bg-destructive/60",
-				isActive && "border-primary/60 bg-primary/10 before:bg-primary/70",
+				isActive &&
+					"border-primary/60 bg-primary/10 before:bg-primary/70 shadow-none hover:shadow-none",
 			)}
 			data-testid="task-card"
 		>
@@ -69,12 +70,17 @@ export function TaskCard({
 				className="mt-1 w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
 			>
 				<div className="relative max-h-30 overflow-y-auto pr-2 scrollbar-none overscroll-contain">
-					<div className="markdown">
+					<div className="markdown markdown-compact">
 						<ReactMarkdown remarkPlugins={[remarkGfm]}>
 							{normalizedDescription}
 						</ReactMarkdown>
 					</div>
-					<div className="pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-linear-to-t from-background to-transparent opacity-90" />
+					<div
+						className={cn(
+							"pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-linear-to-t to-transparent opacity-90",
+							isActive ? "from-primary/10" : "from-background",
+						)}
+					/>
 				</div>
 
 				{statusNotes ? (

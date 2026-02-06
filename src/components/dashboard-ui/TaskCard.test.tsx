@@ -64,6 +64,7 @@ describe("TaskCard", () => {
 		};
 		render(<TaskCard {...props} />);
 		expect(screen.getByText("world").tagName.toLowerCase()).toBe("strong");
+		expect(document.querySelector(".markdown-compact")).toBeInTheDocument();
 	});
 
 	it("renders task ID badge", () => {
@@ -110,6 +111,7 @@ describe("TaskCard", () => {
 		const props = { ...defaultProps, activeTaskId: "1" };
 		render(<TaskCard {...props} />);
 		expect(screen.getByTestId("task-card")).toHaveClass("bg-primary/10");
+		expect(screen.getByTestId("task-card")).toHaveClass("shadow-none");
 	});
 
 	it("does not apply active styling when not selected", () => {
