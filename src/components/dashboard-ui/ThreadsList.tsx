@@ -114,7 +114,7 @@ export function ThreadsList({
 								"mt-1 text-[0.62rem]",
 								thread.unackedMentionCount > 0
 									? "text-amber-700"
-									: "text-muted-foreground",
+									: "text-emerald-700",
 							)}
 						>
 							{ackSummary}
