@@ -64,7 +64,7 @@ export function SidebarHeader({
 }: SidebarHeaderProps) {
 	if (sidebarCollapsed) {
 		return (
-			<div className="flex items-center justify-center gap-2 px-2 py-4">
+			<div className="flex flex-col items-center justify-center gap-2 px-2 py-4">
 				<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
 					<Sparkles className="h-4 w-4" />
 				</div>
