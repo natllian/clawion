@@ -21,8 +21,8 @@ export function Sidebar({
 	return (
 		<aside
 			className={cn(
-				"relative z-20 flex flex-col border-r border-border/70 bg-card/40 transition-all",
-				sidebarCollapsed ? "w-16" : "w-[280px]",
+				"relative z-20 flex shrink-0 flex-col border-r border-border/70 bg-card/40 transition-all",
+				sidebarCollapsed ? "w-20 min-w-20" : "w-[280px] min-w-[280px]",
 			)}
 		>
 			<SidebarHeader
@@ -43,7 +43,8 @@ export function Sidebar({
 
 			<div
 				className={cn(
-					"flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-3 py-4",
+					"flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto py-4",
+					sidebarCollapsed ? "px-2" : "px-3",
 				)}
 			>
 				{children}
@@ -61,25 +62,37 @@ export function SidebarHeader({
 	sidebarCollapsed,
 	onToggleCollapse,
 }: SidebarHeaderProps) {
+	if (sidebarCollapsed) {
+		return (
+			<div className="flex items-center justify-center gap-2 px-2 py-4">
+				<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+					<Sparkles className="h-4 w-4" />
+				</div>
+				<Button
+					variant="ghost"
+					size="icon-sm"
+					className="shrink-0 text-muted-foreground"
+					onClick={onToggleCollapse}
+					aria-label="Toggle sidebar"
+				>
+					<ChevronRight className="h-4 w-4" />
+				</Button>
+			</div>
+		);
+	}
+
 	return (
 		<div className="grid grid-cols-[1fr_auto] items-center gap-2 px-4 py-4">
-			<div
-				className={cn(
-					"flex min-w-0 items-center gap-3",
-					sidebarCollapsed && "justify-center",
-				)}
-			>
+			<div className="flex min-w-0 items-center gap-3">
 				<div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
 					<Sparkles className="h-4 w-4" />
 				</div>
-				{!sidebarCollapsed && (
-					<div>
-						<p className="text-[0.6rem] uppercase tracking-[0.4em] text-muted-foreground">
-							Clawion
-						</p>
-						<p className="text-sm font-semibold">Mission Board</p>
-					</div>
-				)}
+				<div>
+					<p className="text-[0.6rem] uppercase tracking-[0.4em] text-muted-foreground">
+						Clawion
+					</p>
+					<p className="text-sm font-semibold">Mission Board</p>
+				</div>
 			</div>
 			<Button
 				variant="ghost"

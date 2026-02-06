@@ -22,8 +22,8 @@ function MissionListSkeleton({
 				<div
 					key={key}
 					className={cn(
-						"w-full rounded-lg border border-border/70 bg-background p-3",
-						sidebarCollapsed && "h-10 w-10 p-0",
+						"rounded-lg border border-border/70 bg-background",
+						sidebarCollapsed ? "h-10 w-10 p-0" : "w-full p-3",
 					)}
 				>
 					<Skeleton className="h-3 w-24" />
@@ -69,10 +69,11 @@ export function MissionList({
 						key={item.id}
 						href={`/missions/${item.id}`}
 						className={cn(
-							"block w-full rounded-lg border border-border/70 bg-background px-3 py-2 text-left text-xs text-foreground transition hover:border-primary/50 hover:bg-primary/5",
+							"rounded-lg border border-border/70 bg-background text-xs text-foreground transition hover:border-primary/50 hover:bg-primary/5",
+							sidebarCollapsed
+								? "flex h-10 w-10 items-center justify-center text-center"
+								: "block w-full px-3 py-2 text-left",
 							isActive && "border-primary/60 bg-primary/10",
-							sidebarCollapsed &&
-								"flex h-10 w-10 items-center justify-center px-0 py-0 text-center",
 						)}
 					>
 						{sidebarCollapsed ? (

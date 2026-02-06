@@ -443,7 +443,9 @@ export function Dashboard({
 					) : (
 						<div className="flex flex-col items-center gap-2 text-[0.65rem] text-muted-foreground">
 							<Sparkles className="h-4 w-4" />
-							<span>{sortedThreads.length} threads</span>
+							<span className="rounded-full border border-border/70 bg-background px-2 py-0.5 text-[0.65rem] font-medium text-foreground">
+								{sortedThreads.length}
+							</span>
 						</div>
 					)}
 				</Sidebar>
