@@ -362,7 +362,7 @@ export function Dashboard({
 					onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
 				>
 					{/* Missions Section */}
-					<div className="space-y-2">
+					<div className="shrink-0 space-y-2">
 						<div className="flex items-center justify-between">
 							{!sidebarCollapsed && (
 								<p className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">
@@ -387,11 +387,11 @@ export function Dashboard({
 
 					{/* Threads Section */}
 					{!sidebarCollapsed ? (
-						<div className="space-y-2">
+						<div className="flex min-h-0 flex-1 flex-col gap-2">
 							<p className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">
 								Threads
 							</p>
-							<div className="flex max-h-[320px] flex-col gap-2 overflow-y-auto scrollbar-thin pr-1">
+							<div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto scrollbar-thin pr-1">
 								<ThreadsList
 									threads={sortedThreads}
 									agentMap={agentMap}
