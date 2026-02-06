@@ -21,9 +21,7 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-	title: "Clawion Signal Observatory",
-	description:
-		"Read-only control plane for live signal intelligence with Magic UI inspired visuals.",
+	title: "Clawion Workspace",
 };
 
 export default function RootLayout({
