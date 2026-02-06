@@ -123,6 +123,16 @@
 	body {
 		@apply bg-background text-foreground font-sans antialiased;
 	}
+
+	button:not(:disabled),
+	a[href],
+	[role="button"]:not([aria-disabled="true"]),
+	input[type="button"]:not(:disabled),
+	input[type="submit"]:not(:disabled),
+	input[type="reset"]:not(:disabled),
+	summary {
+		cursor: pointer;
+	}
 }
 
 @layer utilities {
