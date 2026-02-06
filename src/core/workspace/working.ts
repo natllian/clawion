@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 import { appendJsonLine, readJsonLines } from "../fs/jsonl";
 import { type WorkingEvent, workingEventSchema } from "../schemas";
+import { nowLocal } from "../time";
 import { resolveMissionPath } from "./mission";
 
 type WorkingAddInput = {
@@ -12,7 +13,7 @@ type WorkingAddInput = {
 };
 
 function nowIso(): string {
-	return new Date().toISOString();
+	return nowLocal();
 }
 
 function resolveWorkingPath(missionPath: string, agentId: string): string {

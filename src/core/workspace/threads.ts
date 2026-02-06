@@ -8,6 +8,7 @@ import {
 	threadMessageEventSchema,
 	threadSummarySchema,
 } from "../schemas";
+import { nowLocal } from "../time";
 import { resolveMissionPath } from "./mission";
 
 type ThreadMessageInput = {
@@ -20,7 +21,7 @@ type ThreadMessageInput = {
 };
 
 function nowIso(): string {
-	return new Date().toISOString();
+	return nowLocal();
 }
 
 function resolveThreadPath(missionPath: string, taskId: string): string {

@@ -1,5 +1,6 @@
 import { appendFile, mkdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
+import { nowLocal } from "../time";
 
 type CliInvocationEntry = {
 	timestamp: string;
@@ -7,7 +8,7 @@ type CliInvocationEntry = {
 };
 
 function nowIso(): string {
-	return new Date().toISOString();
+	return nowLocal();
 }
 
 export function resolveCliInvocationsPath(missionsDir: string): string {

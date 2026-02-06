@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { writeJsonAtomic } from "../src/core/fs/json";
+import { nowLocal } from "../src/core/time";
 import { resolveMissionPath } from "../src/core/workspace/mission";
 import { createWorkspace } from "./helpers";
 
@@ -9,7 +10,7 @@ describe("resolveMissionPath", () => {
 		const missionsDir = await createWorkspace();
 		await writeJsonAtomic(join(missionsDir, "index.json"), {
 			schemaVersion: 1,
-			updatedAt: new Date().toISOString(),
+			updatedAt: nowLocal(),
 			missions: [
 				{
 					id: "m1",
@@ -17,8 +18,8 @@ describe("resolveMissionPath", () => {
 					description: "Desc",
 					path: "m1",
 					status: "active",
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString(),
+					createdAt: nowLocal(),
+					updatedAt: nowLocal(),
 				},
 			],
 		});
@@ -32,7 +33,7 @@ describe("resolveMissionPath", () => {
 		const absolutePath = join(missionsDir, "absolute-m1");
 		await writeJsonAtomic(join(missionsDir, "index.json"), {
 			schemaVersion: 1,
-			updatedAt: new Date().toISOString(),
+			updatedAt: nowLocal(),
 			missions: [
 				{
 					id: "m1",
@@ -40,8 +41,8 @@ describe("resolveMissionPath", () => {
 					description: "Desc",
 					path: absolutePath,
 					status: "active",
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString(),
+					createdAt: nowLocal(),
+					updatedAt: nowLocal(),
 				},
 			],
 		});

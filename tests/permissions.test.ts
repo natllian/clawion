@@ -3,10 +3,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { writeJsonAtomic } from "../src/core/fs/json";
+import { nowLocal } from "../src/core/time";
 import { assertManager } from "../src/core/workspace/permissions";
 
 function nowIso(): string {
-	return new Date().toISOString();
+	return nowLocal();
 }
 
 async function setupMission(

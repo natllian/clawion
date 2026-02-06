@@ -9,6 +9,7 @@ import {
 	type WorkingEvent,
 } from "../core/schemas";
 import { resolveStatusForColumn, type TaskStatus } from "../core/task-status";
+import { formatLocalTime, nowLocal } from "../core/time";
 import { listAgents } from "../core/workspace/agents";
 import { appendInboxAck, listInboxAcks } from "../core/workspace/inbox";
 import { readMemory } from "../core/workspace/memory";
@@ -75,10 +76,6 @@ type WakeContext = {
 	threadSummaries: ThreadSummary[];
 	teamWorkingLatest: TeamWorkingSnapshot[];
 };
-
-function formatLocalTime(isoUtc: string): string {
-	return new Date(isoUtc).toLocaleString();
-}
 
 function buildTaskTitleById(tasks: TasksFile): Map<string, string> {
 	return new Map(tasks.tasks.map((task) => [task.id, task.title] as const));
@@ -643,7 +640,7 @@ async function buildWakeContext(
 		agentId,
 		missionsDir,
 		missionPath,
-		generatedAt: new Date().toISOString(),
+		generatedAt: nowLocal(),
 
 		agentEntry,
 		agents: agentsFile.agents,

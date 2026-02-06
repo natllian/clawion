@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { readJson, writeJsonAtomic } from "../fs/json";
 import { pathExists } from "../fs/util";
 import { agentsSchema, missionSchema, tasksSchema } from "../schemas";
+import { nowLocal } from "../time";
 import {
 	addMissionIndexEntry,
 	loadMissionsIndex,
@@ -30,7 +31,7 @@ type MissionRoadmapUpdateInput = {
 };
 
 function nowIso(): string {
-	return new Date().toISOString();
+	return nowLocal();
 }
 
 export async function createMission(input: MissionCreateInput) {

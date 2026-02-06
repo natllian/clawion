@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import { appendJsonLine, readJsonLines } from "../fs/jsonl";
 import { type InboxAckEvent, inboxAckEventSchema } from "../schemas";
+import { nowLocal } from "../time";
 import { resolveMissionPath } from "./mission";
 
 type InboxAckInput = {
@@ -12,7 +13,7 @@ type InboxAckInput = {
 };
 
 function nowIso(): string {
-	return new Date().toISOString();
+	return nowLocal();
 }
 
 function resolveInboxPath(missionPath: string, agentId: string): string {

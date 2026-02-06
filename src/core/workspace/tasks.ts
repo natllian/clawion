@@ -2,6 +2,7 @@ import { join } from "node:path";
 import { readJson, writeJsonAtomic } from "../fs/json";
 import { taskItemSchema, tasksSchema } from "../schemas";
 import { resolveColumnIdForStatus, type TaskStatus } from "../task-status";
+import { nowLocal } from "../time";
 import { resolveMissionPath } from "./mission";
 
 type TaskCreateInput = {
@@ -21,7 +22,7 @@ type TaskUpdateInput = {
 };
 
 function nowIso(): string {
-	return new Date().toISOString();
+	return nowLocal();
 }
 
 export async function listTasks(missionsDir: string, missionId: string) {

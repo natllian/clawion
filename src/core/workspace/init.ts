@@ -3,13 +3,14 @@ import { join } from "node:path";
 import { writeJsonAtomic } from "../fs/json";
 import { writeMarkdownAtomic } from "../fs/markdown";
 import { pathExists } from "../fs/util";
+import { nowLocal } from "../time";
 
 type WorkspaceInitOptions = {
 	missionsDir: string;
 };
 
 function nowIso(): string {
-	return new Date().toISOString();
+	return nowLocal();
 }
 
 function defaultMissionTemplate() {

@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import { readJson, writeJsonAtomic } from "../fs/json";
 import { missionsIndexSchema } from "../schemas";
+import { nowLocal } from "../time";
 
 export type MissionIndexEntryInput = {
 	id: string;
@@ -47,7 +48,7 @@ export async function addMissionIndexEntry(
 
 	const nextIndex = missionsIndexSchema.parse({
 		...index,
-		updatedAt: new Date().toISOString(),
+		updatedAt: nowLocal(),
 		missions: [...index.missions, entry],
 	});
 
@@ -72,7 +73,7 @@ export async function updateMissionIndexEntry(
 
 	const nextIndex = missionsIndexSchema.parse({
 		...index,
-		updatedAt: new Date().toISOString(),
+		updatedAt: nowLocal(),
 		missions: index.missions.map((entry) =>
 			entry.id === missionId ? nextMission : entry,
 		),

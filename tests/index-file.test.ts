@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { readJson } from "../src/core/fs/json";
 import { missionsIndexSchema } from "../src/core/schemas";
+import { nowLocal } from "../src/core/time";
 import {
 	addMissionIndexEntry,
 	loadMissionsIndex,
@@ -20,8 +21,8 @@ describe("missions index", () => {
 			description: "Desc",
 			path: "m1",
 			status: "active",
-			createdAt: new Date().toISOString(),
-			updatedAt: new Date().toISOString(),
+			createdAt: nowLocal(),
+			updatedAt: nowLocal(),
 		});
 		await addMissionIndexEntry(missionsDir, {
 			id: "m2",
@@ -29,8 +30,8 @@ describe("missions index", () => {
 			description: "Desc",
 			path: "m2",
 			status: "active",
-			createdAt: new Date().toISOString(),
-			updatedAt: new Date().toISOString(),
+			createdAt: nowLocal(),
+			updatedAt: nowLocal(),
 		});
 
 		await updateMissionIndexEntry(missionsDir, "m1", {
@@ -54,8 +55,8 @@ describe("missions index", () => {
 			description: "Desc",
 			path: "m1",
 			status: "active",
-			createdAt: new Date().toISOString(),
-			updatedAt: new Date().toISOString(),
+			createdAt: nowLocal(),
+			updatedAt: nowLocal(),
 		});
 
 		await expect(
@@ -65,8 +66,8 @@ describe("missions index", () => {
 				description: "Desc",
 				path: "m1",
 				status: "active",
-				createdAt: new Date().toISOString(),
-				updatedAt: new Date().toISOString(),
+				createdAt: nowLocal(),
+				updatedAt: nowLocal(),
 			}),
 		).rejects.toThrow("Mission already exists");
 

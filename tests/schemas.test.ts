@@ -8,6 +8,7 @@ import {
 	threadMessageEventSchema,
 	workingEventSchema,
 } from "../src/core/schemas";
+import { nowLocal } from "../src/core/time";
 
 describe("schemas", () => {
 	it("accepts valid mission", () => {
@@ -17,8 +18,8 @@ describe("schemas", () => {
 			name: "Test Mission",
 			description: "A mission",
 			status: "active",
-			createdAt: new Date().toISOString(),
-			updatedAt: new Date().toISOString(),
+			createdAt: nowLocal(),
+			updatedAt: nowLocal(),
 		});
 		expect(result.success).toBe(true);
 	});
@@ -29,8 +30,8 @@ describe("schemas", () => {
 			id: "m1",
 			name: "Test Mission",
 			status: "active",
-			createdAt: new Date().toISOString(),
-			updatedAt: new Date().toISOString(),
+			createdAt: nowLocal(),
+			updatedAt: nowLocal(),
 		});
 		expect(result.success).toBe(false);
 	});
@@ -48,8 +49,8 @@ describe("schemas", () => {
 					columnId: "todo",
 					statusNotes: "",
 					assigneeAgentId: "a1",
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString(),
+					createdAt: nowLocal(),
+					updatedAt: nowLocal(),
 				},
 			],
 		});
@@ -68,8 +69,8 @@ describe("schemas", () => {
 					description: "Do something",
 					columnId: "todo",
 					statusNotes: "",
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString(),
+					createdAt: nowLocal(),
+					updatedAt: nowLocal(),
 					links: ["http://example.com"],
 				},
 			],
@@ -135,7 +136,7 @@ describe("schemas", () => {
 		const result = threadMessageEventSchema.safeParse({
 			type: "message",
 			id: "msg1",
-			createdAt: new Date().toISOString(),
+			createdAt: nowLocal(),
 			authorAgentId: "a1",
 			mentionsAgentIds: "a2",
 			content: "Hello",
@@ -147,7 +148,7 @@ describe("schemas", () => {
 		const result = threadMessageEventSchema.safeParse({
 			type: "message",
 			id: "msg1",
-			createdAt: new Date().toISOString(),
+			createdAt: nowLocal(),
 			authorAgentId: "a1",
 			mentionsAgentIds: [],
 			content: "Hello",
@@ -158,7 +159,7 @@ describe("schemas", () => {
 	it("accepts valid missions index", () => {
 		const result = missionsIndexSchema.safeParse({
 			schemaVersion: 1,
-			updatedAt: new Date().toISOString(),
+			updatedAt: nowLocal(),
 			missions: [
 				{
 					id: "m1",
@@ -166,8 +167,8 @@ describe("schemas", () => {
 					description: "Desc",
 					path: "/tmp/m1",
 					status: "completed",
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString(),
+					createdAt: nowLocal(),
+					updatedAt: nowLocal(),
 				},
 			],
 		});
@@ -181,8 +182,8 @@ describe("schemas", () => {
 			name: "Test Mission",
 			description: "A mission",
 			status: "completed",
-			createdAt: new Date().toISOString(),
-			updatedAt: new Date().toISOString(),
+			createdAt: nowLocal(),
+			updatedAt: nowLocal(),
 		});
 		expect(result.success).toBe(true);
 	});
@@ -190,7 +191,7 @@ describe("schemas", () => {
 	it("accepts valid inbox ack event", () => {
 		const result = inboxAckEventSchema.safeParse({
 			type: "ack",
-			ackedAt: new Date().toISOString(),
+			ackedAt: nowLocal(),
 			missionId: "m1",
 			agentId: "a1",
 			messageId: "msg1",
@@ -202,7 +203,7 @@ describe("schemas", () => {
 	it("accepts valid working event", () => {
 		const result = workingEventSchema.safeParse({
 			id: "w1",
-			createdAt: new Date().toISOString(),
+			createdAt: nowLocal(),
 			agentId: "a1",
 			content: "Investigating.",
 		});
