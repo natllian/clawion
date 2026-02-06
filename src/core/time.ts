@@ -6,7 +6,7 @@ import { format } from "date-fns";
  */
 export function formatLocalTime(dateInput: Date | string = new Date()): string {
 	const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
-	return format(date, "yyyy-MM-dd HH-mm-ss");
+	return format(date, "yyyy-MM-dd HH:mm:ss");
 }
 
 /**

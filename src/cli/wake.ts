@@ -186,9 +186,9 @@ function buildWorkerWakeLines(ctx: WakeContext): string[] {
 	const lines: string[] = [];
 
 	lines.push(
-		`You are a Worker Agent currently on duty in Mission ${ctx.missionId}`,
+		`You are a Worker Agent currently on duty in Mission ${ctx.missionId}.`,
 		"This message is the only authoritative snapshot for deciding what to do next.",
-		"Your job is to move the mission forward this turn.",
+		"Your job is to make concrete task-level progress this turn.",
 	);
 
 	lines.push("");
@@ -229,6 +229,8 @@ function buildWorkerWakeLines(ctx: WakeContext): string[] {
 	lines.push("## Turn Playbook");
 	lines.push(
 		"Your mission this turn: make one assigned task meaningfully closer to done (or fully done). If you can’t progress, reduce uncertainty fast by asking the right person.",
+		`If you’re about to produce a long report, write it to a file in ${join(ctx.missionPath, "artifacts")} for review.`,
+		"Then post a short thread message with the file path so other agents can review.",
 	);
 	lines.push("");
 	lines.push("1) Handle Unread Mentions first.");
@@ -248,20 +250,12 @@ function buildWorkerWakeLines(ctx: WakeContext): string[] {
 		"   Deliverables can be: a patch/PR, a repro + diagnosis, a spec/proposal with tradeoffs, a test plan, or a concrete review result.",
 	);
 	lines.push("");
-	lines.push("4) If your output is long, write it to a file for review.");
-	lines.push(
-		`   - Put long reports/specs in: ${join(ctx.missionPath, "artifacts")} (Markdown preferred).`,
-	);
-	lines.push(
-		"   - Then post a short thread message with the file path so other agents can review.",
-	);
-	lines.push("");
-	lines.push("5) Ask early when unclear or blocked.");
+	lines.push("4) Ask early when unclear or blocked.");
 	lines.push(
 		"   Use `clawion message add` to mention the manager and/or relevant peers. Include what you tried and what you need.",
 	);
 	lines.push("");
-	lines.push("6) Write back before you stop.");
+	lines.push("5) Write back before you stop.");
 	lines.push("   - `working add`: progress + next step (and blockers if any)");
 	lines.push(
 		"   - `message add`: close the loop with the manager (especially on completion)",
@@ -285,20 +279,18 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 	const lines: string[] = [];
 
 	lines.push(
-		`SYSTEM: You are the Mission Manager for Mission ${ctx.missionId}. This Wake report is your single source of truth for this turn (ROADMAP, Team Directory, Mission Dashboard, Threads, Unread Mentions, Working).`,
-	);
-	lines.push(
-		"SYSTEM: Protocol: (1) triage Unread Mentions; (2) scan mission health (blocked/unassigned tasks, recent thread activity, team working updates); (3) decide and dispatch next steps by creating/assigning/updating tasks; (4) communicate decisions via `clawion message add`. Messages shown as unread will be auto-acknowledged after this Wake.",
+		`You are the Mission Manager currently on duty for Mission ${ctx.missionId}.`,
+		"This message is the only authoritative snapshot for deciding what to do next.",
+		"Your job is to coordinate agents and move the overall mission forward this turn.",
 	);
 
 	lines.push("");
 	lines.push("## Identity");
 	lines.push(`- ID: ${ctx.agentEntry.id}`);
-	lines.push(`- Display name: ${ctx.agentEntry.displayName}`);
 	lines.push(`- System role: ${ctx.agentEntry.systemRole}`);
-	lines.push("");
-	lines.push("### Role Description");
-	lines.push(ctx.agentEntry.roleDescription || "_No role description._");
+	lines.push(
+		`- Role Description: ${ctx.agentEntry.roleDescription || "_No role description._"}`,
+	);
 
 	lines.push("");
 	renderTeamDirectory(ctx, lines, ctx.agents);
@@ -419,7 +411,10 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 	lines.push("## Turn Playbook");
 	lines.push(
 		"Your mission this turn: keep throughput high by dispatching clear work, removing blockers, and keeping the task board accurate.",
+		`If you’re about to produce a long report, write it to a file in ${join(ctx.missionPath, "artifacts")} for review.`,
+		"Then post a short thread message with the file path so other agents can review.",
 	);
+
 	lines.push("");
 	lines.push("1) Triage Unread Mentions.");
 	lines.push(
@@ -434,20 +429,13 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 		"   Ensure each task has: a clear outcome, constraints/acceptance criteria, an owner.",
 	);
 	lines.push("");
-	lines.push(
-		"4) If you’re about to produce a long report, write it to a file for review.",
-	);
-	lines.push(
-		`   - Put long reports/specs in: ${join(ctx.missionPath, "artifacts")} (Markdown preferred).`,
-	);
-	lines.push(
-		"   - Then post a short thread message with the file path so other agents can review.",
-	);
-	lines.push("");
-	lines.push("5) Communicate decisions in threads.");
+	lines.push("4) Communicate decisions in threads.");
 	lines.push(
 		"   - Keep messages short, explicit, with the next step and owner.",
 	);
+	lines.push("");
+	lines.push("5) Write back before you stop.");
+	lines.push("   - `working add`: progress + next step (and blockers if any)");
 
 	lines.push("");
 	lines.push("## Command Templates (Manager)");
@@ -475,10 +463,9 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 	lines.push(
 		`  \`clawion mission complete --id ${ctx.missionId} --agent ${ctx.agentEntry.id}\``,
 	);
-
-	lines.push("");
+	lines.push("- Log progress:");
 	lines.push(
-		"_Unread mentions shown above have been automatically acknowledged after this Wake._",
+		`  \`clawion working add --mission ${ctx.missionId} --content "..." --agent ${ctx.agentEntry.id}\``,
 	);
 
 	return lines;
