@@ -16,7 +16,6 @@ describe("schemas", () => {
 			schemaVersion: 1,
 			id: "m1",
 			name: "Test Mission",
-			description: "A mission",
 			status: "active",
 			createdAt: nowLocal(),
 			updatedAt: nowLocal(),
@@ -24,16 +23,17 @@ describe("schemas", () => {
 		expect(result.success).toBe(true);
 	});
 
-	it("rejects mission without description", () => {
+	it("accepts mission with legacy description field", () => {
 		const result = missionSchema.safeParse({
 			schemaVersion: 1,
 			id: "m1",
 			name: "Test Mission",
+			description: "deprecated",
 			status: "active",
 			createdAt: nowLocal(),
 			updatedAt: nowLocal(),
 		});
-		expect(result.success).toBe(false);
+		expect(result.success).toBe(true);
 	});
 
 	it("accepts valid tasks file", () => {
@@ -164,7 +164,6 @@ describe("schemas", () => {
 				{
 					id: "m1",
 					name: "Mission 1",
-					description: "Desc",
 					path: "/tmp/m1",
 					status: "completed",
 					createdAt: nowLocal(),
@@ -180,7 +179,6 @@ describe("schemas", () => {
 			schemaVersion: 1,
 			id: "m1",
 			name: "Test Mission",
-			description: "A mission",
 			status: "completed",
 			createdAt: nowLocal(),
 			updatedAt: nowLocal(),

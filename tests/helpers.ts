@@ -18,6 +18,5 @@ export async function createMissionFixture(
 		missionsDir,
 		id,
 		name: "Mission One",
-		description: "Test mission",
 	});
 }

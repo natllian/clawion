@@ -18,7 +18,6 @@ describe("missions index", () => {
 		await addMissionIndexEntry(missionsDir, {
 			id: "m1",
 			name: "Mission One",
-			description: "Desc",
 			path: "m1",
 			status: "active",
 			createdAt: nowLocal(),
@@ -27,7 +26,6 @@ describe("missions index", () => {
 		await addMissionIndexEntry(missionsDir, {
 			id: "m2",
 			name: "Mission Two",
-			description: "Desc",
 			path: "m2",
 			status: "active",
 			createdAt: nowLocal(),
@@ -35,14 +33,14 @@ describe("missions index", () => {
 		});
 
 		await updateMissionIndexEntry(missionsDir, "m1", {
-			description: "Updated",
+			status: "completed",
 		});
 
 		const index = await readJson(
 			join(missionsDir, "index.json"),
 			missionsIndexSchema,
 		);
-		expect(index.missions[0].description).toBe("Updated");
+		expect(index.missions[0].status).toBe("completed");
 		expect(index.missions).toHaveLength(2);
 	});
 
@@ -52,7 +50,6 @@ describe("missions index", () => {
 		await addMissionIndexEntry(missionsDir, {
 			id: "m1",
 			name: "Mission One",
-			description: "Desc",
 			path: "m1",
 			status: "active",
 			createdAt: nowLocal(),
@@ -63,7 +60,6 @@ describe("missions index", () => {
 			addMissionIndexEntry(missionsDir, {
 				id: "m1",
 				name: "Mission One",
-				description: "Desc",
 				path: "m1",
 				status: "active",
 				createdAt: nowLocal(),
@@ -73,7 +69,7 @@ describe("missions index", () => {
 
 		await expect(
 			updateMissionIndexEntry(missionsDir, "missing", {
-				description: "Updated",
+				status: "completed",
 			}),
 		).rejects.toThrow("Mission not found");
 	});

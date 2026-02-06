@@ -19,7 +19,6 @@ function defaultMissionTemplate() {
 		schemaVersion: 1,
 		id: "template",
 		name: "Template Mission",
-		description: "Describe this mission.",
 		status: "active",
 		createdAt: now,
 		updatedAt: now,

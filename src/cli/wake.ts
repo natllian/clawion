@@ -57,7 +57,6 @@ type WakeContext = {
 	mission: {
 		id: string;
 		name: string;
-		description: string;
 		status: string;
 	};
 	roadmap: string;
@@ -625,7 +624,6 @@ async function buildWakeContext(
 		mission: {
 			id: missionPayload.mission.id,
 			name: missionPayload.mission.name,
-			description: missionPayload.mission.description,
 			status: missionPayload.mission.status,
 		},
 		roadmap: missionPayload.roadmap ?? "",

@@ -536,7 +536,6 @@ export function ThreadDetail({
 						</CardHeader>
 						<CardContent className="space-y-2 text-sm text-muted-foreground">
 							<p className="font-medium text-foreground">{mission?.name}</p>
-							<p>{mission?.description}</p>
 							<Badge
 								variant="outline"
 								className={cn(

@@ -10,7 +10,8 @@ export const missionIndexItemSchema = z
 	.object({
 		id: idSchema,
 		name: nonEmptyTextSchema,
-		description: nonEmptyTextSchema,
+		// Backward-compatibility for old index entries; no longer used.
+		description: nonEmptyTextSchema.optional(),
 		path: nonEmptyTextSchema,
 		status: z.enum(["active", "paused", "archived", "completed"]),
 		createdAt: isoDateSchema,

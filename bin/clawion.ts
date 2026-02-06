@@ -92,9 +92,8 @@ const HELP_ENTRIES: HelpEntry[] = [
 	{
 		command: "mission create",
 		purpose: "Create a new mission from the template.",
-		params: ["--id <id>", "--name <name>", "--description <markdown>"],
-		example:
-			"clawion mission create --id m1 --name 'Alpha' --description 'Build MVP'",
+		params: ["--id <id>", "--name <name>"],
+		example: "clawion mission create --id m1 --name 'Alpha'",
 	},
 	{
 		command: "mission roadmap",
@@ -279,14 +278,12 @@ mission
 	.description("Create a mission from the template")
 	.requiredOption("--id <id>", "Mission ID")
 	.requiredOption("--name <name>", "Mission name")
-	.requiredOption("--description <markdown>", "Mission description")
 	.action(async (options) => {
 		try {
 			await createMission({
 				missionsDir: context.missionsDir,
 				id: options.id,
 				name: options.name,
-				description: options.description,
 			});
 			console.log(`Mission created: ${options.id}`);
 		} catch (error) {

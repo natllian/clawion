@@ -24,7 +24,6 @@ describe("DashboardHeader", () => {
 		schemaVersion: 1,
 		id: "mission-1",
 		name: "Test Mission",
-		description: "A test mission",
 		status: "active",
 		createdAt: new Date().toISOString(),
 		updatedAt: new Date().toISOString(),
@@ -51,12 +50,6 @@ describe("DashboardHeader", () => {
 		expect(
 			screen.getByRole("heading", { name: /test mission/i }),
 		).toBeInTheDocument();
-	});
-
-	it("renders mission description when mission is provided", () => {
-		const props = { ...defaultProps, mission: mockMission };
-		render(<DashboardHeader {...props} />);
-		expect(screen.getByText("A test mission")).toBeInTheDocument();
 	});
 
 	it("shows active status badge", () => {
@@ -92,7 +85,7 @@ describe("DashboardHeader", () => {
 		expect(screen.getByText("archived")).toBeInTheDocument();
 	});
 
-	it("shows placeholder description when no mission", () => {
+	it("shows static mission helper copy", () => {
 		render(<DashboardHeader {...defaultProps} />);
 		expect(screen.getByText(/pick a mission/i)).toBeInTheDocument();
 	});

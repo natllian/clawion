@@ -15,7 +15,6 @@ describe("resolveMissionPath", () => {
 				{
 					id: "m1",
 					name: "Mission One",
-					description: "Desc",
 					path: "m1",
 					status: "active",
 					createdAt: nowLocal(),
@@ -38,7 +37,6 @@ describe("resolveMissionPath", () => {
 				{
 					id: "m1",
 					name: "Mission One",
-					description: "Desc",
 					path: absolutePath,
 					status: "active",
 					createdAt: nowLocal(),

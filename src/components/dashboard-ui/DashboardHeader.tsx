@@ -45,8 +45,7 @@ export function DashboardHeader({
 					)}
 				</div>
 				<p className="mt-1 max-w-2xl text-xs text-muted-foreground">
-					{mission?.description ??
-						"Pick a mission to see its tasks and runbook."}
+					Pick a mission to see its tasks and runbook.
 				</p>
 			</div>
 

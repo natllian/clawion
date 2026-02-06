@@ -6,7 +6,6 @@ import {
 	completeMission,
 	listMissions,
 	showMission,
-	updateMission,
 	updateMissionRoadmap,
 } from "../src/core/workspace/missions";
 import { createMissionFixture, createWorkspace } from "./helpers";
@@ -42,29 +41,9 @@ describe("missions", () => {
 		expect(details.roadmap).toContain("Mission Roadmap");
 	});
 
-	it("updates mission description and completes mission", async () => {
+	it("completes mission", async () => {
 		const missionsDir = await createWorkspace();
 		await createMissionFixture(missionsDir, "m1");
-
-		await updateMission({
-			missionsDir,
-			id: "m1",
-			description: "Updated description",
-		});
-
-		const updated = await readJson(
-			join(missionsDir, "m1", "mission.json"),
-			missionSchema,
-		);
-		expect(updated.description).toBe("Updated description");
-
-		const indexAfterUpdate = await readJson(
-			join(missionsDir, "index.json"),
-			missionsIndexSchema,
-		);
-		expect(indexAfterUpdate.missions[0].description).toBe(
-			"Updated description",
-		);
 
 		await completeMission(missionsDir, "m1");
 		const completed = await readJson(

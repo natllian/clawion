@@ -88,9 +88,6 @@ export function MissionList({
 										{item.status}
 									</span>
 								</div>
-								<p className="mt-1 line-clamp-2 text-[0.65rem] text-muted-foreground">
-									{item.description}
-								</p>
 							</div>
 						)}
 					</Link>

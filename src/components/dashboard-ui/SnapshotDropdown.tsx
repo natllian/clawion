@@ -64,9 +64,6 @@ export function SnapshotDropdown({
 							{mission?.status ?? "—"}
 						</Badge>
 					</div>
-					<p className="text-xs text-muted-foreground">
-						{mission?.description ?? "Select a mission."}
-					</p>
 					<div className="rounded-lg border border-border/70 bg-background p-2">
 						<MarkdownBlock content={roadmapContent} />
 					</div>

@@ -47,7 +47,6 @@ const mockMission: Mission = {
 	schemaVersion: 1,
 	id: "m1",
 	name: "Test Mission",
-	description: "A test mission",
 	status: "active",
 	createdAt: "2024-01-01T08:00:00Z",
 	updatedAt: "2024-01-01T12:00:00Z",

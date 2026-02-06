@@ -8,7 +8,6 @@ describe("MissionList", () => {
 		{
 			id: "m1",
 			name: "Alpha Mission",
-			description: "First mission",
 			path: "/tmp/m1",
 			status: "active",
 			createdAt: new Date().toISOString(),
@@ -17,7 +16,6 @@ describe("MissionList", () => {
 		{
 			id: "m2",
 			name: "Beta Mission",
-			description: "Second mission",
 			path: "/tmp/m2",
 			status: "completed",
 			createdAt: new Date().toISOString(),

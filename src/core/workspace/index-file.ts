@@ -6,7 +6,6 @@ import { nowLocal } from "../time";
 export type MissionIndexEntryInput = {
 	id: string;
 	name: string;
-	description: string;
 	path: string;
 	status: "active" | "paused" | "archived" | "completed";
 	createdAt: string;

@@ -35,7 +35,6 @@ async function setupMission(
 			{
 				id: missionId,
 				name: "Test Mission",
-				description: "Test",
 				path: missionId,
 				status: "active",
 				createdAt: nowIso(),

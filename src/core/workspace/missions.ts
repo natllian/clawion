@@ -15,13 +15,6 @@ type MissionCreateInput = {
 	missionsDir: string;
 	id: string;
 	name: string;
-	description: string;
-};
-
-type MissionUpdateInput = {
-	missionsDir: string;
-	id: string;
-	description: string;
 };
 
 type MissionRoadmapUpdateInput = {
@@ -49,7 +42,6 @@ export async function createMission(input: MissionCreateInput) {
 		schemaVersion: 1,
 		id: input.id,
 		name: input.name,
-		description: input.description,
 		status: "active",
 		createdAt: now,
 		updatedAt: now,
@@ -72,7 +64,6 @@ export async function createMission(input: MissionCreateInput) {
 	await addMissionIndexEntry(input.missionsDir, {
 		id: input.id,
 		name: input.name,
-		description: input.description,
 		path: input.id,
 		status: "active",
 		createdAt: now,
@@ -93,25 +84,6 @@ export async function showMission(missionsDir: string, missionId: string) {
 	);
 	const roadmap = await readFile(join(missionPath, "ROADMAP.md"), "utf8");
 	return { mission, roadmap };
-}
-
-export async function updateMission(input: MissionUpdateInput) {
-	const missionPath = await resolveMissionPath(input.missionsDir, input.id);
-	const mission = await readJson(
-		join(missionPath, "mission.json"),
-		missionSchema,
-	);
-	const nextMission = missionSchema.parse({
-		...mission,
-		description: input.description,
-		updatedAt: nowIso(),
-	});
-
-	await writeJsonAtomic(join(missionPath, "mission.json"), nextMission);
-	await updateMissionIndexEntry(input.missionsDir, input.id, {
-		description: input.description,
-		updatedAt: nextMission.updatedAt,
-	});
 }
 
 export async function updateMissionRoadmap(input: MissionRoadmapUpdateInput) {
