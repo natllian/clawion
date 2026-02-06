@@ -81,16 +81,6 @@ function buildTaskTitleById(tasks: TasksFile): Map<string, string> {
 	return new Map(tasks.tasks.map((task) => [task.id, task.title] as const));
 }
 
-function summarizeTaskDescription(description: string): string {
-	const trimmed = description?.trim() ?? "";
-	if (!trimmed) {
-		return "_No description._";
-	}
-	const firstParagraph = trimmed.split(/\n\s*\n/)[0] ?? "";
-	const firstLine = firstParagraph.split("\n")[0] ?? "";
-	return firstLine.trim() || "_No description._";
-}
-
 function groupUnreadMentions(unread: UnreadMention[]) {
 	const sorted = [...unread].sort((a, b) =>
 		a.createdAt.localeCompare(b.createdAt),
@@ -109,20 +99,20 @@ function groupUnreadMentions(unread: UnreadMention[]) {
 	return { byTask, taskIdsOrdered };
 }
 
-function renderTeamDirectory(lines: string[], agents: Agent[]) {
-	lines.push("## Team Directory");
+function renderTeamDirectory(
+	ctx: WakeContext,
+	lines: string[],
+	agents: Agent[],
+) {
+	lines.push("## Teammates");
 	if (agents.length === 0) {
 		lines.push("_No agents registered in this mission yet._");
 		return;
 	}
 
 	for (const agent of agents) {
-		const roleLine = (agent.roleDescription ?? "").trim().split("\n")[0] ?? "";
-		lines.push(
-			`- ${agent.displayName} (@${agent.id}) — ${agent.systemRole}${
-				roleLine ? ` — ${roleLine}` : ""
-			}`,
-		);
+		if (agent.id === ctx.agentEntry.id) continue;
+		lines.push(`- ${agent.displayName} (@${agent.id}) — ${agent.systemRole}`);
 	}
 }
 
@@ -140,7 +130,7 @@ function renderAssignedTasks(lines: string[], tasks: TaskWithStatus[]) {
 				statusNotes ? ` — ${statusNotes}` : ""
 			}`,
 		);
-		lines.push(`  Description: ${summarizeTaskDescription(task.description)}`);
+		lines.push(`  Description: ${task.description}`);
 	}
 }
 
@@ -194,45 +184,30 @@ function renderWorking(lines: string[], workingEvents: WorkingEvent[]) {
 	}
 }
 
-function renderMemory(lines: string[], memory: string) {
-	lines.push("## Memory");
-	lines.push(memory.trim() || "_No memory yet._");
-}
-
 function buildWorkerWakeLines(ctx: WakeContext): string[] {
 	const lines: string[] = [];
 
 	lines.push(
-		`# Wake: ${ctx.agentEntry.displayName} (@${ctx.agentEntry.id}) · Mission ${ctx.missionId}`,
-	);
-	lines.push("");
-	lines.push(
-		`SYSTEM: You are a Worker Agent in Mission ${ctx.missionId}. This Wake report is your single source of truth for this turn (Team Directory, Mission Summary, Assigned Tasks, Unread Mentions, Working, Memory).`,
-	);
-	lines.push(
-		"SYSTEM: Protocol: (1) respond to Unread Mentions; (2) progress Assigned Tasks; (3) log progress via `clawion working add` and keep `clawion memory set` current. If anything is unclear or blocked, ask early—use `clawion message add` to mention the manager and/or relevant peers for feedback. Messages shown as unread will be auto-acknowledged after this Wake.",
+		`You are a Worker Agent currently on duty in Mission ${ctx.missionId}`,
+		"This message is the only authoritative snapshot for deciding what to do next.",
+		"Your job is to move the mission forward this turn.",
 	);
 
 	lines.push("");
-	lines.push("## Agent");
+	lines.push("## Your Identity");
 	lines.push(`- ID: ${ctx.agentEntry.id}`);
-	lines.push(`- Display name: ${ctx.agentEntry.displayName}`);
 	lines.push(`- System role: ${ctx.agentEntry.systemRole}`);
-	lines.push("");
-	lines.push("### Role Description");
-	lines.push(ctx.agentEntry.roleDescription || "_No role description._");
+	lines.push(
+		`- Role Description: ${ctx.agentEntry.roleDescription || "_No role description._"}`,
+	);
 
 	lines.push("");
-	renderTeamDirectory(lines, ctx.agents);
+	renderTeamDirectory(ctx, lines, ctx.agents);
 
 	lines.push("");
-	lines.push("## Mission Summary");
+	lines.push("## Mission Overview");
 	lines.push(`- ID: ${ctx.mission.id}`);
-	lines.push(`- Name: ${ctx.mission.name}`);
 	lines.push(`- Status: ${ctx.mission.status}`);
-	lines.push(`- Shared artifacts: ${join(ctx.missionPath, "artifacts")}`);
-	lines.push("");
-	lines.push(ctx.mission.description.trim() || "_No mission description._");
 
 	lines.push("### ROADMAP");
 	lines.push(ctx.roadmap.trim() || "_No roadmap yet._");
@@ -253,7 +228,6 @@ function buildWorkerWakeLines(ctx: WakeContext): string[] {
 	renderWorking(lines, ctx.workingEvents);
 
 	lines.push("");
-	renderMemory(lines, ctx.memory);
 
 	lines.push("");
 	lines.push("## Turn Playbook");
@@ -278,7 +252,7 @@ function buildWorkerWakeLines(ctx: WakeContext): string[] {
 		"   Deliverables can be: a patch/PR, a repro + diagnosis, a spec/proposal with tradeoffs, a test plan, or a concrete review result.",
 	);
 	lines.push("");
-	lines.push("3.5) If your output is long, write it to a file for review.");
+	lines.push("4) If your output is long, write it to a file for review.");
 	lines.push(
 		`   - Put long reports/specs in: ${join(ctx.missionPath, "artifacts")} (Markdown preferred).`,
 	);
@@ -286,12 +260,12 @@ function buildWorkerWakeLines(ctx: WakeContext): string[] {
 		"   - Then post a short thread message with the file path so other agents can review.",
 	);
 	lines.push("");
-	lines.push("4) Ask early when unclear or blocked.");
+	lines.push("5) Ask early when unclear or blocked.");
 	lines.push(
 		"   Use `clawion message add` to mention the manager and/or relevant peers. Include what you tried and what you need.",
 	);
 	lines.push("");
-	lines.push("5) Write back before you stop.");
+	lines.push("6) Write back before you stop.");
 	lines.push("   - `working add`: progress + next step (and blockers if any)");
 	lines.push("   - `memory set`: stable summary of what’s true now");
 	lines.push(
@@ -313,21 +287,12 @@ function buildWorkerWakeLines(ctx: WakeContext): string[] {
 		`  \`clawion memory set --mission ${ctx.missionId} --content "..." --agent ${ctx.agentEntry.id}\``,
 	);
 
-	lines.push("");
-	lines.push(
-		"_Unread mentions shown above have been automatically acknowledged after this Wake._",
-	);
-
 	return lines;
 }
 
 function buildManagerWakeLines(ctx: WakeContext): string[] {
 	const lines: string[] = [];
 
-	lines.push(
-		`# Wake: ${ctx.agentEntry.displayName} (@${ctx.agentEntry.id}) · Mission ${ctx.missionId}`,
-	);
-	lines.push("");
 	lines.push(
 		`SYSTEM: You are the Mission Manager for Mission ${ctx.missionId}. This Wake report is your single source of truth for this turn (ROADMAP, Team Directory, Mission Dashboard, Threads, Unread Mentions, Working/Memory).`,
 	);
@@ -336,7 +301,7 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 	);
 
 	lines.push("");
-	lines.push("## Agent");
+	lines.push("## Identity");
 	lines.push(`- ID: ${ctx.agentEntry.id}`);
 	lines.push(`- Display name: ${ctx.agentEntry.displayName}`);
 	lines.push(`- System role: ${ctx.agentEntry.systemRole}`);
@@ -345,14 +310,12 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 	lines.push(ctx.agentEntry.roleDescription || "_No role description._");
 
 	lines.push("");
-	renderTeamDirectory(lines, ctx.agents);
+	renderTeamDirectory(ctx, lines, ctx.agents);
 
 	lines.push("");
 	lines.push("## Mission Overview");
 	lines.push(`- ID: ${ctx.mission.id}`);
-	lines.push(`- Name: ${ctx.mission.name}`);
 	lines.push(`- Status: ${ctx.mission.status}`);
-	lines.push(`- Shared artifacts: ${join(ctx.missionPath, "artifacts")}`);
 	lines.push(`- Description: ${ctx.mission.description}`);
 	lines.push("");
 	lines.push("### ROADMAP");
@@ -399,9 +362,7 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 	} else {
 		for (const task of unassignedTasks) {
 			lines.push(`- ${task.title} (#${task.id}) — ${task.status}`);
-			lines.push(
-				`  Description: ${summarizeTaskDescription(task.description)}`,
-			);
+			lines.push(`  Description: ${task.description}`);
 		}
 	}
 
@@ -416,9 +377,7 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 			lines.push(
 				`- ${task.title} (#${task.id})${who}${note ? ` — ${note}` : ""}`,
 			);
-			lines.push(
-				`  Description: ${summarizeTaskDescription(task.description)}`,
-			);
+			lines.push(`Description: ${task.description}`);
 		}
 	}
 
@@ -467,7 +426,6 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 	}
 
 	lines.push("");
-	renderMemory(lines, ctx.memory);
 
 	lines.push("");
 	lines.push("## Turn Playbook");
@@ -489,7 +447,7 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 	);
 	lines.push("");
 	lines.push(
-		"3.5) If you’re about to produce a long report, write it to a file for review.",
+		"4) If you’re about to produce a long report, write it to a file for review.",
 	);
 	lines.push(
 		`   - Put long reports/specs in: ${join(ctx.missionPath, "artifacts")} (Markdown preferred).`,
@@ -498,7 +456,7 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 		"   - Then post a short thread message with the file path so other agents can review.",
 	);
 	lines.push("");
-	lines.push("4) Communicate decisions in threads.");
+	lines.push("5) Communicate decisions in threads.");
 	lines.push(
 		"   - Keep messages short, explicit, with the next step and owner.",
 	);
