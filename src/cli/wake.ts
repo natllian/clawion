@@ -229,13 +229,11 @@ function buildWorkerWakeLines(ctx: WakeContext): string[] {
 	lines.push("## Turn Playbook");
 	lines.push(
 		"Your mission this turn: make one assigned task meaningfully closer to done (or fully done). If you can’t progress, reduce uncertainty fast by asking the right person.",
-		`If you’re about to produce a long report, write it to a file in ${join(ctx.missionPath, "artifacts")} for review.`,
-		"Then post a short thread message with the file path so other agents can review.",
 	);
 	lines.push("");
 	lines.push("1) Handle Unread Mentions first.");
 	lines.push(
-		"   - Reply with an answer, a clear question, or a concrete next step.",
+		"   - Reply with an answer, a clear question, or a different opinion.",
 	);
 	lines.push("");
 	lines.push("2) Pick the single highest-priority Assigned Task.");
@@ -411,8 +409,6 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 	lines.push("## Turn Playbook");
 	lines.push(
 		"Your mission this turn: keep throughput high by dispatching clear work, removing blockers, and keeping the task board accurate.",
-		`If you’re about to produce a long report, write it to a file in ${join(ctx.missionPath, "artifacts")} for review.`,
-		"Then post a short thread message with the file path so other agents can review.",
 	);
 
 	lines.push("");
