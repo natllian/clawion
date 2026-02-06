@@ -29,4 +29,12 @@ describe("MarkdownBlock", () => {
 		const link = screen.getByRole("link", { name: /click here/i });
 		expect(link).toHaveAttribute("href", "https://example.com");
 	});
+
+	it("decodes escaped newlines before rendering markdown", () => {
+		render(<MarkdownBlock content={"Title\\n\\n### Subtitle"} />);
+		expect(screen.getByText("Title")).toBeInTheDocument();
+		expect(screen.getByRole("heading", { level: 3 })).toHaveTextContent(
+			"Subtitle",
+		);
+	});
 });

@@ -3,14 +3,11 @@ import { resolveMissionsDir } from "@/core/workspace/paths";
 import { listThreads } from "@/core/workspace/threads";
 
 export async function GET(
-	request: Request,
+	_request: Request,
 	{ params }: { params: Promise<{ missionId: string }> },
 ) {
 	const { missionId } = await params;
-	const { searchParams } = new URL(request.url);
-	const missionsDir = resolveMissionsDir(
-		searchParams.get("missionsDir") ?? undefined,
-	);
+	const missionsDir = resolveMissionsDir();
 
 	try {
 		const threads = await listThreads(missionsDir, missionId);

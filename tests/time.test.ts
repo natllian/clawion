@@ -18,7 +18,7 @@ describe("time", () => {
 
 		it("includes timezone offset", () => {
 			const result = nowLocal();
-			expect(result).toContain("+") || expect(result).toContain("-");
+			expect(result).toMatch(/[+-]\d{2}:\d{2}$/);
 		});
 	});
 

@@ -13,6 +13,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { AgentsFile, WorkingEvent } from "@/core/schemas";
+import { normalizeMarkdownContent } from "@/lib/markdown";
+import { MarkdownBlock } from "./MarkdownBlock";
 
 const workingSkeletons = ["working-a", "working-b", "working-c"];
 
@@ -129,7 +131,9 @@ export function AgentDropdown({
 									<div className="mt-1 max-h-[120px] overflow-y-auto scrollbar-dropdown">
 										<div className="markdown text-xs text-muted-foreground">
 											<ReactMarkdown remarkPlugins={[remarkGfm]}>
-												{agent.roleDescription || "No description provided."}
+												{normalizeMarkdownContent(
+													agent.roleDescription || "No description provided.",
+												)}
 											</ReactMarkdown>
 										</div>
 									</div>
@@ -193,5 +197,3 @@ export function AgentDropdown({
 		</>
 	);
 }
-
-import { MarkdownBlock } from "./MarkdownBlock";

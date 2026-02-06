@@ -3,6 +3,7 @@
 import { Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { normalizeMarkdownContent } from "@/lib/markdown";
 import { cn } from "@/lib/utils";
 
 interface MarkdownBlockProps {
@@ -11,6 +12,7 @@ interface MarkdownBlockProps {
 
 export function MarkdownBlock({ content }: MarkdownBlockProps) {
 	const isLoading = content === "Loading ROADMAP.md...";
+	const normalizedContent = normalizeMarkdownContent(content);
 
 	if (isLoading) {
 		return (
@@ -28,7 +30,9 @@ export function MarkdownBlock({ content }: MarkdownBlockProps) {
 
 	return (
 		<div className="markdown prose prose-sm dark:prose-invert max-w-none">
-			<ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+			<ReactMarkdown remarkPlugins={[remarkGfm]}>
+				{normalizedContent}
+			</ReactMarkdown>
 		</div>
 	);
 }

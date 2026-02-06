@@ -5,6 +5,7 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { TaskItem } from "@/core/schemas";
+import { normalizeMarkdownContent } from "@/lib/markdown";
 import { cn } from "@/lib/utils";
 
 interface TaskCardProps {
@@ -27,6 +28,7 @@ export function TaskCard({
 	const statusNotes = task.statusNotes ?? "";
 	const isBlocked = statusNotes.toLowerCase().startsWith("blocked:");
 	const isActive = task.id === activeTaskId;
+	const normalizedDescription = normalizeMarkdownContent(task.description);
 
 	return (
 		<div
@@ -69,7 +71,7 @@ export function TaskCard({
 				<div className="relative max-h-30 overflow-y-auto pr-2 scrollbar-none overscroll-contain">
 					<div className="markdown">
 						<ReactMarkdown remarkPlugins={[remarkGfm]}>
-							{task.description}
+							{normalizedDescription}
 						</ReactMarkdown>
 					</div>
 					<div className="pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-linear-to-t from-background to-transparent opacity-90" />
