@@ -1,22 +1,26 @@
 import { createReadStream } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 
 export async function logInvocations(filePath: string): Promise<void> {
 	let position = 0;
 
-	// Output existing content
+	// Get current file size and output existing content
 	try {
-		const content = await readFile(filePath, "utf8");
-		if (content) {
+		const stats = await stat(filePath);
+		position = stats.size;
+		if (position > 0) {
+			const content = await readFile(filePath, "utf8");
 			process.stdout.write(content);
-			position = content.length;
 		}
 	} catch {
-		// File doesn't exist yet
+		// File doesn't exist yet, will wait for it
 	}
 
-	// Follow for new content
-	const stream = createReadStream(filePath, { start: position });
+	// Wait for and output new content
+	const stream = createReadStream(filePath, {
+		start: position,
+		encoding: "utf8",
+	});
 	for await (const chunk of stream) {
 		process.stdout.write(chunk);
 	}
