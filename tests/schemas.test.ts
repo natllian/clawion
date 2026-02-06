@@ -23,7 +23,7 @@ describe("schemas", () => {
 		expect(result.success).toBe(true);
 	});
 
-	it("accepts mission with legacy description field", () => {
+	it("rejects mission with legacy description field", () => {
 		const result = missionSchema.safeParse({
 			schemaVersion: 1,
 			id: "m1",
@@ -33,7 +33,7 @@ describe("schemas", () => {
 			createdAt: nowLocal(),
 			updatedAt: nowLocal(),
 		});
-		expect(result.success).toBe(true);
+		expect(result.success).toBe(false);
 	});
 
 	it("accepts valid tasks file", () => {
