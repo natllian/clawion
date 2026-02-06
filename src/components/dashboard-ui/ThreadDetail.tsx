@@ -3,8 +3,6 @@
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,9 +23,9 @@ import type {
 	ThreadMessageEvent,
 	WorkingEvent,
 } from "@/core/schemas";
-import { normalizeMarkdownContent } from "@/lib/markdown";
 import { missionStatusTone } from "@/lib/status-tones";
 import { cn } from "@/lib/utils";
+import { AgentSnapshotPanel } from "./AgentSnapshotPanel";
 import { MarkdownBlock } from "./MarkdownBlock";
 
 interface ThreadDetailProps {
@@ -384,14 +382,18 @@ export function ThreadDetail({
 										snapshotAgentId === message.authorAgentId;
 									return (
 										<div key={message.id} className="relative flex gap-3">
-											<DropdownMenu modal={false}>
+											<DropdownMenu
+												modal={false}
+												onOpenChange={(open) => {
+													if (open) {
+														setSnapshotAgentId(message.authorAgentId);
+													}
+												}}
+											>
 												<DropdownMenuTrigger asChild>
 													<button
 														type="button"
 														aria-label={`Open snapshot for ${authorLabel}`}
-														onClick={() =>
-															setSnapshotAgentId(message.authorAgentId)
-														}
 														className="z-10 mt-1 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
 													>
 														<Avatar>
@@ -402,7 +404,7 @@ export function ThreadDetail({
 													</button>
 												</DropdownMenuTrigger>
 												<DropdownMenuContent
-													className="z-[70] w-[420px] p-3"
+													className="w-[420px] p-3"
 													side="right"
 													align="start"
 													collisionPadding={12}
@@ -412,109 +414,20 @@ export function ThreadDetail({
 														Agent Snapshot
 													</DropdownMenuLabel>
 													<DropdownMenuSeparator />
-													<div className="space-y-3">
-														<div className="rounded-lg border border-border/70 bg-background p-3">
-															<p className="text-sm font-medium text-foreground">
-																{authorLabel}
-															</p>
-															<div className="mt-1 max-h-[120px] overflow-y-auto scrollbar-dropdown">
-																<div className="markdown text-xs text-muted-foreground">
-																	<ReactMarkdown remarkPlugins={[remarkGfm]}>
-																		{normalizeMarkdownContent(
-																			messageAgent?.roleDescription ||
-																				"No description provided.",
-																		)}
-																	</ReactMarkdown>
-																</div>
-															</div>
-															<p className="mt-2 text-[0.6rem] uppercase tracking-wide text-muted-foreground">
-																{messageAgent?.systemRole ?? "—"}
-															</p>
-														</div>
-
-														<div className="mt-2">
-															<p className="mb-2 text-[0.65rem] uppercase tracking-wide text-muted-foreground">
-																Dark Secret
-															</p>
-															<div className="mb-2 flex items-start justify-between gap-2">
-																<p className="text-[0.7rem] text-amber-700">
-																	Critical and private. It must never be
-																	disclosed to other agents.
-																</p>
-																<Button
-																	type="button"
-																	size="xs"
-																	onClick={() =>
-																		handleSnapshotSecretSave(
-																			message.authorAgentId,
-																		)
-																	}
-																	disabled={!isSnapshotActive || savingSnapshot}
-																	className="shrink-0"
-																>
-																	{savingSnapshot ? "Saving..." : "Save Secret"}
-																</Button>
-															</div>
-															<textarea
-																value={isSnapshotActive ? snapshotSecret : ""}
-																onChange={(event) =>
-																	setSnapshotSecret(event.target.value)
-																}
-																disabled={!isSnapshotActive || savingSnapshot}
-																placeholder={
-																	isSnapshotActive
-																		? "Write this agent's dark secret..."
-																		: "Select an agent to edit dark secret."
-																}
-																className="scrollbar-dropdown h-24 w-full resize-none rounded-md border border-border/70 bg-background px-2 py-1 text-xs text-foreground outline-none ring-ring/50 placeholder:text-muted-foreground focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-60"
-															/>
-														</div>
-
-														<div className="mt-2">
-															<p className="mb-2 text-[0.65rem] uppercase tracking-wide text-muted-foreground">
-																Working
-															</p>
-															<div className="flex h-[180px] flex-col gap-2 overflow-y-auto rounded-lg border border-border/70 bg-background p-2 scrollbar-dropdown">
-																{loadingSnapshot ? (
-																	[1, 2, 3].map((idx) => (
-																		<div
-																			key={idx}
-																			className="rounded-lg border border-border/70 bg-background p-2"
-																		>
-																			<Skeleton className="h-3 w-24" />
-																		</div>
-																	))
-																) : isSnapshotActive &&
-																	snapshotWorking.length ? (
-																	snapshotWorking
-																		.slice()
-																		.reverse()
-																		.slice(0, 6)
-																		.map((event) => (
-																			<div
-																				key={event.id}
-																				className="rounded-lg border border-border/70 bg-background p-2"
-																			>
-																				<div className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">
-																					{formatDate(event.createdAt)}
-																				</div>
-																				<div className="mt-2 text-xs text-foreground">
-																					<MarkdownBlock
-																						content={event.content}
-																					/>
-																				</div>
-																			</div>
-																		))
-																) : (
-																	<div className="rounded-lg border border-border/70 bg-background p-2 text-xs text-muted-foreground">
-																		{isSnapshotActive
-																			? "No working events yet."
-																			: "Select an agent to load working events."}
-																	</div>
-																)}
-															</div>
-														</div>
-													</div>
+													<AgentSnapshotPanel
+														agentLabel={authorLabel}
+														roleDescription={messageAgent?.roleDescription}
+														systemRole={messageAgent?.systemRole}
+														isActive={isSnapshotActive}
+														working={snapshotWorking}
+														loadingWorking={loadingSnapshot}
+														darkSecret={snapshotSecret}
+														onDarkSecretChange={setSnapshotSecret}
+														onDarkSecretSave={() =>
+															handleSnapshotSecretSave(message.authorAgentId)
+														}
+														savingDarkSecret={savingSnapshot}
+													/>
 												</DropdownMenuContent>
 											</DropdownMenu>
 											<div className="flex-1 rounded-xl border border-border/70 bg-card">
