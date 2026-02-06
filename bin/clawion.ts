@@ -86,8 +86,8 @@ const HELP_ENTRIES: HelpEntry[] = [
 	{
 		command: "log",
 		purpose: "Show CLI invocation logs (tail -f).",
-		params: ["--follow (optional)"],
-		example: "clawion log --follow",
+		params: ["(no params)"],
+		example: "clawion log",
 	},
 	{
 		command: "mission create",
@@ -225,12 +225,11 @@ program
 
 program
 	.command("log")
-	.description("Show CLI invocation logs")
-	.option("-f, --follow", "Follow the log file (like tail -f)")
-	.action(async (options) => {
+	.description("Show CLI invocation logs (Ctrl+C to exit)")
+	.action(async () => {
 		const workspaceDir = resolveWorkspaceDir();
 		const logPath = resolveCliInvocationsPath(workspaceDir);
-		await logInvocations(logPath, { follow: !!options.follow });
+		await logInvocations(logPath);
 	});
 
 function resolveAgentId(command: Command): string | null {
