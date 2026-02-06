@@ -69,6 +69,21 @@ function isBlocked(statusNotes: string | null): boolean {
 	return (statusNotes ?? "").toLowerCase().startsWith("blocked:");
 }
 
+function resolveColumnBadgeTone(columnId: string, columnName?: string | null) {
+	const value = `${columnId} ${columnName ?? ""}`.toLowerCase();
+
+	if (value.includes("block")) {
+		return "border-amber-500/40 bg-amber-500/10 text-amber-700";
+	}
+	if (value.includes("ongoing") || value.includes("doing")) {
+		return "border-blue-500/40 bg-blue-500/10 text-blue-700";
+	}
+	if (value.includes("complete") || value.includes("done")) {
+		return "border-emerald-500/40 bg-emerald-500/10 text-emerald-700";
+	}
+	return "border-slate-500/40 bg-slate-500/10 text-slate-700";
+}
+
 function ThreadSkeleton() {
 	return (
 		<div className="space-y-6">
@@ -152,6 +167,7 @@ export function ThreadDetail({
 	const { thread, task, column } = data;
 	const pendingAckByMessageId = data.pendingAckByMessageId ?? {};
 	const isTaskBlocked = isBlocked(task.statusNotes);
+	const columnBadgeTone = resolveColumnBadgeTone(task.columnId, column?.name);
 	const assigneeLabel = task.assigneeAgentId
 		? `@${agentMap.get(task.assigneeAgentId) ?? task.assigneeAgentId}`
 		: "Unassigned";
@@ -194,7 +210,10 @@ export function ThreadDetail({
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge
 							variant="outline"
-							className="rounded-full border-border/70 bg-muted/60 px-2 py-0.5 text-[0.65rem] font-medium text-foreground/80"
+							className={cn(
+								"rounded-full px-2 py-0.5 text-[0.65rem] font-medium",
+								columnBadgeTone,
+							)}
 						>
 							{column?.name ?? task.columnId}
 						</Badge>
