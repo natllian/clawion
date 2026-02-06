@@ -148,6 +148,7 @@ function renderUnreadMentions(
 	lines: string[],
 	missionId: string,
 	agentId: string,
+	managerIdForLoop: string | null,
 	unreadCount: number,
 	unreadTaskIdsOrdered: string[],
 	unreadByTask: Map<string, UnreadMention[]>,
@@ -171,7 +172,13 @@ function renderUnreadMentions(
 
 		const mentions = unreadByTask.get(taskId) ?? [];
 		for (const mention of mentions) {
-			const replyMentions = Array.from(new Set([mention.authorAgentId]));
+			const replyMentions = Array.from(
+				new Set(
+					[mention.authorAgentId, managerIdForLoop]
+						.filter((id): id is string => Boolean(id))
+						.filter((id) => id !== agentId),
+				),
+			);
 			const replyHere = buildReplyHereCommand(
 				missionId,
 				mention.taskId,
@@ -216,6 +223,11 @@ function renderDarkSecret(lines: string[], darkSecret: string) {
 
 function buildWorkerWakeLines(ctx: WakeContext): string[] {
 	const lines: string[] = [];
+	const managerForLoop =
+		ctx.agents.find(
+			(agent) =>
+				agent.systemRole === "manager" && agent.id !== ctx.agentEntry.id,
+		)?.id ?? null;
 
 	lines.push(
 		`You are a Worker Agent currently on duty in Mission ${ctx.missionId}.`,
@@ -250,6 +262,7 @@ function buildWorkerWakeLines(ctx: WakeContext): string[] {
 		lines,
 		ctx.missionId,
 		ctx.agentEntry.id,
+		managerForLoop,
 		ctx.unreadMentions.length,
 		ctx.unreadTaskIdsOrdered,
 		ctx.unreadMentionsByTask,
@@ -419,6 +432,7 @@ function buildManagerWakeLines(ctx: WakeContext): string[] {
 		lines,
 		ctx.missionId,
 		ctx.agentEntry.id,
+		null,
 		ctx.unreadMentions.length,
 		ctx.unreadTaskIdsOrdered,
 		ctx.unreadMentionsByTask,
