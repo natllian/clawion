@@ -11,12 +11,18 @@ interface DashboardHeaderProps {
 	mission: Mission | null;
 	roadmap: string;
 	loadingMission: boolean;
+	onRoadmapChange: (value: string) => void;
+	onRoadmapSave: () => void | Promise<void>;
+	savingRoadmap: boolean;
 }
 
 export function DashboardHeader({
 	mission,
 	roadmap,
 	loadingMission,
+	onRoadmapChange,
+	onRoadmapSave,
+	savingRoadmap,
 }: DashboardHeaderProps) {
 	const roadmapContent = loadingMission
 		? "Loading ROADMAP.md..."
@@ -50,7 +56,14 @@ export function DashboardHeader({
 			</div>
 
 			<div className="flex flex-wrap items-center gap-2">
-				<SnapshotDropdown mission={mission} roadmapContent={roadmapContent} />
+				<SnapshotDropdown
+					mission={mission}
+					roadmapContent={roadmapContent}
+					onRoadmapChange={onRoadmapChange}
+					onRoadmapSave={onRoadmapSave}
+					savingRoadmap={savingRoadmap}
+					loadingMission={loadingMission}
+				/>
 				<ThemeToggle />
 			</div>
 		</header>

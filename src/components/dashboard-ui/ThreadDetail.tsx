@@ -138,10 +138,19 @@ export function ThreadDetail({
 	const [snapshotWorking, setSnapshotWorking] = React.useState<WorkingEvent[]>(
 		[],
 	);
+	const [snapshotRoleDescription, setSnapshotRoleDescription] =
+		React.useState("");
+	const [snapshotRoleDraftByAgentId, setSnapshotRoleDraftByAgentId] =
+		React.useState<Record<string, string>>({});
 	const [snapshotSecret, setSnapshotSecret] = React.useState("");
 	const [loadingSnapshot, setLoadingSnapshot] = React.useState(false);
 	const [savingSnapshot, setSavingSnapshot] = React.useState(false);
+	const [savingSnapshotRole, setSavingSnapshotRole] = React.useState(false);
 	const [completingTask, setCompletingTask] = React.useState(false);
+	const agentsById = React.useMemo(
+		() => new Map((agents?.agents ?? []).map((agent) => [agent.id, agent])),
+		[agents],
+	);
 
 	const loadThread = React.useCallback(
 		async (signal?: AbortSignal) => {
@@ -182,6 +191,7 @@ export function ThreadDetail({
 	React.useEffect(() => {
 		if (!snapshotAgentId) {
 			setSnapshotWorking([]);
+			setSnapshotRoleDescription("");
 			setSnapshotSecret("");
 			return;
 		}
@@ -232,6 +242,18 @@ export function ThreadDetail({
 		};
 	}, [missionId, snapshotAgentId]);
 
+	React.useEffect(() => {
+		if (!snapshotAgentId) return;
+		const cachedRole = snapshotRoleDraftByAgentId[snapshotAgentId];
+		if (typeof cachedRole === "string") {
+			setSnapshotRoleDescription(cachedRole);
+			return;
+		}
+		setSnapshotRoleDescription(
+			agentsById.get(snapshotAgentId)?.roleDescription ?? "",
+		);
+	}, [snapshotAgentId, agentsById, snapshotRoleDraftByAgentId]);
+
 	async function handleSnapshotSecretSave(agentId: string) {
 		setSavingSnapshot(true);
 		try {
@@ -250,6 +272,31 @@ export function ThreadDetail({
 			}
 		} finally {
 			setSavingSnapshot(false);
+		}
+	}
+
+	async function handleSnapshotRoleDescriptionSave(agentId: string) {
+		setSavingSnapshotRole(true);
+		try {
+			const response = await fetch(
+				`/api/missions/${missionId}/agents/${agentId}`,
+				{
+					method: "PUT",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({ roleDescription: snapshotRoleDescription }),
+				},
+			);
+			if (!response.ok) {
+				throw new Error("Failed to save role description.");
+			}
+			setSnapshotRoleDraftByAgentId((current) => ({
+				...current,
+				[agentId]: snapshotRoleDescription,
+			}));
+		} finally {
+			setSavingSnapshotRole(false);
 		}
 	}
 
@@ -276,10 +323,6 @@ export function ThreadDetail({
 	const assigneeLabel = task.assigneeAgentId
 		? `@${agentMap.get(task.assigneeAgentId) ?? task.assigneeAgentId}`
 		: "Unassigned";
-	const agentsById = new Map(
-		(agents?.agents ?? []).map((agent) => [agent.id, agent]),
-	);
-
 	const participants = new Set<string>();
 	thread.messages.forEach((message: ThreadMessageEvent) => {
 		participants.add(message.authorAgentId);
@@ -314,12 +357,23 @@ export function ThreadDetail({
 					sideOffset={10}
 				>
 					<DropdownMenuLabel className="text-xs uppercase tracking-wide text-muted-foreground">
-						Agent Snapshot
+						Agent Profile
 					</DropdownMenuLabel>
 					<DropdownMenuSeparator />
 					<AgentSnapshotPanel
 						agentLabel={agentLabel}
-						roleDescription={agent?.roleDescription}
+						roleDescription={
+							isSnapshotActive
+								? snapshotRoleDescription
+								: (snapshotRoleDraftByAgentId[agentId] ??
+									agent?.roleDescription ??
+									"")
+						}
+						onRoleDescriptionChange={setSnapshotRoleDescription}
+						onRoleDescriptionSave={() =>
+							handleSnapshotRoleDescriptionSave(agentId)
+						}
+						savingRoleDescription={savingSnapshotRole}
 						systemRole={agent?.systemRole}
 						isActive={isSnapshotActive}
 						working={snapshotWorking}

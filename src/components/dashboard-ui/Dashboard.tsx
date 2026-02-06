@@ -76,8 +76,12 @@ export function Dashboard({
 	const [agents, setAgents] = React.useState<AgentsFile | null>(null);
 	const [activeAgentId, setActiveAgentId] = React.useState<string | null>(null);
 	const [working, setWorking] = React.useState<WorkingEvent[]>([]);
+	const [roleDescription, setRoleDescription] = React.useState<string>("");
+	const [savingRoleDescription, setSavingRoleDescription] =
+		React.useState(false);
 	const [darkSecret, setDarkSecret] = React.useState<string>("");
 	const [savingDarkSecret, setSavingDarkSecret] = React.useState(false);
+	const [savingRoadmap, setSavingRoadmap] = React.useState(false);
 	const [error, setError] = React.useState<string | null>(null);
 	const [loadingMissions, setLoadingMissions] = React.useState(true);
 	const [loadingMission, setLoadingMission] = React.useState(false);
@@ -262,6 +266,7 @@ export function Dashboard({
 	React.useEffect(() => {
 		if (!activeMissionId || !activeAgentId) {
 			setWorking([]);
+			setRoleDescription("");
 			setDarkSecret("");
 			return;
 		}
@@ -309,6 +314,17 @@ export function Dashboard({
 		};
 	}, [activeMissionId, activeAgentId]);
 
+	React.useEffect(() => {
+		if (!activeAgentId) {
+			setRoleDescription("");
+			return;
+		}
+		const currentAgent = agents?.agents.find(
+			(agent) => agent.id === activeAgentId,
+		);
+		setRoleDescription(currentAgent?.roleDescription ?? "");
+	}, [activeAgentId, agents]);
+
 	const saveDarkSecret = React.useCallback(
 		async (agentId: string, content: string) => {
 			if (!activeMissionId) return;
@@ -338,6 +354,76 @@ export function Dashboard({
 		},
 		[activeMissionId],
 	);
+
+	const saveRoleDescription = React.useCallback(
+		async (agentId: string, content: string) => {
+			if (!activeMissionId) return;
+			setSavingRoleDescription(true);
+			try {
+				const response = await fetch(
+					`/api/missions/${activeMissionId}/agents/${agentId}`,
+					{
+						method: "PUT",
+						headers: {
+							"Content-Type": "application/json",
+						},
+						body: JSON.stringify({ roleDescription: content }),
+					},
+				);
+				if (!response.ok) {
+					throw new Error("Failed to save role description.");
+				}
+				setAgents((current) => {
+					if (!current) return current;
+					return {
+						...current,
+						agents: current.agents.map((agent) =>
+							agent.id === agentId
+								? {
+										...agent,
+										roleDescription: content,
+									}
+								: agent,
+						),
+					};
+				});
+				setRoleDescription(content);
+			} catch (err) {
+				if (!isAbortError(err)) {
+					setError("Unable to save role description.");
+				}
+			} finally {
+				setSavingRoleDescription(false);
+			}
+		},
+		[activeMissionId],
+	);
+
+	const saveRoadmap = React.useCallback(async () => {
+		if (!activeMissionId) return;
+		setSavingRoadmap(true);
+		try {
+			const response = await fetch(`/api/missions/${activeMissionId}`, {
+				method: "PUT",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ roadmap }),
+			});
+			if (!response.ok) {
+				throw new Error("Failed to save roadmap.");
+			}
+			const payload = (await response.json()) as MissionResponse;
+			setMission(payload.mission);
+			setRoadmap(payload.roadmap);
+		} catch (err) {
+			if (!isAbortError(err)) {
+				setError("Unable to save roadmap.");
+			}
+		} finally {
+			setSavingRoadmap(false);
+		}
+	}, [activeMissionId, roadmap]);
 
 	// Derived state
 	const tasksColumns = React.useMemo(
@@ -455,6 +541,9 @@ export function Dashboard({
 						mission={mission}
 						roadmap={roadmap}
 						loadingMission={loadingMission}
+						onRoadmapChange={setRoadmap}
+						onRoadmapSave={saveRoadmap}
+						savingRoadmap={savingRoadmap}
 					/>
 
 					<main className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 py-6">
@@ -515,6 +604,10 @@ export function Dashboard({
 										activeAgentId={activeAgentId}
 										onAgentSelect={setActiveAgentId}
 										working={working}
+										roleDescription={roleDescription}
+										onRoleDescriptionChange={setRoleDescription}
+										onRoleDescriptionSave={saveRoleDescription}
+										savingRoleDescription={savingRoleDescription}
 										darkSecret={darkSecret}
 										onDarkSecretChange={setDarkSecret}
 										onDarkSecretSave={saveDarkSecret}

@@ -317,7 +317,7 @@ describe("ThreadDetail", () => {
 			{ button: 0, ctrlKey: false },
 		);
 		await waitFor(() => {
-			expect(screen.getByText("Agent Snapshot")).toBeInTheDocument();
+			expect(screen.getByText("Agent Profile")).toBeInTheDocument();
 		});
 	});
 
@@ -354,7 +354,7 @@ describe("ThreadDetail", () => {
 			ctrlKey: false,
 		});
 		await waitFor(() => {
-			expect(screen.getByText("Agent Snapshot")).toBeInTheDocument();
+			expect(screen.getByText("Agent Profile")).toBeInTheDocument();
 		});
 	});
 

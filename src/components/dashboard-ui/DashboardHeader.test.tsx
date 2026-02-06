@@ -33,6 +33,9 @@ describe("DashboardHeader", () => {
 		mission: null as Mission | null,
 		roadmap: "# Test Roadmap",
 		loadingMission: false,
+		onRoadmapChange: vi.fn(),
+		onRoadmapSave: vi.fn(),
+		savingRoadmap: false,
 	};
 
 	afterEach(() => {

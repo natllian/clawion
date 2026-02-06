@@ -65,3 +65,33 @@ export async function listAgents(missionDir: string) {
 		);
 	}
 }
+
+type AgentRoleDescriptionInput = {
+	missionDir: string;
+	agentId: string;
+	roleDescription: string;
+};
+
+export async function setAgentRoleDescription(
+	input: AgentRoleDescriptionInput,
+) {
+	const agentsPath = join(input.missionDir, "agents.json");
+	const agentsFile = await readJson(agentsPath, agentsSchema);
+	const target = agentsFile.agents.find((agent) => agent.id === input.agentId);
+	if (!target) {
+		throw new Error(`Agent not found: ${input.agentId}`);
+	}
+
+	const nextAgent = agentSchema.parse({
+		...target,
+		roleDescription: input.roleDescription,
+	});
+	const nextFile = agentsSchema.parse({
+		...agentsFile,
+		agents: agentsFile.agents.map((agent) =>
+			agent.id === input.agentId ? nextAgent : agent,
+		),
+	});
+	await writeJsonAtomic(agentsPath, nextFile);
+	return nextAgent;
+}

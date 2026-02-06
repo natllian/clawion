@@ -22,7 +22,10 @@ function formatDate(value: string) {
 
 interface AgentSnapshotPanelProps {
 	agentLabel: string;
-	roleDescription?: string | null;
+	roleDescription: string;
+	onRoleDescriptionChange: (value: string) => void;
+	onRoleDescriptionSave: () => void | Promise<void>;
+	savingRoleDescription: boolean;
 	systemRole?: string | null;
 	isActive: boolean;
 	working: WorkingEvent[];
@@ -53,6 +56,9 @@ export function WorkingEventItem({ event }: WorkingEventItemProps) {
 export function AgentSnapshotPanel({
 	agentLabel,
 	roleDescription,
+	onRoleDescriptionChange,
+	onRoleDescriptionSave,
+	savingRoleDescription,
 	systemRole,
 	isActive,
 	working,
@@ -65,28 +71,55 @@ export function AgentSnapshotPanel({
 	return (
 		<div className="space-y-3">
 			<div className="rounded-lg border border-border/70 bg-background p-3">
-				<p className="text-sm font-medium text-foreground">{agentLabel}</p>
-				<div className="mt-1 max-h-[120px] overflow-y-auto scrollbar-dropdown">
+				<div className="flex items-center justify-between gap-2">
+					<p className="text-sm font-medium text-foreground">{agentLabel}</p>
+					<p className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">
+						{systemRole ?? "—"}
+					</p>
+				</div>
+			</div>
+
+			<div className="mt-2">
+				<div className="mb-2 flex items-center justify-between gap-2">
+					<p className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">
+						Role Description
+					</p>
+					<Button
+						type="button"
+						size="xs"
+						onClick={onRoleDescriptionSave}
+						disabled={!isActive || savingRoleDescription}
+						className="shrink-0"
+					>
+						{savingRoleDescription ? "Saving..." : "Save"}
+					</Button>
+				</div>
+				<textarea
+					value={isActive ? roleDescription : ""}
+					onChange={(event) => onRoleDescriptionChange(event.target.value)}
+					disabled={!isActive || savingRoleDescription}
+					placeholder={
+						isActive
+							? "Describe this agent's role and constraints..."
+							: "Select an agent to edit role description."
+					}
+					className="scrollbar-dropdown h-24 w-full resize-none rounded-md border border-border/70 bg-background px-2 py-1 text-xs text-foreground outline-none ring-ring/50 placeholder:text-muted-foreground focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-60"
+				/>
+				<div className="mt-2 max-h-[120px] overflow-y-auto scrollbar-dropdown rounded-md border border-border/70 bg-background p-2">
 					<div className="markdown text-xs text-muted-foreground">
 						<ReactMarkdown remarkPlugins={[remarkGfm]}>
 							{normalizeMarkdownContent(
-								roleDescription || "No description provided.",
+								roleDescription || "No role description provided.",
 							)}
 						</ReactMarkdown>
 					</div>
 				</div>
-				<p className="mt-2 text-[0.6rem] uppercase tracking-wide text-muted-foreground">
-					{systemRole ?? "—"}
-				</p>
 			</div>
 
 			<div className="mt-2">
-				<p className="mb-2 text-[0.65rem] uppercase tracking-wide text-muted-foreground">
-					Dark Secret
-				</p>
-				<div className="mb-2 flex items-start justify-between gap-2">
-					<p className="text-[0.7rem] text-amber-700">
-						Critical and private. It must never be disclosed to other agents.
+				<div className="mb-2 flex items-center justify-between gap-2">
+					<p className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">
+						Dark Secret
 					</p>
 					<Button
 						type="button"
@@ -95,9 +128,12 @@ export function AgentSnapshotPanel({
 						disabled={!isActive || savingDarkSecret}
 						className="shrink-0"
 					>
-						{savingDarkSecret ? "Saving..." : "Save Secret"}
+						{savingDarkSecret ? "Saving..." : "Save"}
 					</Button>
 				</div>
+				<p className="mb-2 text-[0.7rem] text-amber-700">
+					Critical and private. It must never be disclosed to other agents.
+				</p>
 				<textarea
 					value={isActive ? darkSecret : ""}
 					onChange={(event) => onDarkSecretChange(event.target.value)}

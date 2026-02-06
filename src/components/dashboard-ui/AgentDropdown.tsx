@@ -29,6 +29,13 @@ interface AgentDropdownProps {
 	activeAgentId: string | null;
 	onAgentSelect: (id: string) => void;
 	working: WorkingEvent[];
+	roleDescription: string;
+	onRoleDescriptionChange: (value: string) => void;
+	onRoleDescriptionSave: (
+		agentId: string,
+		roleDescription: string,
+	) => void | Promise<void>;
+	savingRoleDescription: boolean;
 	darkSecret: string;
 	onDarkSecretChange: (value: string) => void;
 	onDarkSecretSave: (agentId: string, content: string) => void | Promise<void>;
@@ -42,6 +49,10 @@ export function AgentDropdown({
 	activeAgentId,
 	onAgentSelect,
 	working,
+	roleDescription,
+	onRoleDescriptionChange,
+	onRoleDescriptionSave,
+	savingRoleDescription,
 	darkSecret,
 	onDarkSecretChange,
 	onDarkSecretSave,
@@ -108,12 +119,17 @@ export function AgentDropdown({
 							sideOffset={10}
 						>
 							<DropdownMenuLabel className="text-xs uppercase tracking-wide text-muted-foreground">
-								Agent Snapshot
+								Agent Profile
 							</DropdownMenuLabel>
 							<DropdownMenuSeparator />
 							<AgentSnapshotPanel
 								agentLabel={agent.displayName}
-								roleDescription={agent.roleDescription}
+								roleDescription={roleDescription}
+								onRoleDescriptionChange={onRoleDescriptionChange}
+								onRoleDescriptionSave={() =>
+									onRoleDescriptionSave(agent.id, roleDescription)
+								}
+								savingRoleDescription={savingRoleDescription}
 								systemRole={agent.systemRole}
 								isActive={isActive}
 								working={working}
