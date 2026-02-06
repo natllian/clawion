@@ -2,7 +2,6 @@
 
 import { BookOpen } from "lucide-react";
 import * as React from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -12,8 +11,6 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Mission } from "@/core/schemas";
-import { missionStatusTone } from "@/lib/status-tones";
-import { cn } from "@/lib/utils";
 import { MarkdownBlock } from "./MarkdownBlock";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -79,19 +76,9 @@ export function SnapshotDropdown({
 				</DropdownMenuLabel>
 				<DropdownMenuSeparator />
 				<div className="space-y-2">
-					<p className="text-sm font-medium">{mission?.name ?? "—"}</p>
 					<div className="space-y-2">
 						<div className="flex items-center justify-between gap-2">
-							<Badge
-								variant="outline"
-								className={cn(
-									"rounded-full text-[0.6rem] uppercase tracking-wide",
-									mission ? missionStatusTone[mission.status] : "",
-								)}
-							>
-								{mission?.status ?? "—"}
-							</Badge>
-							<div className="flex items-center gap-2">
+							<div className="ml-auto flex items-center gap-2">
 								{isEditingRoadmap ? (
 									<>
 										<Button
