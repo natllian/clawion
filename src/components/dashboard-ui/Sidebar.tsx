@@ -41,7 +41,11 @@ export function Sidebar({
 
 			<Separator />
 
-			<div className={cn("flex flex-1 flex-col gap-4 px-3 py-4")}>
+			<div
+				className={cn(
+					"flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-3 py-4",
+				)}
+			>
 				{children}
 			</div>
 		</aside>
