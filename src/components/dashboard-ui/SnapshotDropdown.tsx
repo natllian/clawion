@@ -70,64 +70,61 @@ export function SnapshotDropdown({
 			<DropdownMenuTrigger asChild>
 				<Button variant="outline" size="sm">
 					<BookOpen className="h-4 w-4" />
-					Mission Brief
+					Roadmap
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent className="w-[380px] p-3" sideOffset={8}>
 				<DropdownMenuLabel className="text-xs uppercase tracking-wide text-muted-foreground">
-					Mission Brief
+					Roadmap
 				</DropdownMenuLabel>
 				<DropdownMenuSeparator />
 				<div className="space-y-2">
-					<div className="flex items-center justify-between">
-						<p className="text-sm font-medium">{mission?.name ?? "—"}</p>
-						<Badge
-							variant="outline"
-							className={cn(
-								"rounded-full text-[0.6rem] uppercase tracking-wide",
-								mission ? missionStatusTone[mission.status] : "",
-							)}
-						>
-							{mission?.status ?? "—"}
-						</Badge>
-					</div>
+					<p className="text-sm font-medium">{mission?.name ?? "—"}</p>
 					<div className="space-y-2">
 						<div className="flex items-center justify-between gap-2">
-							<p className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">
-								Roadmap
-							</p>
-							{isEditingRoadmap ? (
-								<div className="flex items-center gap-2">
+							<Badge
+								variant="outline"
+								className={cn(
+									"rounded-full text-[0.6rem] uppercase tracking-wide",
+									mission ? missionStatusTone[mission.status] : "",
+								)}
+							>
+								{mission?.status ?? "—"}
+							</Badge>
+							<div className="flex items-center gap-2">
+								{isEditingRoadmap ? (
+									<>
+										<Button
+											type="button"
+											size="xs"
+											variant="ghost"
+											onClick={handleCancelRoadmap}
+											disabled={savingRoadmap}
+										>
+											Cancel
+										</Button>
+										<Button
+											type="button"
+											size="xs"
+											onClick={handleSaveRoadmap}
+											disabled={!isEditable || savingRoadmap}
+											className="shrink-0"
+										>
+											{savingRoadmap ? "Saving..." : "Save"}
+										</Button>
+									</>
+								) : (
 									<Button
 										type="button"
 										size="xs"
-										variant="ghost"
-										onClick={handleCancelRoadmap}
-										disabled={savingRoadmap}
+										variant="outline"
+										onClick={() => setIsEditingRoadmap(true)}
+										disabled={!isEditable}
 									>
-										Cancel
+										Edit
 									</Button>
-									<Button
-										type="button"
-										size="xs"
-										onClick={handleSaveRoadmap}
-										disabled={!isEditable || savingRoadmap}
-										className="shrink-0"
-									>
-										{savingRoadmap ? "Saving..." : "Save"}
-									</Button>
-								</div>
-							) : (
-								<Button
-									type="button"
-									size="xs"
-									variant="outline"
-									onClick={() => setIsEditingRoadmap(true)}
-									disabled={!isEditable}
-								>
-									Edit
-								</Button>
-							)}
+								)}
+							</div>
 						</div>
 						{isEditingRoadmap ? (
 							<textarea
@@ -139,7 +136,7 @@ export function SnapshotDropdown({
 										? "Write roadmap markdown..."
 										: "Select a mission to edit roadmap."
 								}
-								className="scrollbar-dropdown h-28 w-full resize-none rounded-md border border-border/70 bg-background px-2 py-1 text-xs text-foreground outline-none ring-ring/50 placeholder:text-muted-foreground focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-60"
+								className="scrollbar-dropdown min-h-[300px] h-[52vh] max-h-[540px] w-full resize-none rounded-md border border-border/70 bg-background px-2 py-1 text-xs text-foreground outline-none ring-ring/50 placeholder:text-muted-foreground focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-60"
 							/>
 						) : (
 							<div className="rounded-lg border border-border/70 bg-background p-2">
