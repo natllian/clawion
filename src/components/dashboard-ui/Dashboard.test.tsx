@@ -9,6 +9,10 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Mission, MissionIndexItem, TasksFile } from "@/core/schemas";
 
+vi.mock("next/navigation", () => ({
+	useRouter: () => ({ push: vi.fn() }),
+}));
+
 // Mock all child components to isolate Dashboard logic
 vi.mock("./index", () => ({
 	AgentDropdown: ({

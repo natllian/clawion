@@ -1,6 +1,7 @@
 "use client";
 
 import { Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
 import * as React from "react";
 import type {
 	AgentsFile,
@@ -61,6 +62,7 @@ export function Dashboard({
 	missionId: initialMissionId,
 	threadId: initialThreadId,
 }: DashboardProps) {
+	const router = useRouter();
 	const [missionsDir, setMissionsDir] = React.useState<string | null>(null);
 	const [missions, setMissions] = React.useState<MissionIndexItem[]>([]);
 	const [activeMissionId, setActiveMissionId] = React.useState<string | null>(
@@ -87,6 +89,34 @@ export function Dashboard({
 	const [loadingMission, setLoadingMission] = React.useState(false);
 	const [loadingAgent, setLoadingAgent] = React.useState(false);
 	const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+
+	const handleMissionDeleted = React.useCallback(
+		(deletedId: string) => {
+			async function refetch() {
+				const response = await fetch("/api/missions", {
+					cache: "no-store",
+				});
+				if (!response.ok) return;
+				const payload = (await response.json()) as MissionsResponse;
+				setMissionsDir(payload.missionsDir);
+				setMissions(payload.missions);
+				setActiveMissionId((current) => {
+					if (current === deletedId) {
+						const next = payload.missions[0]?.id ?? null;
+						if (next) {
+							router.push(`/missions/${next}`);
+						} else {
+							router.push("/");
+						}
+						return next;
+					}
+					return current;
+				});
+			}
+			void refetch();
+		},
+		[router],
+	);
 
 	// Mission loading
 	React.useEffect(() => {
@@ -513,6 +543,7 @@ export function Dashboard({
 								activeMissionId={activeMissionId}
 								loadingMissions={loadingMissions}
 								sidebarCollapsed={sidebarCollapsed}
+								onDeleteMission={handleMissionDeleted}
 							/>
 						</div>
 					</div>

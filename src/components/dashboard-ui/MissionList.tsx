@@ -1,6 +1,8 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Tooltip,
@@ -16,6 +18,7 @@ interface MissionListProps {
 	activeMissionId: string | null;
 	loadingMissions: boolean;
 	sidebarCollapsed: boolean;
+	onDeleteMission?: (missionId: string) => void;
 }
 
 function MissionListSkeleton({
@@ -45,6 +48,7 @@ export function MissionList({
 	activeMissionId,
 	loadingMissions,
 	sidebarCollapsed,
+	onDeleteMission,
 }: MissionListProps) {
 	if (loadingMissions) {
 		return <MissionListSkeleton sidebarCollapsed={sidebarCollapsed} />;
@@ -58,36 +62,86 @@ export function MissionList({
 		);
 	}
 
+	async function handleDelete(
+		e: React.MouseEvent,
+		missionId: string,
+		missionName: string,
+	) {
+		e.preventDefault();
+		e.stopPropagation();
+		if (
+			!onDeleteMission ||
+			!window.confirm(`Delete mission "${missionName}"? This cannot be undone.`)
+		) {
+			return;
+		}
+		try {
+			const res = await fetch(`/api/missions/${missionId}`, {
+				method: "DELETE",
+			});
+			if (res.ok) {
+				onDeleteMission(missionId);
+			}
+		} catch {
+			// Caller can surface error via state if needed
+		}
+	}
+
 	return (
 		<>
 			{missions.map((item) => {
 				const isActive = item.id === activeMissionId;
+				const showDelete = !sidebarCollapsed && onDeleteMission != null;
 				const content = (
-					<Link
-						href={`/missions/${item.id}`}
+					<div
 						className={cn(
-							"rounded-lg border border-border/70 bg-background text-xs text-foreground transition hover:border-primary/50 hover:bg-primary/5",
-							sidebarCollapsed
-								? "flex h-10 w-10 items-center justify-center text-center"
-								: "block w-full px-3 py-2 text-left",
+							"group flex w-full items-center gap-1 rounded-lg border border-border/70 bg-background text-xs text-foreground transition hover:border-primary/50 hover:bg-primary/5",
+							sidebarCollapsed ? "flex-row justify-center" : "",
 							isActive && "border-primary/60 bg-primary/10",
 						)}
 					>
-						{sidebarCollapsed ? (
-							<span className="text-[0.65rem] font-semibold">
-								{getInitials(item.name || item.id)}
-							</span>
-						) : (
-							<div>
-								<div className="flex items-center justify-between gap-2">
-									<span className="font-medium">{item.name}</span>
-									<span className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">
-										{item.status}
-									</span>
+						<Link
+							href={`/missions/${item.id}`}
+							className={cn(
+								"flex min-w-0 flex-1 items-center text-left",
+								sidebarCollapsed ? "h-10 w-10 justify-center" : "px-3 py-2",
+							)}
+						>
+							{sidebarCollapsed ? (
+								<span className="text-[0.65rem] font-semibold">
+									{getInitials(item.name || item.id)}
+								</span>
+							) : (
+								<div className="min-w-0 flex-1">
+									<div className="flex items-center justify-between gap-2">
+										<span className="font-medium">{item.name}</span>
+										<span className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">
+											{item.status}
+										</span>
+									</div>
 								</div>
-							</div>
+							)}
+						</Link>
+						{showDelete && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										type="button"
+										variant="ghost"
+										size="icon-sm"
+										className="shrink-0 opacity-60 hover:opacity-100 hover:text-destructive"
+										aria-label={`Delete ${item.name}`}
+										onClick={(e) =>
+											handleDelete(e, item.id, item.name || item.id)
+										}
+									>
+										<Trash2 className="h-3.5 w-3.5" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="right">Delete mission</TooltipContent>
+							</Tooltip>
 						)}
-					</Link>
+					</div>
 				);
 
 				if (sidebarCollapsed) {

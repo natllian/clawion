@@ -86,3 +86,21 @@ export async function updateMissionIndexEntry(
 
 	await saveMissionsIndex(missionsDir, nextIndex);
 }
+
+export async function removeMissionIndexEntry(
+	missionsDir: string,
+	missionId: string,
+) {
+	const index = await loadMissionsIndex(missionsDir);
+	if (!index.missions.some((entry) => entry.id === missionId)) {
+		throw new Error(`Mission not found in index: ${missionId}`);
+	}
+
+	const nextIndex = missionsIndexSchema.parse({
+		...index,
+		updatedAt: nowLocal(),
+		missions: index.missions.filter((entry) => entry.id !== missionId),
+	});
+
+	await saveMissionsIndex(missionsDir, nextIndex);
+}

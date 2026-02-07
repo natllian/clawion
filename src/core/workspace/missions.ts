@@ -8,6 +8,7 @@ import { nowLocal } from "../time";
 import {
 	addMissionIndexEntry,
 	loadMissionsIndex,
+	removeMissionIndexEntry,
 	updateMissionIndexEntry,
 } from "./index-file";
 import { resolveMissionPath } from "./mission";
@@ -125,4 +126,10 @@ export async function completeMission(missionsDir: string, missionId: string) {
 		status: "completed",
 		updatedAt,
 	});
+}
+
+export async function deleteMission(missionsDir: string, missionId: string) {
+	const missionPath = await resolveMissionPath(missionsDir, missionId);
+	await rm(missionPath, { recursive: true, force: true });
+	await removeMissionIndexEntry(missionsDir, missionId);
 }

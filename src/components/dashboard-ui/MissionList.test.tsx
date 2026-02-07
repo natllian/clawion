@@ -55,8 +55,8 @@ describe("MissionList", () => {
 	it("applies active styling to selected mission", () => {
 		const props = { ...defaultProps, activeMissionId: "m1" };
 		render(<MissionList {...props} />);
-		const activeCard = screen.getByRole("link", { name: /alpha mission/i });
-		expect(activeCard).toHaveClass("border-primary/60");
+		const activeLink = screen.getByRole("link", { name: /alpha mission/i });
+		expect(activeLink.closest("div")).toHaveClass("border-primary/60");
 	});
 
 	it("shows loading skeletons when loading", () => {
@@ -77,5 +77,33 @@ describe("MissionList", () => {
 		render(<MissionList {...props} />);
 		// Should show initials instead of full names
 		expect(screen.queryByText("Alpha Mission")).not.toBeInTheDocument();
+	});
+
+	it("shows delete button when onDeleteMission is provided and not collapsed", () => {
+		const onDeleteMission = () => {};
+		const props = {
+			...defaultProps,
+			onDeleteMission,
+		};
+		render(<MissionList {...props} />);
+		expect(
+			screen.getByRole("button", { name: /delete alpha mission/i }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: /delete beta mission/i }),
+		).toBeInTheDocument();
+	});
+
+	it("hides delete button when sidebar is collapsed", () => {
+		const onDeleteMission = () => {};
+		const props = {
+			...defaultProps,
+			sidebarCollapsed: true,
+			onDeleteMission,
+		};
+		render(<MissionList {...props} />);
+		expect(
+			screen.queryByRole("button", { name: /delete/i }),
+		).not.toBeInTheDocument();
 	});
 });
