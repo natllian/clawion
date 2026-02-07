@@ -4,7 +4,10 @@ import { Command } from "commander";
 import { logInvocations } from "../src/cli/log";
 import { runThreadShow } from "../src/cli/thread-show";
 import { runWake } from "../src/cli/wake";
-import type { TaskStatus } from "../src/core/task-status";
+import {
+	resolveStatusForColumn,
+	type TaskStatus,
+} from "../src/core/task-status";
 import { addAgent, listAgents } from "../src/core/workspace/agents";
 import {
 	appendCliInvocation,
@@ -347,6 +350,32 @@ mission
 			return;
 		}
 		try {
+			const tasksFile = await listTasks(context.missionsDir, options.id);
+			const incomplete = tasksFile.tasks
+				.map((task) => ({
+					...task,
+					status: resolveStatusForColumn(tasksFile.columns, task.columnId),
+				}))
+				.filter((task) => task.status !== "completed");
+
+			if (incomplete.length > 0) {
+				const details = incomplete.map(
+					(task) =>
+						`- ${task.id} (${task.title}) — ${task.status}${task.assigneeAgentId ? `, assigned to ${task.assigneeAgentId}` : ", unassigned"}${task.statusNotes?.trim() ? `: ${task.statusNotes.trim()}` : ""}`,
+				);
+				console.error(
+					[
+						`Cannot complete mission: ${incomplete.length} task(s) not completed.`,
+						"",
+						...details,
+						"",
+						"All tasks must be completed before the mission can be marked as completed.",
+					].join("\n"),
+				);
+				process.exitCode = 1;
+				return;
+			}
+
 			await completeMission(context.missionsDir, options.id);
 			console.log(`Mission completed: ${options.id}`);
 		} catch (error) {
