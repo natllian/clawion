@@ -121,6 +121,16 @@ describe("AgentSnapshotPanel", () => {
 		expect(textarea).toHaveValue("Frontend developer");
 	});
 
+	it("renders escaped newlines in role description as real line breaks", () => {
+		const props = {
+			...defaultProps,
+			roleDescription: "Line 1\\nLine 2",
+		};
+		render(<AgentSnapshotPanel {...props} />);
+		const textarea = screen.getByLabelText("Role description");
+		expect(textarea).toHaveValue("Line 1\nLine 2");
+	});
+
 	it("textarea is disabled when not in editing mode", () => {
 		render(<AgentSnapshotPanel {...defaultProps} />);
 		const textarea = screen.getByLabelText("Role description");

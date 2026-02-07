@@ -9,6 +9,13 @@ import { MarkdownBlock } from "./MarkdownBlock";
 
 const workingSkeletons = ["working-a", "working-b", "working-c"];
 
+function normalizeEscapedNewlines(content: string) {
+	return content
+		.replace(/\\r\\n/g, "\n")
+		.replace(/\\n/g, "\n")
+		.replace(/\\r/g, "\n");
+}
+
 interface AgentSnapshotPanelProps {
 	roleDescription: string;
 	onRoleDescriptionChange: (value: string) => void;
@@ -58,6 +65,9 @@ export function AgentSnapshotPanel({
 
 	const canEditRole = isActive && isEditingRole;
 	const canEditSecret = isActive && isEditingSecret;
+	const displayedRoleDescription = canEditRole
+		? roleDescription
+		: normalizeEscapedNewlines(roleDescription);
 
 	async function handleSaveRole() {
 		try {
@@ -129,7 +139,7 @@ export function AgentSnapshotPanel({
 				</div>
 				<textarea
 					aria-label="Role description"
-					value={isActive ? roleDescription : ""}
+					value={isActive ? displayedRoleDescription : ""}
 					onChange={(event) => onRoleDescriptionChange(event.target.value)}
 					disabled={!canEditRole || savingRoleDescription}
 					placeholder={
@@ -137,7 +147,7 @@ export function AgentSnapshotPanel({
 							? "Describe this agent's role and constraints..."
 							: "Select an agent to edit role description."
 					}
-					className="scrollbar-dropdown h-24 w-full resize-none rounded-md border border-border/70 bg-background px-2 py-1 text-xs text-foreground outline-none ring-ring/50 placeholder:text-muted-foreground focus-visible:ring-[3px] disabled:opacity-60"
+					className="scrollbar-dropdown h-40 w-full resize-none rounded-md border border-border/70 bg-background px-2 py-1 text-xs text-foreground outline-none ring-ring/50 placeholder:text-muted-foreground focus-visible:ring-[3px] disabled:opacity-60"
 				/>
 			</div>
 
