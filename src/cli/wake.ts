@@ -149,7 +149,9 @@ export function renderTaskSection(opts: RenderTaskSectionOptions) {
 			lines.push(`- TaskId: ${task.id}`);
 			lines.push(`- Assignee: ${task.assigneeAgentId ?? "**Unassigned**"}`);
 			lines.push(`- Title: ${task.title}`);
-			lines.push(`- Description: ${task.description}`);
+			if (!isManager) {
+				lines.push(`- Description: ${task.description}`);
+			}
 			const statusNotes = task.statusNotes?.trim();
 			if (statusNotes) {
 				lines.push(`- Status Notes: ${statusNotes}`);
@@ -212,41 +214,12 @@ export function renderUnreadMentions(
 
 export function renderWorking(lines: string[], workingEvents: WorkingEvent[]) {
 	if (workingEvents.length === 0) return;
-	lines.push(`## Working (recent events: ${workingEvents.length})`);
-	const recent = workingEvents.slice(-8).reverse();
-	for (const event of recent) {
+	lines.push(`## Working`);
+	for (const event of workingEvents.reverse()) {
 		lines.push("");
 		lines.push(`- ${formatLocalTime(event.createdAt)}`);
 		lines.push("");
 		lines.push(event.content.trim());
-	}
-}
-
-export function renderThreadSummaries(
-	lines: string[],
-	summaries: ThreadSummary[],
-	taskTitleById: Map<string, string>,
-) {
-	lines.push("");
-	lines.push("## Thread Activity");
-	if (summaries.length === 0) {
-		lines.push("_No threads yet._");
-	} else {
-		const sorted = [...summaries].sort((a, b) => {
-			const aAt = a.lastMessageAt ?? "";
-			const bAt = b.lastMessageAt ?? "";
-			return bAt.localeCompare(aAt);
-		});
-		for (const summary of sorted) {
-			const title = taskTitleById.get(summary.taskId);
-			const titlePart = title ? ` (${title})` : "";
-			const lastPart = summary.lastAuthorAgentId
-				? `, last by @${summary.lastAuthorAgentId}${summary.lastMessageAt ? ` at ${formatLocalTime(summary.lastMessageAt)}` : ""}`
-				: "";
-			lines.push(
-				`- Task ${summary.taskId}${titlePart} — ${summary.messageCount} messages${lastPart}`,
-			);
-		}
 	}
 }
 
@@ -260,6 +233,7 @@ export function renderDarkSecret(lines: string[], darkSecret: string) {
 	);
 	lines.push(
 		`- Dark Secret: "${darkSecret.trim() || "_No dark secret set._"}"`,
+		"",
 	);
 }
 
@@ -271,6 +245,11 @@ export function buildWorkerWakeLines(ctx: WakeContext): string[] {
 				agent.systemRole === "manager" && agent.id !== ctx.agentEntry.id,
 		)?.id ?? null;
 
+	if (ctx.darkSecret !== "") {
+		lines.push("## Dark Secret (Strictly Confidential)");
+		renderDarkSecret(lines, ctx.darkSecret);
+	}
+
 	lines.push(
 		`You are a Worker Agent currently on duty in Mission ${ctx.missionId}.`,
 		"This message is the only authoritative snapshot for deciding what to do next.",
@@ -278,14 +257,12 @@ export function buildWorkerWakeLines(ctx: WakeContext): string[] {
 	);
 
 	lines.push("");
-	lines.push("## Your Identity");
+	lines.push("## Identity");
 	lines.push(`- ID: ${ctx.agentEntry.id}`);
 	lines.push(`- System role: ${ctx.agentEntry.systemRole}`);
 	lines.push(
 		`- Role Description: ${ctx.agentEntry.roleDescription || "_No role description._"}`,
 	);
-	lines.push("");
-	renderDarkSecret(lines, ctx.darkSecret);
 
 	lines.push("");
 	renderTeamDirectory(ctx, lines, ctx.agents);
@@ -373,6 +350,11 @@ export function buildWorkerWakeLines(ctx: WakeContext): string[] {
 export function buildManagerWakeLines(ctx: WakeContext): string[] {
 	const lines: string[] = [];
 
+	if (ctx.darkSecret !== "") {
+		lines.push("## Dark Secret (Strictly Confidential)");
+		renderDarkSecret(lines, ctx.darkSecret);
+	}
+
 	lines.push(
 		`You are the Mission Manager currently on duty for Mission ${ctx.missionId}.`,
 		"This message is the only authoritative snapshot for deciding what to do next.",
@@ -385,11 +367,9 @@ export function buildManagerWakeLines(ctx: WakeContext): string[] {
 	lines.push(`- System role: ${ctx.agentEntry.systemRole}`);
 	lines.push(
 		`- Role Description: ${ctx.agentEntry.roleDescription || "_No role description._"}`,
+		"",
 	);
-	lines.push("");
-	renderDarkSecret(lines, ctx.darkSecret);
 
-	lines.push("");
 	renderTeamDirectory(ctx, lines, ctx.agents);
 
 	lines.push("");
@@ -420,6 +400,9 @@ export function buildManagerWakeLines(ctx: WakeContext): string[] {
 	const blockedTasks = ctx.allTasks.filter((task) => task.status === "blocked");
 	const pendingTasks = ctx.allTasks.filter((task) => task.status === "pending");
 	const ongoingTasks = ctx.allTasks.filter((task) => task.status === "ongoing");
+	const completedTasks = ctx.allTasks.filter(
+		(task) => task.status === "completed",
+	);
 
 	renderTaskSection({
 		lines,
@@ -444,6 +427,15 @@ export function buildManagerWakeLines(ctx: WakeContext): string[] {
 		heading: "Ongoing Tasks",
 		tasks: ongoingTasks,
 		emptyMessage: "_No ongoing tasks._",
+		missionId: ctx.missionId,
+		agentId: ctx.agentEntry.id,
+		isManager: true,
+	});
+	renderTaskSection({
+		lines,
+		heading: "Completed Tasks",
+		tasks: completedTasks,
+		emptyMessage: "_No completed tasks._",
 		missionId: ctx.missionId,
 		agentId: ctx.agentEntry.id,
 		isManager: true,
@@ -479,9 +471,8 @@ export function buildManagerWakeLines(ctx: WakeContext): string[] {
 		}
 	}
 
-	renderThreadSummaries(lines, ctx.threadSummaries, ctx.taskTitleById);
-
 	lines.push("");
+	renderWorking(lines, ctx.workingEvents);
 
 	lines.push("");
 	lines.push("## Turn Playbook");

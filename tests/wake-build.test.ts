@@ -60,7 +60,7 @@ describe("buildWorkerWakeLines", () => {
 
 		expect(text).toContain("Worker Agent");
 		expect(text).toContain("agent-1");
-		expect(text).toContain("## Your Identity");
+		expect(text).toContain("## Identity");
 		expect(text).toContain("## Mission Overview");
 		expect(text).toContain("- ID: m1");
 		expect(text).toContain("# Roadmap");

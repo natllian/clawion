@@ -6,14 +6,13 @@ import {
 	renderDarkSecret,
 	renderTaskSection,
 	renderTeamDirectory,
-	renderThreadSummaries,
 	renderUnreadMentions,
 	renderWorking,
 	type TaskWithStatus,
 	type UnreadMention,
 	type WakeContext,
 } from "../src/cli/wake";
-import type { Agent, ThreadSummary, WorkingEvent } from "../src/core/schemas";
+import type { Agent, WorkingEvent } from "../src/core/schemas";
 import type { TaskStatus } from "../src/core/task-status";
 
 describe("buildTaskTitleById", () => {
@@ -288,56 +287,6 @@ describe("renderTaskSection", () => {
 		});
 
 		expect(lines.some((l) => l.includes("**Unassigned**"))).toBe(true);
-	});
-});
-
-describe("renderThreadSummaries", () => {
-	it("renders thread summaries sorted by latest activity", () => {
-		const summaries: ThreadSummary[] = [
-			{
-				taskId: "t1",
-				messageCount: 5,
-				lastMessageAt: "2024-01-15 12:00:00",
-				lastAuthorAgentId: "agent-1",
-				lastMentionsAgentIds: ["manager-1"],
-			},
-			{
-				taskId: "t2",
-				messageCount: 2,
-				lastMessageAt: "2024-01-16 09:00:00",
-				lastAuthorAgentId: "manager-1",
-				lastMentionsAgentIds: ["agent-1"],
-			},
-		];
-		const titleMap = new Map([
-			["t1", "Build Login"],
-			["t2", "Fix Auth"],
-		]);
-
-		const lines: string[] = [];
-		renderThreadSummaries(lines, summaries, titleMap);
-
-		expect(lines).toContain("## Thread Activity");
-		// t2 is more recent, should appear first
-		const t2Line = lines.find((l) => l.includes("Task t2"));
-		const t1Line = lines.find((l) => l.includes("Task t1"));
-		expect(t2Line).toBeDefined();
-		expect(t1Line).toBeDefined();
-		// biome-ignore lint/style/noNonNullAssertion: guarded by toBeDefined above
-		expect(lines.indexOf(t2Line!)).toBeLessThan(lines.indexOf(t1Line!));
-		expect(t1Line).toContain("Build Login");
-		expect(t1Line).toContain("5 messages");
-		expect(t1Line).toContain("@agent-1");
-		expect(t2Line).toContain("Fix Auth");
-		expect(t2Line).toContain("2 messages");
-	});
-
-	it("shows empty state when no threads", () => {
-		const lines: string[] = [];
-		renderThreadSummaries(lines, [], new Map());
-
-		expect(lines).toContain("## Thread Activity");
-		expect(lines).toContain("_No threads yet._");
 	});
 });
 

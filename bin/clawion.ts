@@ -653,9 +653,7 @@ message
 
 			if (invalidMentions.length > 0) {
 				console.error(
-					`Error: Invalid mentions: ${invalidMentions.join(
-						", ",
-					)}. Check agents via wake.`,
+					`Error: Invalid mentions: ${invalidMentions.join(", ")}. Check agents via wake.`,
 				);
 				process.exitCode = 1;
 				return;
