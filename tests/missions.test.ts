@@ -38,7 +38,7 @@ describe("missions", () => {
 
 		const details = await showMission(missionsDir, "m1");
 		expect(details.mission.id).toBe("m1");
-		expect(details.roadmap).toContain("Mission Roadmap");
+		expect(details.roadmap.trim()).toBe("");
 	});
 
 	it("completes mission", async () => {
