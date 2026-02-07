@@ -7,7 +7,7 @@ description: Multi-agent collaboration powered by OpenClaw cron jobs and the cla
 
 **Recurring or periodic work in Clawion must be implemented via OpenClaw cron jobs.** Do not rely on ad-hoc runs or "remember to run later" — create cron jobs so the Gateway wakes agents on schedule. Official reference: **[Cron Jobs — OpenClaw](https://docs.openclaw.ai/automation/cron-jobs#cron-jobs)**.
 
-Clawion is a **file-based mission coordinator**. Agents interact with state through the **`clawion` CLI**.
+Clawion is **multi-agent**: every agent (the manager and each worker) must have **one dedicated cron job**. One job per agent — no sharing. Clawion is also a **file-based mission coordinator**. Agents interact with state through the **`clawion` CLI**.
 
 ## Mental model (cron-driven)
 
@@ -20,6 +20,7 @@ Clawion is **wake-driven** — OpenClaw cron is the only reliable engine for per
 
 Key properties:
 - **Wake is the only read entrypoint.**
+- **One cron job per agent.** The manager and every worker each get their own job; multi-agent ⇒ multiple jobs.
 - **No cron job ⇒ no scheduled runs.** Always create cron jobs for missions that need periodic execution.
 
 ## Core invariants
@@ -104,7 +105,7 @@ clawion mission roadmap --id <MISSION_ID> --set "<markdown>" --agent <MANAGER_ID
 
 ### 6. Create cron jobs (disabled) and get user approval — **mandatory**
 
-You **must** create **one isolated cron job per agent** (manager + each worker), all **disabled**. You **must not** enable any job until the user has reviewed in the Clawion Web UI and given explicit approval.
+Clawion is **multi-agent**: you **must** create **one isolated cron job per agent** — one for the manager, one for each worker. All jobs **disabled** until the user approves. You **must not** enable any job until the user has reviewed in the Clawion Web UI and given explicit approval.
 
 - **Do not skip this step.** Without cron jobs, the mission will not run on schedule. When in doubt, create the jobs and leave them disabled until the user approves.
 - Use OpenClaw’s cron API/CLI; canonical behavior and JSON shapes: **[Cron Jobs — OpenClaw](https://docs.openclaw.ai/automation/cron-jobs#cron-jobs)**.
@@ -122,7 +123,7 @@ You **must** create **one isolated cron job per agent** (manager + each worker),
 
 | Rule                | Detail                                                                                                                                                    |
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Create jobs**     | For any mission that should run periodically, you **must** create the corresponding OpenClaw cron job(s). No cron job ⇒ no scheduled execution.            |
+| **Create jobs**     | Multi-agent ⇒ one cron job per agent. You **must** create **one** OpenClaw cron job **per agent** (manager + each worker). No cron job for an agent ⇒ that agent never runs on schedule. |
 | **Isolation**       | Each tick runs in its **own isolated OpenClaw session** (`sessionTarget: "isolated"`, never `main`). Context bleed makes the loop unreliable.              |
 | **Wake interval**   | If the user didn't specify one, **ask and confirm** before creating jobs.                                                                                 |
 | **Minimal payload** | Do **not** embed mission context, task lists, or SOP text. The authoritative prompt is assembled by `clawion agent wake` from workspace state at runtime. |
@@ -162,4 +163,4 @@ If the mission is complete, disable all related cron jobs.
 
 ### Before you finish
 
-- **Did you create the cron job(s)?** If the user asked for recurring/periodic runs, you must have created the OpenClaw cron job(s) (disabled until user approval). If you only described “run clawion agent wake” without creating a job, the workflow will not run on schedule. Double-check against [Cron Jobs — OpenClaw](https://docs.openclaw.ai/automation/cron-jobs#cron-jobs).
+- **Did you create one cron job per agent?** Multi-agent means one job for the manager and one for each worker. If you only created one job or forgot a worker, that agent will never run on schedule. Double-check: [Cron Jobs — OpenClaw](https://docs.openclaw.ai/automation/cron-jobs#cron-jobs).
