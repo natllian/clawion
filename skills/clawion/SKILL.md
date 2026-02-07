@@ -1,6 +1,6 @@
 ---
 name: clawion
-description: Operate Clawion missions using the clawion CLI + OpenClaw scheduled agents (wake-driven workflow).
+description: Multi-agent collaboration powered by OpenClaw cron jobs and the clawion CLI (wake-driven workflow).
 ---
 
 # Clawion (runbook)
