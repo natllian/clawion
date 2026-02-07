@@ -212,7 +212,7 @@ export function renderDarkSecret(lines: string[], darkSecret: string) {
 	);
 }
 
-function buildWorkerWakeLines(ctx: WakeContext): string[] {
+export function buildWorkerWakeLines(ctx: WakeContext): string[] {
 	const lines: string[] = [];
 	const managerForLoop =
 		ctx.agents.find(
@@ -313,7 +313,7 @@ function buildWorkerWakeLines(ctx: WakeContext): string[] {
 	return lines;
 }
 
-function buildManagerWakeLines(ctx: WakeContext): string[] {
+export function buildManagerWakeLines(ctx: WakeContext): string[] {
 	const lines: string[] = [];
 
 	lines.push(

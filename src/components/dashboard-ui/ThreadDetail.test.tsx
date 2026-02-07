@@ -326,4 +326,245 @@ describe("ThreadDetail", () => {
 			},
 		);
 	});
+
+	it("shows blocked badge when statusNotes starts with blocked:", async () => {
+		const blockedPayload: ThreadResponse = {
+			...mockThreadResponse,
+			task: {
+				...mockThreadResponse.task,
+				statusNotes: "blocked: waiting for API",
+			},
+		};
+
+		(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+			ok: true,
+			json: async () => blockedPayload,
+		});
+
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
+
+		await waitFor(() => {
+			expect(screen.getByText("Blocked")).toBeInTheDocument();
+		});
+		expect(screen.getByText("blocked: waiting for API")).toBeInTheDocument();
+	});
+
+	it("renders ongoing column badge with blue styling", async () => {
+		const ongoingPayload: ThreadResponse = {
+			...mockThreadResponse,
+			task: { ...mockThreadResponse.task, columnId: "ongoing" },
+			column: { id: "ongoing", name: "In Progress" },
+		};
+
+		(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+			ok: true,
+			json: async () => ongoingPayload,
+		});
+
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
+
+		await waitFor(() => {
+			const badge = screen.getByText("In Progress");
+			expect(badge).toBeInTheDocument();
+		});
+	});
+
+	it("shows Unassigned when no assignee", async () => {
+		const unassignedPayload: ThreadResponse = {
+			...mockThreadResponse,
+			task: {
+				...mockThreadResponse.task,
+				assigneeAgentId: null,
+			},
+		};
+
+		(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+			ok: true,
+			json: async () => unassignedPayload,
+		});
+
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
+
+		await waitFor(() => {
+			const unassignedElements = screen.getAllByText("Unassigned");
+			expect(unassignedElements.length).toBeGreaterThanOrEqual(1);
+		});
+	});
+
+	it("shows empty thread messages state", async () => {
+		const emptyPayload: ThreadResponse = {
+			...mockThreadResponse,
+			thread: { taskId: "t1", messages: [] },
+		};
+
+		(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+			ok: true,
+			json: async () => emptyPayload,
+		});
+
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
+
+		await waitFor(() => {
+			expect(screen.getByText("No thread messages yet.")).toBeInTheDocument();
+		});
+		expect(screen.getByText("0 messages")).toBeInTheDocument();
+	});
+
+	it("shows participants card", async () => {
+		(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+			ok: true,
+			json: async () => mockThreadResponse,
+		});
+
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
+
+		await waitFor(() => {
+			expect(screen.getByText("Participants")).toBeInTheDocument();
+		});
+	});
+
+	it("renders column name from column when available", async () => {
+		(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+			ok: true,
+			json: async () => mockThreadResponse,
+		});
+
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
+
+		await waitFor(() => {
+			expect(screen.getByText("To Do")).toBeInTheDocument();
+		});
+	});
+
+	it("falls back to columnId when column is null", async () => {
+		const noColumnPayload: ThreadResponse = {
+			...mockThreadResponse,
+			column: null,
+		};
+
+		(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+			ok: true,
+			json: async () => noColumnPayload,
+		});
+
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
+
+		await waitFor(() => {
+			expect(screen.getByText("todo")).toBeInTheDocument();
+		});
+	});
+
+	it("shows message content and mentions", async () => {
+		(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+			ok: true,
+			json: async () => mockThreadResponse,
+		});
+
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
+
+		await waitFor(() => {
+			expect(
+				screen.getByText("Hello, this is a test message."),
+			).toBeInTheDocument();
+			expect(screen.getByText("Reply message.")).toBeInTheDocument();
+		});
+		// Check mention labels
+		expect(screen.getByText("to @Bob")).toBeInTheDocument();
+	});
+
+	it("handles complete task failure gracefully", async () => {
+		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+		(global.fetch as ReturnType<typeof vi.fn>)
+			.mockResolvedValueOnce({
+				ok: true,
+				json: async () => mockThreadResponse,
+			})
+			.mockResolvedValueOnce({
+				ok: false,
+				json: async () => ({ error: "Cannot complete" }),
+			});
+
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
+
+		await waitFor(() => {
+			expect(screen.getByText("Task Title")).toBeInTheDocument();
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: "Complete task" }));
+
+		await waitFor(() => {
+			// Button should return to "Complete task" after failure
+			expect(
+				screen.getByRole("button", { name: "Complete task" }),
+			).toBeInTheDocument();
+		});
+
+		consoleSpy.mockRestore();
+	});
+
+	it("renders completed column badge tone", async () => {
+		const completedPayload: ThreadResponse = {
+			...mockThreadResponse,
+			task: { ...mockThreadResponse.task, columnId: "done" },
+			column: { id: "done", name: "Done" },
+		};
+
+		(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+			ok: true,
+			json: async () => completedPayload,
+		});
+
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
+
+		await waitFor(() => {
+			const badge = screen.getByText("Done");
+			expect(badge).toHaveClass("border-emerald-500/40");
+		});
+	});
+
+	it("shows Created and Updated dates", async () => {
+		(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+			ok: true,
+			json: async () => mockThreadResponse,
+		});
+
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
+
+		await waitFor(() => {
+			expect(screen.getByText(/Created/)).toBeInTheDocument();
+			expect(screen.getByText(/Updated/)).toBeInTheDocument();
+		});
+	});
+
+	it("renders Assignee card with agent name", async () => {
+		(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+			ok: true,
+			json: async () => mockThreadResponse,
+		});
+
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
+
+		await waitFor(() => {
+			expect(screen.getByText("Assignee")).toBeInTheDocument();
+		});
+	});
+
+	it("shows No participants yet when empty thread", async () => {
+		const emptyPayload: ThreadResponse = {
+			...mockThreadResponse,
+			thread: { taskId: "t1", messages: [] },
+		};
+
+		(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+			ok: true,
+			json: async () => emptyPayload,
+		});
+
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
+
+		await waitFor(() => {
+			expect(screen.getByText("No participants yet.")).toBeInTheDocument();
+		});
+	});
 });
