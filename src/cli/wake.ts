@@ -123,7 +123,7 @@ export function renderTeamDirectory(
 
 	for (const agent of agents) {
 		if (agent.id === ctx.agentEntry.id) continue;
-		lines.push(`- ${agent.displayName} (@${agent.id}) — ${agent.systemRole}`);
+		lines.push(`- ${agent.displayName} (${agent.id}) — ${agent.systemRole}`);
 	}
 }
 
@@ -241,7 +241,7 @@ export function renderThreadSummaries(
 			const title = taskTitleById.get(summary.taskId);
 			const titlePart = title ? ` (${title})` : "";
 			const lastPart = summary.lastAuthorAgentId
-				? `, last by @${summary.lastAuthorAgentId}${summary.lastMessageAt ? ` at ${formatLocalTime(summary.lastMessageAt)}` : ""}`
+				? `, last by ${summary.lastAuthorAgentId}${summary.lastMessageAt ? ` at ${formatLocalTime(summary.lastMessageAt)}` : ""}`
 				: "";
 			lines.push(
 				`- Task ${summary.taskId}${titlePart} — ${summary.messageCount} messages${lastPart}`,
@@ -474,7 +474,7 @@ export function buildManagerWakeLines(ctx: WakeContext): string[] {
 				? item.lastEvent.content.split("\n")[0].trim()
 				: "";
 			lines.push(
-				`- ${item.displayName} (@${item.agentId}, ${item.systemRole}) · last: ${lastAt}${snippet ? ` · ${snippet}` : ""}`,
+				`- ${item.displayName} (${item.agentId}, ${item.systemRole}) · last: ${lastAt}${snippet ? ` · ${snippet}` : ""}`,
 			);
 		}
 	}
