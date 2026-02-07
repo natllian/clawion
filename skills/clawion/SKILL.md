@@ -7,8 +7,6 @@ description: Multi-agent collaboration powered by OpenClaw cron jobs and the cla
 
 Clawion is a **file-based mission coordinator**. Agents interact with state through the **`clawion` CLI**.
 
-Repo: https://github.com/natllian/clawion
-
 ## Mental model
 
 Clawion is **wake-driven** — OpenClaw cron ticks are the engine.
@@ -43,7 +41,7 @@ Verify the CLI is available:
 clawion --help
 ```
 
-If the command is not found, install it by following the setup instructions in the [Clawion README](https://github.com/natllian/clawion#readme).
+If the command is not found, install it globally: `pnpm install -g clawion`
 
 ### 1. Create the mission
 
