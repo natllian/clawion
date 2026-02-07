@@ -221,6 +221,55 @@ describe("ThreadDetail", () => {
 		expect(screen.getByText("Acknowledged")).toBeInTheDocument();
 	});
 
+	it("acknowledges all pending mentions from thread detail", async () => {
+		const pendingPayload: ThreadResponse = {
+			...mockThreadResponse,
+			pendingAckByMessageId: {
+				"msg-1": ["agent-1", "agent-2"],
+			},
+		};
+		const refreshedPayload: ThreadResponse = {
+			...mockThreadResponse,
+			pendingAckByMessageId: {},
+		};
+
+		(global.fetch as ReturnType<typeof vi.fn>)
+			.mockResolvedValueOnce({
+				ok: true,
+				json: async () => pendingPayload,
+			})
+			.mockResolvedValueOnce({
+				ok: true,
+				json: async () => ({ ok: true, ackedCount: 2 }),
+			})
+			.mockResolvedValueOnce({
+				ok: true,
+				json: async () => refreshedPayload,
+			});
+
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
+
+		await waitFor(() => {
+			expect(
+				screen.getByRole("button", { name: "All acknowledged" }),
+			).toBeEnabled();
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: "All acknowledged" }));
+
+		await waitFor(() => {
+			expect(
+				screen.getByRole("button", { name: "Acknowledged" }),
+			).toBeDisabled();
+		});
+		expect(global.fetch).toHaveBeenCalledWith(
+			"/api/missions/m1/threads/t1/ack-all",
+			{
+				method: "POST",
+			},
+		);
+	});
+
 	it("opens agent snapshot when clicking avatar", async () => {
 		(global.fetch as ReturnType<typeof vi.fn>)
 			.mockResolvedValueOnce({

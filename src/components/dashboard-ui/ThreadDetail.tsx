@@ -123,6 +123,7 @@ export function ThreadDetail({
 	const [savingSnapshot, setSavingSnapshot] = React.useState(false);
 	const [savingSnapshotRole, setSavingSnapshotRole] = React.useState(false);
 	const [completingTask, setCompletingTask] = React.useState(false);
+	const [acknowledgingAll, setAcknowledgingAll] = React.useState(false);
 	const agentsById = React.useMemo(
 		() => new Map((agents?.agents ?? []).map((agent) => [agent.id, agent])),
 		[agents],
@@ -303,6 +304,11 @@ export function ThreadDetail({
 
 	const { thread, task, column } = data;
 	const pendingAckByMessageId = data.pendingAckByMessageId ?? {};
+	const pendingAckCount = Object.values(pendingAckByMessageId).reduce(
+		(total, agentIds) => total + agentIds.length,
+		0,
+	);
+	const hasPendingAcks = pendingAckCount > 0;
 	const isTaskBlocked = isBlocked(task.statusNotes);
 	const columnBadgeTone = resolveColumnBadgeTone(task.columnId, column?.name);
 	const isTaskCompleted =
@@ -399,6 +405,31 @@ export function ThreadDetail({
 		}
 	}
 
+	async function handleAcknowledgeAll() {
+		if (acknowledgingAll || !hasPendingAcks) {
+			return;
+		}
+
+		setAcknowledgingAll(true);
+		try {
+			const response = await fetch(
+				`/api/missions/${missionId}/threads/${threadId}/ack-all`,
+				{
+					method: "POST",
+				},
+			);
+			if (!response.ok) {
+				const payload = (await response.json()) as { error?: string };
+				throw new Error(payload.error ?? "Failed to acknowledge all mentions.");
+			}
+			await loadThread();
+		} catch (error) {
+			console.error(error);
+		} finally {
+			setAcknowledgingAll(false);
+		}
+	}
+
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center gap-4">
@@ -474,6 +505,19 @@ export function ThreadDetail({
 					<div className="flex items-center justify-between">
 						<h2 className="text-sm font-semibold">Thread</h2>
 						<div className="flex items-center gap-2">
+							<Button
+								type="button"
+								variant="outline"
+								size="xs"
+								disabled={acknowledgingAll || !hasPendingAcks}
+								onClick={handleAcknowledgeAll}
+							>
+								{acknowledgingAll
+									? "Acknowledging..."
+									: hasPendingAcks
+										? "All acknowledged"
+										: "Acknowledged"}
+							</Button>
 							<Button
 								type="button"
 								variant="outline"
