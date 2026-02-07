@@ -15,6 +15,7 @@ import { resolveMissionPath } from "../src/core/workspace/mission";
 import {
 	completeMission,
 	createMission,
+	showMission,
 	updateMissionRoadmap,
 } from "../src/core/workspace/missions";
 import {
@@ -97,7 +98,7 @@ const HELP_ENTRIES: HelpEntry[] = [
 	},
 	{
 		command: "mission roadmap",
-		purpose: "Replace the mission roadmap (manager only).",
+		purpose: "Set the mission roadmap (manager only, write-once).",
 		params: ["--id <id>", "--set <markdown>", "--agent <agentId>"],
 		example:
 			"clawion mission roadmap --id m1 --set '# Roadmap\\n\\n- Item' --agent manager-1",
@@ -299,7 +300,7 @@ mission
 
 mission
 	.command("roadmap")
-	.description("Replace mission roadmap contents (manager only)")
+	.description("Set mission roadmap (manager only, write-once)")
 	.requiredOption("--id <id>", "Mission ID")
 	.option("--set <markdown>", "Replace roadmap contents")
 	.action(async (options, command) => {
@@ -315,6 +316,13 @@ mission
 				return;
 			}
 
+			const existing = await showMission(context.missionsDir, options.id);
+			if (existing.roadmap.trim().length > 0) {
+				console.error("Roadmap already exists.");
+				process.exitCode = 1;
+				return;
+			}
+
 			const roadmap = String(options.set);
 
 			await updateMissionRoadmap({
@@ -322,7 +330,7 @@ mission
 				id: options.id,
 				roadmap,
 			});
-			console.log(`Mission roadmap updated: ${options.id}`);
+			console.log(`Mission roadmap set: ${options.id}`);
 		} catch (error) {
 			console.error(error instanceof Error ? error.message : String(error));
 			process.exitCode = 1;
