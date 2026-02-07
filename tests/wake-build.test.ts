@@ -4,7 +4,7 @@ import {
 	buildWorkerWakeLines,
 	type WakeContext,
 } from "../src/cli/wake";
-import type { Agent, ThreadSummary } from "../src/core/schemas";
+import type { Agent } from "../src/core/schemas";
 import type { TaskStatus } from "../src/core/task-status";
 
 function makeAgent(overrides?: Partial<Agent>): Agent {
@@ -111,8 +111,12 @@ describe("buildWorkerWakeLines", () => {
 		const text = lines.join("\n");
 
 		expect(text).toContain("## Assigned Tasks");
-		expect(text).toContain("Build Login (#t1)");
-		expect(text).toContain("Implement login flow");
+		expect(text).toContain("- TaskId: t1");
+		expect(text).toContain("- Title: Build Login");
+		expect(text).toContain("- Description: Implement login flow");
+		expect(text).toContain("- Status Notes: WIP");
+		// worker should NOT see thread show command
+		expect(text).not.toContain("clawion thread show");
 	});
 
 	it("renders unread mentions with reply command", () => {
@@ -255,71 +259,14 @@ describe("buildManagerWakeLines", () => {
 		const lines = buildManagerWakeLines(ctx);
 		const text = lines.join("\n");
 
-		expect(text).toContain("## Mission Dashboard");
-		expect(text).toContain("4 total");
-		expect(text).toContain("1 pending");
-		expect(text).toContain("1 ongoing");
-		expect(text).toContain("1 blocked");
-		expect(text).toContain("1 completed");
-	});
-
-	it("lists unassigned tasks (not completed)", () => {
-		const ctx = makeBaseContext({
-			agentEntry: makeManagerAgent(),
-			agentId: "manager-1",
-			allTasks: [
-				{
-					id: "t1",
-					title: "Unassigned Task",
-					description: "Needs owner",
-					columnId: "todo",
-					statusNotes: "",
-					createdAt: "",
-					updatedAt: "",
-					status: "pending" as TaskStatus,
-				},
-				{
-					id: "t2",
-					title: "Done Task",
-					description: "",
-					columnId: "done",
-					statusNotes: "",
-					createdAt: "",
-					updatedAt: "",
-					status: "completed" as TaskStatus,
-				},
-			],
-		});
-		const lines = buildManagerWakeLines(ctx);
-		const text = lines.join("\n");
-
-		expect(text).toContain("## Unassigned Tasks");
-		expect(text).toContain("Unassigned Task (#t1)");
-		expect(text).not.toContain("Done Task");
-	});
-
-	it("shows empty state for unassigned tasks", () => {
-		const ctx = makeBaseContext({
-			agentEntry: makeManagerAgent(),
-			agentId: "manager-1",
-			allTasks: [
-				{
-					id: "t1",
-					title: "Assigned",
-					description: "",
-					columnId: "todo",
-					statusNotes: "",
-					assigneeAgentId: "agent-1",
-					createdAt: "",
-					updatedAt: "",
-					status: "pending" as TaskStatus,
-				},
-			],
-		});
-		const lines = buildManagerWakeLines(ctx);
-		const text = lines.join("\n");
-
-		expect(text).toContain("_No unassigned tasks._");
+		expect(text).toContain("## Mission Overview");
+		expect(text).toContain("## Task Dashboard");
+		expect(text).toContain(
+			"Total: 4 | Pending: 1 | Ongoing: 1 | Blocked: 1 | Completed: 1",
+		);
+		expect(text).toContain("## Blocked Tasks");
+		expect(text).toContain("## Pending Tasks");
+		expect(text).toContain("## Ongoing Tasks");
 	});
 
 	it("lists blocked tasks with assignee and notes", () => {
@@ -344,9 +291,11 @@ describe("buildManagerWakeLines", () => {
 		const text = lines.join("\n");
 
 		expect(text).toContain("## Blocked Tasks");
-		expect(text).toContain("Blocked Task (#t1)");
-		expect(text).toContain("@agent-1");
-		expect(text).toContain("Waiting for API");
+		expect(text).toContain("- TaskId: t1");
+		expect(text).toContain("- Assignee: agent-1");
+		expect(text).toContain("- Title: Blocked Task");
+		expect(text).toContain("- Status Notes: Waiting for API");
+		expect(text).toContain("clawion thread show --mission m1 --task t1");
 	});
 
 	it("shows empty state for blocked tasks", () => {
@@ -360,32 +309,33 @@ describe("buildManagerWakeLines", () => {
 		expect(text).toContain("_No blocked tasks._");
 	});
 
-	it("shows recent thread activity", () => {
-		const threadSummaries: ThreadSummary[] = [
-			{
-				taskId: "t1",
-				messageCount: 5,
-				lastMessageAt: "2024-01-15 12:00:00",
-				lastAuthorAgentId: "agent-1",
-				lastMentionsAgentIds: ["manager-1"],
-			},
-		];
+	it("lists pending tasks", () => {
 		const ctx = makeBaseContext({
 			agentEntry: makeManagerAgent(),
 			agentId: "manager-1",
-			threadSummaries,
-			taskTitleById: new Map([["t1", "UI Thread"]]),
+			allTasks: [
+				{
+					id: "t1",
+					title: "Pending Task",
+					description: "Waiting to start",
+					columnId: "todo",
+					statusNotes: "",
+					assigneeAgentId: "agent-1",
+					createdAt: "",
+					updatedAt: "",
+					status: "pending" as TaskStatus,
+				},
+			],
 		});
 		const lines = buildManagerWakeLines(ctx);
 		const text = lines.join("\n");
 
-		expect(text).toContain("## Recent Thread Activity");
-		expect(text).toContain("Task t1");
-		expect(text).toContain("UI Thread");
-		expect(text).toContain("5 messages");
+		expect(text).toContain("## Pending Tasks");
+		expect(text).toContain("Pending Task");
+		expect(text).toContain("Waiting to start");
 	});
 
-	it("shows empty state for threads", () => {
+	it("shows empty state for pending tasks", () => {
 		const ctx = makeBaseContext({
 			agentEntry: makeManagerAgent(),
 			agentId: "manager-1",
@@ -393,7 +343,44 @@ describe("buildManagerWakeLines", () => {
 		const lines = buildManagerWakeLines(ctx);
 		const text = lines.join("\n");
 
-		expect(text).toContain("_No threads yet._");
+		expect(text).toContain("_No pending tasks._");
+	});
+
+	it("lists ongoing tasks", () => {
+		const ctx = makeBaseContext({
+			agentEntry: makeManagerAgent(),
+			agentId: "manager-1",
+			allTasks: [
+				{
+					id: "t1",
+					title: "Ongoing Task",
+					description: "In progress now",
+					columnId: "doing",
+					statusNotes: "",
+					assigneeAgentId: "agent-1",
+					createdAt: "",
+					updatedAt: "",
+					status: "ongoing" as TaskStatus,
+				},
+			],
+		});
+		const lines = buildManagerWakeLines(ctx);
+		const text = lines.join("\n");
+
+		expect(text).toContain("## Ongoing Tasks");
+		expect(text).toContain("Ongoing Task");
+		expect(text).toContain("In progress now");
+	});
+
+	it("shows empty state for ongoing tasks", () => {
+		const ctx = makeBaseContext({
+			agentEntry: makeManagerAgent(),
+			agentId: "manager-1",
+		});
+		const lines = buildManagerWakeLines(ctx);
+		const text = lines.join("\n");
+
+		expect(text).toContain("_No ongoing tasks._");
 	});
 
 	it("shows team working (latest per agent)", () => {
@@ -432,6 +419,42 @@ describe("buildManagerWakeLines", () => {
 		expect(text).toContain("_No team working events._");
 	});
 
+	it("renders thread activity from threadSummaries", () => {
+		const ctx = makeBaseContext({
+			agentEntry: makeManagerAgent(),
+			agentId: "manager-1",
+			threadSummaries: [
+				{
+					taskId: "t1",
+					messageCount: 3,
+					lastMessageAt: "2024-01-15 10:00:00",
+					lastAuthorAgentId: "agent-1",
+					lastMentionsAgentIds: ["manager-1"],
+				},
+			],
+			taskTitleById: new Map([["t1", "Build Login"]]),
+		});
+		const lines = buildManagerWakeLines(ctx);
+		const text = lines.join("\n");
+
+		expect(text).toContain("## Thread Activity");
+		expect(text).toContain("Task t1 (Build Login)");
+		expect(text).toContain("3 messages");
+		expect(text).toContain("@agent-1");
+	});
+
+	it("shows empty thread activity", () => {
+		const ctx = makeBaseContext({
+			agentEntry: makeManagerAgent(),
+			agentId: "manager-1",
+		});
+		const lines = buildManagerWakeLines(ctx);
+		const text = lines.join("\n");
+
+		expect(text).toContain("## Thread Activity");
+		expect(text).toContain("_No threads yet._");
+	});
+
 	it("includes manager command templates", () => {
 		const ctx = makeBaseContext({
 			agentEntry: makeManagerAgent(),
@@ -446,6 +469,7 @@ describe("buildManagerWakeLines", () => {
 		expect(text).toContain("clawion task update");
 		expect(text).toContain("clawion mission roadmap");
 		expect(text).toContain("clawion mission complete");
+		expect(text).toContain("clawion thread show");
 	});
 
 	it("includes manager turn playbook", () => {

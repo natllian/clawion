@@ -127,17 +127,40 @@ export function renderTeamDirectory(
 	}
 }
 
-export function renderAssignedTasks(lines: string[], tasks: TaskWithStatus[]) {
-	if (tasks.length === 0) return;
-	lines.push("## Assigned Tasks");
-	for (const task of tasks) {
-		const statusNotes = task.statusNotes?.trim();
-		lines.push(
-			`- ${task.title} (#${task.id}) — ${task.status}${
-				statusNotes ? ` — ${statusNotes}` : ""
-			}`,
-		);
-		lines.push(`  Description: ${task.description}`);
+export type RenderTaskSectionOptions = {
+	lines: string[];
+	heading: string;
+	tasks: TaskWithStatus[];
+	emptyMessage: string;
+	missionId: string;
+	agentId: string;
+	isManager?: boolean;
+};
+
+export function renderTaskSection(opts: RenderTaskSectionOptions) {
+	const { lines, heading, tasks, emptyMessage, missionId, agentId, isManager } =
+		opts;
+	lines.push("");
+	lines.push(`## ${heading}`);
+	if (tasks.length === 0) {
+		lines.push(emptyMessage);
+	} else {
+		for (const task of tasks) {
+			lines.push(`- TaskId: ${task.id}`);
+			lines.push(`- Assignee: ${task.assigneeAgentId ?? "**Unassigned**"}`);
+			lines.push(`- Title: ${task.title}`);
+			lines.push(`- Description: ${task.description}`);
+			const statusNotes = task.statusNotes?.trim();
+			if (statusNotes) {
+				lines.push(`- Status Notes: ${statusNotes}`);
+			}
+			if (isManager) {
+				lines.push(
+					`- View Detail: \`clawion thread show --mission ${missionId} --task ${task.id} --agent ${agentId}\``,
+				);
+			}
+			lines.push("");
+		}
 	}
 }
 
@@ -199,6 +222,34 @@ export function renderWorking(lines: string[], workingEvents: WorkingEvent[]) {
 	}
 }
 
+export function renderThreadSummaries(
+	lines: string[],
+	summaries: ThreadSummary[],
+	taskTitleById: Map<string, string>,
+) {
+	lines.push("");
+	lines.push("## Thread Activity");
+	if (summaries.length === 0) {
+		lines.push("_No threads yet._");
+	} else {
+		const sorted = [...summaries].sort((a, b) => {
+			const aAt = a.lastMessageAt ?? "";
+			const bAt = b.lastMessageAt ?? "";
+			return bAt.localeCompare(aAt);
+		});
+		for (const summary of sorted) {
+			const title = taskTitleById.get(summary.taskId);
+			const titlePart = title ? ` (${title})` : "";
+			const lastPart = summary.lastAuthorAgentId
+				? `, last by @${summary.lastAuthorAgentId}${summary.lastMessageAt ? ` at ${formatLocalTime(summary.lastMessageAt)}` : ""}`
+				: "";
+			lines.push(
+				`- Task ${summary.taskId}${titlePart} — ${summary.messageCount} messages${lastPart}`,
+			);
+		}
+	}
+}
+
 export function renderDarkSecret(lines: string[], darkSecret: string) {
 	if (darkSecret.trim() === "") return;
 	lines.push("## Dark Secret (Strictly Confidential)");
@@ -245,8 +296,14 @@ export function buildWorkerWakeLines(ctx: WakeContext): string[] {
 	lines.push(`- Status: ${ctx.mission.status}`);
 	lines.push(`- ROADMAP: ${ctx.roadmap.trim() || "_No roadmap yet._"}`);
 
-	lines.push("");
-	renderAssignedTasks(lines, ctx.assignedTasks);
+	renderTaskSection({
+		lines,
+		heading: "Assigned Tasks",
+		tasks: ctx.assignedTasks,
+		emptyMessage: "_No assigned tasks._",
+		missionId: ctx.missionId,
+		agentId: ctx.agentEntry.id,
+	});
 
 	lines.push("");
 	renderUnreadMentions(
@@ -354,69 +411,43 @@ export function buildManagerWakeLines(ctx: WakeContext): string[] {
 		else taskStatusCounts.completed += 1;
 	}
 
-	const unassignedTasks = ctx.allTasks.filter(
-		(task) => !task.assigneeAgentId && task.status !== "completed",
-	);
-	const blockedTasks = ctx.allTasks.filter((task) => task.status === "blocked");
-
-	const sortedThreadSummaries = [...ctx.threadSummaries].sort((a, b) => {
-		const aTime = a.lastMessageAt ?? "";
-		const bTime = b.lastMessageAt ?? "";
-		return bTime.localeCompare(aTime);
-	});
-	const recentThreads = sortedThreadSummaries.slice(0, 12);
-
 	lines.push("");
-	lines.push("## Mission Dashboard");
+	lines.push("## Task Dashboard");
 	lines.push(
-		`- Tasks: ${ctx.allTasks.length} total · ${taskStatusCounts.pending} pending · ${taskStatusCounts.ongoing} ongoing · ${taskStatusCounts.blocked} blocked · ${taskStatusCounts.completed} completed`,
+		`- Total: ${ctx.allTasks.length} | Pending: ${taskStatusCounts.pending} | Ongoing: ${taskStatusCounts.ongoing} | Blocked: ${taskStatusCounts.blocked} | Completed: ${taskStatusCounts.completed}`,
 	);
-	lines.push(`- Unassigned (not completed): ${unassignedTasks.length}`);
-	lines.push(`- Unread mentions: ${ctx.unreadMentions.length}`);
-	lines.push(`- Threads: ${ctx.threadSummaries.length}`);
 
-	lines.push("");
-	lines.push("## Unassigned Tasks (not completed)");
-	if (unassignedTasks.length === 0) {
-		lines.push("_No unassigned tasks._");
-	} else {
-		for (const task of unassignedTasks) {
-			lines.push(`- ${task.title} (#${task.id}) — ${task.status}`);
-			lines.push(`  Description: ${task.description}`);
-		}
-	}
+	const blockedTasks = ctx.allTasks.filter((task) => task.status === "blocked");
+	const pendingTasks = ctx.allTasks.filter((task) => task.status === "pending");
+	const ongoingTasks = ctx.allTasks.filter((task) => task.status === "ongoing");
 
-	lines.push("");
-	lines.push("## Blocked Tasks");
-	if (blockedTasks.length === 0) {
-		lines.push("_No blocked tasks._");
-	} else {
-		for (const task of blockedTasks) {
-			const who = task.assigneeAgentId ? ` @${task.assigneeAgentId}` : "";
-			const note = task.statusNotes?.trim();
-			lines.push(
-				`- ${task.title} (#${task.id})${who}${note ? ` — ${note}` : ""}`,
-			);
-			lines.push(`Description: ${task.description}`);
-		}
-	}
-
-	lines.push("");
-	lines.push("## Recent Thread Activity");
-	if (recentThreads.length === 0) {
-		lines.push("_No threads yet._");
-	} else {
-		for (const thread of recentThreads) {
-			const title = ctx.taskTitleById.get(thread.taskId);
-			const when = thread.lastMessageAt
-				? formatLocalTime(thread.lastMessageAt)
-				: "—";
-			const by = thread.lastAuthorAgentId ?? "—";
-			lines.push(
-				`- Task ${thread.taskId}${title ? ` — ${title}` : ""}: ${thread.messageCount} messages · last at ${when} by ${by}`,
-			);
-		}
-	}
+	renderTaskSection({
+		lines,
+		heading: "Blocked Tasks",
+		tasks: blockedTasks,
+		emptyMessage: "_No blocked tasks._",
+		missionId: ctx.missionId,
+		agentId: ctx.agentEntry.id,
+		isManager: true,
+	});
+	renderTaskSection({
+		lines,
+		heading: "Pending Tasks",
+		tasks: pendingTasks,
+		emptyMessage: "_No pending tasks._",
+		missionId: ctx.missionId,
+		agentId: ctx.agentEntry.id,
+		isManager: true,
+	});
+	renderTaskSection({
+		lines,
+		heading: "Ongoing Tasks",
+		tasks: ongoingTasks,
+		emptyMessage: "_No ongoing tasks._",
+		missionId: ctx.missionId,
+		agentId: ctx.agentEntry.id,
+		isManager: true,
+	});
 
 	lines.push("");
 	renderUnreadMentions(
@@ -447,6 +478,8 @@ export function buildManagerWakeLines(ctx: WakeContext): string[] {
 			);
 		}
 	}
+
+	renderThreadSummaries(lines, ctx.threadSummaries, ctx.taskTitleById);
 
 	lines.push("");
 
@@ -503,6 +536,10 @@ export function buildManagerWakeLines(ctx: WakeContext): string[] {
 	lines.push("- Complete mission:");
 	lines.push(
 		`  \`clawion mission complete --id ${ctx.missionId} --agent ${ctx.agentEntry.id}\``,
+	);
+	lines.push("- View thread:");
+	lines.push(
+		`  \`clawion thread show --mission ${ctx.missionId} --task <taskId> --agent ${ctx.agentEntry.id}\``,
 	);
 	lines.push("- Log progress:");
 	lines.push(

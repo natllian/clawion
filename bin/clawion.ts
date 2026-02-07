@@ -2,6 +2,7 @@
 import { spawn } from "node:child_process";
 import { Command } from "commander";
 import { logInvocations } from "../src/cli/log";
+import { runThreadShow } from "../src/cli/thread-show";
 import { runWake } from "../src/cli/wake";
 import type { TaskStatus } from "../src/core/task-status";
 import { addAgent, listAgents } from "../src/core/workspace/agents";
@@ -9,7 +10,6 @@ import {
 	appendCliInvocation,
 	resolveCliInvocationsPath,
 } from "../src/core/workspace/cli-invocations";
-import { listUnackedTaskMentions } from "../src/core/workspace/inbox";
 import { ensureWorkspace } from "../src/core/workspace/init";
 import { resolveMissionPath } from "../src/core/workspace/mission";
 import {
@@ -178,6 +178,12 @@ const HELP_ENTRIES: HelpEntry[] = [
 		],
 		example:
 			"clawion message add --mission m1 --task t1 --content 'Please review' --mentions agent-1,agent-2 --agent manager-1",
+	},
+	{
+		command: "thread show",
+		purpose: "Show thread messages for a task (manager only).",
+		params: ["--mission <id>", "--task <taskId>", "--agent <agentId>"],
+		example: "clawion thread show --mission m1 --task t1 --agent manager-1",
 	},
 	{
 		command: "working add",
@@ -428,33 +434,6 @@ task
 				status = rawStatus as TaskStatus;
 			}
 
-			if (status === "completed") {
-				const pendingAcks = await listUnackedTaskMentions(
-					context.missionsDir,
-					options.mission,
-					options.id,
-				);
-				if (pendingAcks.length > 0) {
-					const details = pendingAcks.map((item) => {
-						const agents = item.unackedAgentIds
-							.map((id) => `@${id}`)
-							.join(", ");
-						return `- message ${item.messageId} (from @${item.authorAgentId}): ${agents}`;
-					});
-					console.error(
-						[
-							`Cannot mark task as completed: ${options.id}`,
-							"Unacknowledged mentions still exist in this task thread.",
-							"Pending acknowledgements:",
-							...details,
-							"Ask the listed agents to acknowledge first (for example via `clawion agent wake`).",
-						].join("\n"),
-					);
-					process.exitCode = 1;
-					return;
-				}
-			}
-
 			await updateTask({
 				missionsDir: context.missionsDir,
 				missionId: options.mission,
@@ -672,6 +651,34 @@ message
 
 message.action(() => {
 	message.help();
+});
+
+const thread = program.command("thread").description("Thread operations");
+
+thread
+	.command("show")
+	.description("Show thread messages for a task (manager only)")
+	.requiredOption("--mission <id>", "Mission ID")
+	.requiredOption("--task <taskId>", "Task ID")
+	.action(async (options, command) => {
+		const allowed = await requireManager(command, options.mission);
+		if (!allowed) {
+			return;
+		}
+		try {
+			await runThreadShow({
+				missionsDir: context.missionsDir,
+				missionId: options.mission,
+				taskId: options.task,
+			});
+		} catch (error) {
+			console.error(error instanceof Error ? error.message : String(error));
+			process.exitCode = 1;
+		}
+	});
+
+thread.action(() => {
+	thread.help();
 });
 
 const working = program.command("working").description("Working events");

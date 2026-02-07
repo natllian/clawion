@@ -3,16 +3,17 @@ import {
 	buildReplyHereCommand,
 	buildTaskTitleById,
 	groupUnreadMentions,
-	renderAssignedTasks,
 	renderDarkSecret,
+	renderTaskSection,
 	renderTeamDirectory,
+	renderThreadSummaries,
 	renderUnreadMentions,
 	renderWorking,
 	type TaskWithStatus,
 	type UnreadMention,
 	type WakeContext,
 } from "../src/cli/wake";
-import type { Agent, WorkingEvent } from "../src/core/schemas";
+import type { Agent, ThreadSummary, WorkingEvent } from "../src/core/schemas";
 import type { TaskStatus } from "../src/core/task-status";
 
 describe("buildTaskTitleById", () => {
@@ -150,8 +151,8 @@ describe("renderTeamDirectory", () => {
 	});
 });
 
-describe("renderAssignedTasks", () => {
-	it("renders assigned task details", () => {
+describe("renderTaskSection", () => {
+	it("renders task details with statusNotes", () => {
 		const tasks: TaskWithStatus[] = [
 			{
 				id: "t1",
@@ -166,14 +167,58 @@ describe("renderAssignedTasks", () => {
 		];
 
 		const lines: string[] = [];
-		renderAssignedTasks(lines, tasks);
+		renderTaskSection({
+			lines,
+			heading: "Assigned Tasks",
+			tasks,
+			emptyMessage: "_No assigned tasks._",
+			missionId: "m1",
+			agentId: "agent-1",
+		});
 
 		expect(lines).toContain("## Assigned Tasks");
-		expect(lines.some((l) => l.includes("Build UI") && l.includes("#t1"))).toBe(
+		expect(lines.some((l) => l.includes("Build UI"))).toBe(true);
+		expect(lines.some((l) => l.includes("t1"))).toBe(true);
+		expect(lines.some((l) => l.includes("Create the frontend"))).toBe(true);
+		expect(lines.some((l) => l.includes("Status Notes: In progress"))).toBe(
 			true,
 		);
-		expect(lines.some((l) => l.includes("In progress"))).toBe(true);
-		expect(lines.some((l) => l.includes("Create the frontend"))).toBe(true);
+		// without isManager, no thread show command
+		expect(lines.some((l) => l.includes("clawion thread show"))).toBe(false);
+	});
+
+	it("shows thread show command only for manager", () => {
+		const tasks: TaskWithStatus[] = [
+			{
+				id: "t1",
+				title: "Task",
+				description: "Desc",
+				columnId: "ongoing",
+				statusNotes: "",
+				createdAt: "2024-01-01 10:00:00",
+				updatedAt: "2024-01-01 10:00:00",
+				status: "ongoing" as TaskStatus,
+			},
+		];
+
+		const lines: string[] = [];
+		renderTaskSection({
+			lines,
+			heading: "Tasks",
+			tasks,
+			emptyMessage: "_None._",
+			missionId: "m1",
+			agentId: "manager-1",
+			isManager: true,
+		});
+
+		expect(
+			lines.some((l) =>
+				l.includes(
+					"clawion thread show --mission m1 --task t1 --agent manager-1",
+				),
+			),
+		).toBe(true);
 	});
 
 	it("omits statusNotes when empty", () => {
@@ -191,16 +236,108 @@ describe("renderAssignedTasks", () => {
 		];
 
 		const lines: string[] = [];
-		renderAssignedTasks(lines, tasks);
-		const taskLine = lines.find((l) => l.includes("Task (#t1)"));
-		// Format is: "- Task (#t1) — pending" (no trailing " — statusNotes")
-		expect(taskLine).toBe("- Task (#t1) — pending");
+		renderTaskSection({
+			lines,
+			heading: "Tasks",
+			tasks,
+			emptyMessage: "_None._",
+			missionId: "m1",
+			agentId: "a1",
+		});
+
+		expect(lines.some((l) => l.includes("Status Notes"))).toBe(false);
 	});
 
-	it("does nothing when no tasks", () => {
+	it("shows empty message when no tasks", () => {
 		const lines: string[] = [];
-		renderAssignedTasks(lines, []);
-		expect(lines).toHaveLength(0);
+		renderTaskSection({
+			lines,
+			heading: "Assigned Tasks",
+			tasks: [],
+			emptyMessage: "_No assigned tasks._",
+			missionId: "m1",
+			agentId: "a1",
+		});
+
+		expect(lines).toContain("## Assigned Tasks");
+		expect(lines).toContain("_No assigned tasks._");
+	});
+
+	it("shows Unassigned for tasks without assignee", () => {
+		const tasks: TaskWithStatus[] = [
+			{
+				id: "t1",
+				title: "Task",
+				description: "Desc",
+				columnId: "todo",
+				statusNotes: "",
+				createdAt: "2024-01-01 10:00:00",
+				updatedAt: "2024-01-01 10:00:00",
+				status: "pending" as TaskStatus,
+			},
+		];
+
+		const lines: string[] = [];
+		renderTaskSection({
+			lines,
+			heading: "Pending Tasks",
+			tasks,
+			emptyMessage: "_No pending tasks._",
+			missionId: "m1",
+			agentId: "a1",
+		});
+
+		expect(lines.some((l) => l.includes("**Unassigned**"))).toBe(true);
+	});
+});
+
+describe("renderThreadSummaries", () => {
+	it("renders thread summaries sorted by latest activity", () => {
+		const summaries: ThreadSummary[] = [
+			{
+				taskId: "t1",
+				messageCount: 5,
+				lastMessageAt: "2024-01-15 12:00:00",
+				lastAuthorAgentId: "agent-1",
+				lastMentionsAgentIds: ["manager-1"],
+			},
+			{
+				taskId: "t2",
+				messageCount: 2,
+				lastMessageAt: "2024-01-16 09:00:00",
+				lastAuthorAgentId: "manager-1",
+				lastMentionsAgentIds: ["agent-1"],
+			},
+		];
+		const titleMap = new Map([
+			["t1", "Build Login"],
+			["t2", "Fix Auth"],
+		]);
+
+		const lines: string[] = [];
+		renderThreadSummaries(lines, summaries, titleMap);
+
+		expect(lines).toContain("## Thread Activity");
+		// t2 is more recent, should appear first
+		const t2Line = lines.find((l) => l.includes("Task t2"));
+		const t1Line = lines.find((l) => l.includes("Task t1"));
+		expect(t2Line).toBeDefined();
+		expect(t1Line).toBeDefined();
+		// biome-ignore lint/style/noNonNullAssertion: guarded by toBeDefined above
+		expect(lines.indexOf(t2Line!)).toBeLessThan(lines.indexOf(t1Line!));
+		expect(t1Line).toContain("Build Login");
+		expect(t1Line).toContain("5 messages");
+		expect(t1Line).toContain("@agent-1");
+		expect(t2Line).toContain("Fix Auth");
+		expect(t2Line).toContain("2 messages");
+	});
+
+	it("shows empty state when no threads", () => {
+		const lines: string[] = [];
+		renderThreadSummaries(lines, [], new Map());
+
+		expect(lines).toContain("## Thread Activity");
+		expect(lines).toContain("_No threads yet._");
 	});
 });
 
