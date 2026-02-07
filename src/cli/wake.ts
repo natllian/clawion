@@ -305,16 +305,15 @@ export function buildWorkerWakeLines(ctx: WakeContext): string[] {
 		"Your mission this turn: make one assigned task meaningfully closer to done (or fully done). If you can’t progress, reduce uncertainty fast by asking the right person.",
 	);
 	lines.push("");
-	lines.push("1) Handle Unread Mentions first.");
-	lines.push(
-		"   - Reply with an answer, a clear question, or a different opinion.",
-	);
-	lines.push("");
-	lines.push("2) Pick the single highest-priority Assigned Task.");
+	lines.push("1) Pick the single highest-priority Assigned Task.");
 	lines.push("   - If anything is blocked → focus on unblocking it.");
 	lines.push("   - Else continue the most ongoing task.");
 	lines.push(
 		"   - Else start a pending task with a short plan and a first deliverable.",
+	);
+	lines.push("");
+	lines.push(
+		"2) Unread Mentions: respond when the situation calls for it (answer, question, or opinion). You may read without replying if no response is needed.",
 	);
 	lines.push("");
 	lines.push("3) Aim for a deliverable (not just activity).");
