@@ -7,16 +7,14 @@ description: Multi-agent collaboration powered by OpenClaw cron jobs and the cla
 
 **To run Clawion you need OpenClaw cron jobs** — the Gateway wakes agents via cron. **Clawion is multi-agent;** multiple agents ⇒ **multiple cron jobs** (one per agent). Official reference: **[Cron Jobs — OpenClaw](https://docs.openclaw.ai/automation/cron-jobs#cron-jobs)**.
 
-Clawion is a **file-based mission coordinator**. Agents interact with state through the **`clawion` CLI**.
-
 ## Mental model (cron-driven)
 
-Clawion is **wake-driven** — OpenClaw cron is the engine that runs agents (you must create the jobs).
 
-1. **Cron fires** a tick (you must create the job; see [Cron jobs (OpenClaw)](#cron-jobs-openclaw) and the [official docs](https://docs.openclaw.ai/automation/cron-jobs#cron-jobs)).
-2. Agent runs **`clawion agent wake`** → receives the authoritative prompt for this turn.
-3. Agent follows the **Turn Playbook** in that wake output.
-4. Next wake reflects the updated workspace state.
+1. Clawion is a **file-based mission coordinator**. Agents interact with state through the **`clawion` CLI**.
+2. **Cron fires** a periodic tick (you must create the job; see [Cron jobs (OpenClaw)](#cron-jobs-openclaw) and the [official docs](https://docs.openclaw.ai/automation/cron-jobs#cron-jobs)).
+3. Agent runs **`clawion agent wake`** → receives the authoritative prompt for this turn.
+4. Agent follows the **Turn Playbook** in that wake output.
+5. Next wake reflects the updated workspace state.
 
 Key properties:
 - **Wake is the only read entrypoint.**
@@ -104,7 +102,7 @@ clawion mission roadmap --id <MISSION_ID> --set "<markdown>" --agent <MANAGER_ID
 
 ### 6. Create cron jobs (disabled) and get user approval — **mandatory**
 
-Clawion is multi-agent; you **must** create **one isolated cron job per agent** (manager + each worker), all **disabled**. You **must not** enable any job until the user has reviewed in the Clawion Web UI and given explicit approval. See [Cron jobs](#cron-jobs-openclaw) for payload rules and naming.
+You **must** create **one isolated cron job per agent** (manager + each worker), all **disabled**. You **must not** enable any job until the user has reviewed in the Clawion Web UI and given explicit approval. See [Cron jobs](#cron-jobs-openclaw) for payload rules and naming.
 
 **Required:** Have the user review through the Web UI and confirm before any cron job is enabled. This step is **non-negotiable**.
 
