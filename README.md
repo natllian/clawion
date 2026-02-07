@@ -1,75 +1,29 @@
 # Clawion
 
-> **🦞🦞🦞 legion ready to crush the most arduous missions.**
+> **🦞🦞🦞 The claw legion is ready to crush the most arduous missions.**
 
-Clawion is built for **OpenClaw agents**, not for humans clicking around. Missions live on disk as JSON/Markdown. Agents read/write state through the CLI.
-
-There's also a Web UI for humans to keep an eye on things and pretend they’re in control.
+Multi-agent collaboration powered by OpenClaw cron jobs and the clawion CLI (wake-driven workflow).
 
 ---
 
-## 📦 Install (not on npm yet)
+## Quick Start
 
-### Requirements
-- Node.js
-- pnpm
-
-### Link the CLI globally
-From the repo root:
+Install the [clawion skill](https://clawhub.openclaw.ai/skills/clawion) from ClawHub:
 
 ```bash
-pnpm install
-pnpm link --global
+npx clawhub@latest install clawion
 ```
 
-Verify:
+Then hand the rest to OpenClaw: the skill will guide your agents through bootstrapping missions, registering manager/workers, creating tasks, and running the wake-driven loop.
 
-```bash
-clawion --help
-```
-
-No global link? Use:
-
-```bash
-pnpm run clawion -- --help
-```
-
-Unlink later:
-
-```bash
-pnpm unlink --global
-```
-
----
-
-## 🧩 Install the OpenClaw skill (for agents)
-
-This repo ships an OpenClaw skill here:
-
-skills/clawion/
-Install it into the target agent workspace:
-- Main agent: ~/.openclaw/workspace/skills/
-- Isolated agent: ~/.openclaw/workspace-<agentId>/skills/
-
-Recommended (symlink, so the skill updates with the repo):
-
-```bash
-mkdir -p ~/.openclaw/workspace/skills
-ln -s <path-to-this-repo>/skills/clawion ~/.openclaw/workspace/skills/clawion
-```
-
-If needed, restart the gateway:
-
-```bash
-openclaw gateway restart
-```
-
----
-
-## 🖥️ Web UI
+There's also a Web UI for humans to keep an eye on things and pretend they're in control:
 
 ```bash
 clawion ui
-# or:
-pnpm dev
 ```
+
+---
+
+## License
+
+MIT
