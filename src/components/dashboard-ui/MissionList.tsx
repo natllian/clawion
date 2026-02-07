@@ -21,6 +21,17 @@ interface MissionListProps {
 	onDeleteMission?: (missionId: string) => void;
 }
 
+function getStatusBadgeClass(status: MissionIndexItem["status"]) {
+	switch (status) {
+		case "active":
+			return "border-primary/35 bg-primary/10 text-primary";
+		case "completed":
+			return "border-emerald-500/35 bg-emerald-500/10 text-emerald-700";
+		default:
+			return "border-border/60 bg-muted/40 text-muted-foreground";
+	}
+}
+
 function MissionListSkeleton({
 	sidebarCollapsed,
 }: {
@@ -94,17 +105,21 @@ export function MissionList({
 				const showDelete = !sidebarCollapsed && onDeleteMission != null;
 				const content = (
 					<div
+						data-testid={`mission-item-${item.id}`}
 						className={cn(
-							"group flex w-full items-center gap-1 rounded-lg border border-border/70 bg-background text-xs text-foreground transition hover:border-primary/50 hover:bg-primary/5",
+							"group flex w-full items-center gap-2 rounded-xl border border-border/70 bg-background text-xs text-foreground transition hover:border-primary/50 hover:bg-primary/5",
 							sidebarCollapsed ? "flex-row justify-center" : "",
-							isActive && "border-primary/60 bg-primary/10",
+							isActive &&
+								"border-primary/60 bg-primary/10 shadow-[0_1px_0_hsl(var(--primary)/0.2)]",
 						)}
 					>
 						<Link
 							href={`/missions/${item.id}`}
 							className={cn(
 								"flex min-w-0 flex-1 items-center text-left",
-								sidebarCollapsed ? "h-10 w-10 justify-center" : "px-3 py-2",
+								sidebarCollapsed
+									? "h-10 w-10 justify-center"
+									: "h-14 px-3 py-2.5",
 							)}
 						>
 							{sidebarCollapsed ? (
@@ -114,8 +129,15 @@ export function MissionList({
 							) : (
 								<div className="min-w-0 flex-1">
 									<div className="flex items-center justify-between gap-2">
-										<span className="font-medium">{item.name}</span>
-										<span className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">
+										<span className="truncate pr-1 text-sm font-medium leading-none">
+											{item.name}
+										</span>
+										<span
+											className={cn(
+												"inline-flex shrink-0 items-center rounded-full border px-1.5 py-0.5 text-[0.6rem] uppercase tracking-wide",
+												getStatusBadgeClass(item.status),
+											)}
+										>
 											{item.status}
 										</span>
 									</div>
@@ -123,23 +145,26 @@ export function MissionList({
 							)}
 						</Link>
 						{showDelete && (
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										type="button"
-										variant="ghost"
-										size="icon-sm"
-										className="shrink-0 opacity-60 hover:opacity-100 hover:text-destructive"
-										aria-label={`Delete ${item.name}`}
-										onClick={(e) =>
-											handleDelete(e, item.id, item.name || item.id)
-										}
-									>
-										<Trash2 className="h-3.5 w-3.5" />
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent side="right">Delete mission</TooltipContent>
-							</Tooltip>
+							<div className="mr-1 flex h-14 w-8 shrink-0 items-center justify-center">
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											type="button"
+											variant="ghost"
+											size="icon-sm"
+											data-testid={`mission-delete-${item.id}`}
+											className="pointer-events-none opacity-0 transition-opacity duration-150 hover:text-destructive group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100"
+											aria-label={`Delete ${item.name}`}
+											onClick={(e) =>
+												handleDelete(e, item.id, item.name || item.id)
+											}
+										>
+											<Trash2 className="h-3.5 w-3.5" />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent side="right">Delete mission</TooltipContent>
+								</Tooltip>
+							</div>
 						)}
 					</div>
 				);

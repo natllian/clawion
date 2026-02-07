@@ -55,8 +55,15 @@ describe("MissionList", () => {
 	it("applies active styling to selected mission", () => {
 		const props = { ...defaultProps, activeMissionId: "m1" };
 		render(<MissionList {...props} />);
-		const activeLink = screen.getByRole("link", { name: /alpha mission/i });
-		expect(activeLink.closest("div")).toHaveClass("border-primary/60");
+		expect(screen.getByTestId("mission-item-m1")).toHaveClass(
+			"border-primary/60",
+		);
+	});
+
+	it("uses fixed mission row height in expanded mode", () => {
+		render(<MissionList {...defaultProps} />);
+		const alphaLink = screen.getByRole("link", { name: /alpha mission/i });
+		expect(alphaLink).toHaveClass("h-14");
 	});
 
 	it("shows loading skeletons when loading", () => {
@@ -92,6 +99,10 @@ describe("MissionList", () => {
 		expect(
 			screen.getByRole("button", { name: /delete beta mission/i }),
 		).toBeInTheDocument();
+		expect(screen.getByTestId("mission-delete-m1")).toHaveClass("opacity-0");
+		expect(screen.getByTestId("mission-delete-m1")).toHaveClass(
+			"group-hover:opacity-100",
+		);
 	});
 
 	it("hides delete button when sidebar is collapsed", () => {
