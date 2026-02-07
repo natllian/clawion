@@ -129,12 +129,12 @@ export function MissionList({
 							) : (
 								<div className="min-w-0 flex-1">
 									<div className="flex items-center justify-between gap-2">
-										<span className="truncate pr-1 text-[0.84rem] font-medium leading-none">
+										<span className="truncate pr-1 text-[0.75rem] font-medium leading-none">
 											{item.name}
 										</span>
 										<span
 											className={cn(
-												"inline-flex shrink-0 items-center rounded-full border px-1.5 py-0.5 text-[0.55rem] uppercase tracking-wide transition-opacity duration-150 group-hover:opacity-0 group-focus-within:opacity-0",
+												"inline-flex shrink-0 items-center rounded-full border px-1.5 py-0.5 text-[0.55rem] uppercase tracking-wide transition-opacity duration-150 group-hover:opacity-0",
 												getStatusBadgeClass(item.status),
 											)}
 										>
@@ -152,7 +152,7 @@ export function MissionList({
 										variant="ghost"
 										size="icon-sm"
 										data-testid={`mission-delete-${item.id}`}
-										className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 opacity-0 transition-opacity duration-150 hover:text-destructive group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100"
+										className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 opacity-0 transition-opacity duration-150 hover:text-destructive group-hover:pointer-events-auto group-hover:opacity-100"
 										aria-label={`Delete ${item.name}`}
 										onClick={(e) =>
 											handleDelete(e, item.id, item.name || item.id)
