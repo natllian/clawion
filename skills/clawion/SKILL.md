@@ -100,9 +100,12 @@ clawion mission roadmap --id <MISSION_ID> --set "<markdown>" --agent <MANAGER_ID
 
 ### 6. Create cron jobs (disabled) and get user approval — **mandatory**
 
-You **must** create **one isolated cron job per agent** (manager + each worker), all **disabled**. You **must not** enable any job until the user has reviewed and given explicit approval. See [Cron jobs](#cron-jobs-openclaw) for more rules.
+- You **must** create **one isolated cron job per agent** (manager + each worker), all **disabled**.
+- You **must not** enable any job until the user has reviewed and given explicit approval.
+- After creating the jobs, **remind the user** that they can use the Clawion Web UI (`clawion ui`) to review and edit mission content (roadmap, tasks, agents, etc.) before enabling.
 
-**Required:** Have the user review and confirm before any cron job is enabled. This step is **non-negotiable**.
+See [Cron jobs](#cron-jobs-openclaw) for more rules.
+
 
 ---
 
@@ -116,7 +119,7 @@ You **must** create **one isolated cron job per agent** (manager + each worker),
 | **Isolation**       | Each tick runs in its **own isolated OpenClaw session** (never `main`). Context bleed makes the loop unreliable.                                          |
 | **Wake interval**   | If the user didn't specify one, **ask and confirm** before creating jobs.                                                                                 |
 | **Minimal payload** | Do **not** embed mission context, task lists, or SOP text. The authoritative prompt is assembled by `clawion agent wake` from workspace state at runtime. |
-| **Disabled first**  | Always create jobs disabled. Enable only after the user reviews in the Web UI (quickstart step 6).                                                        |
+| **Disabled first**  | Have the user review and confirm before any cron job is enabled. This step is **non-negotiable**                                                       |
 
 ### Recommended cron message
 
