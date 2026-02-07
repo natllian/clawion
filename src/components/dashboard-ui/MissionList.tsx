@@ -158,7 +158,7 @@ export function MissionList({
 											handleDelete(e, item.id, item.name || item.id)
 										}
 									>
-										<Trash2 className="h-3.5 w-3.5" />
+										<Trash2 className="h-3.5 w-3.5 text-red-600" />
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent side="right">Delete mission</TooltipContent>
