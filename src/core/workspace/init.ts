@@ -95,10 +95,7 @@ export async function ensureWorkspace(
 		join(templateDir, "agents.json"),
 		defaultAgentsTemplate(),
 	);
-	await ensureMarkdownFile(
-		join(templateDir, "ROADMAP.md"),
-		"# Mission Roadmap\n\nDescribe milestones and direction here.\n",
-	);
+	await ensureMarkdownFile(join(templateDir, "ROADMAP.md"), "");
 
 	await ensureDir(join(templateDir, "threads"));
 	await ensureDir(join(templateDir, "inbox"));
