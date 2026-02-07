@@ -33,7 +33,6 @@ describe("DashboardHeader", () => {
 		mission: null as Mission | null,
 		roadmap: "# Test Roadmap",
 		loadingMission: false,
-		onRoadmapChange: vi.fn(),
 		onRoadmapSave: vi.fn(),
 		savingRoadmap: false,
 	};
@@ -88,9 +87,15 @@ describe("DashboardHeader", () => {
 		expect(screen.getByText("archived")).toBeInTheDocument();
 	});
 
-	it("shows static mission helper copy", () => {
+	it("shows helper text when no mission selected", () => {
 		render(<DashboardHeader {...defaultProps} />);
 		expect(screen.getByText(/pick a mission/i)).toBeInTheDocument();
+	});
+
+	it("hides helper text when mission is selected", () => {
+		const props = { ...defaultProps, mission: mockMission };
+		render(<DashboardHeader {...props} />);
+		expect(screen.queryByText(/pick a mission/i)).not.toBeInTheDocument();
 	});
 
 	it("renders theme toggle", () => {

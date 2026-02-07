@@ -34,6 +34,8 @@ describe("ThemeToggle", () => {
 		cleanup();
 		vi.clearAllMocks();
 		localStorageMock.getItem.mockReturnValue(null);
+		document.documentElement.classList.remove("dark");
+		delete document.documentElement.dataset.theme;
 	});
 
 	it("renders with custom className", () => {
@@ -43,29 +45,24 @@ describe("ThemeToggle", () => {
 		expect(wrapper).toHaveClass("custom-class");
 	});
 
-	it("renders light theme by default", () => {
+	it("applies light theme when stored value is light", () => {
 		localStorageMock.getItem.mockReturnValue("light");
 		const { container } = render(<ThemeToggle />);
-		// After mounting, should show the toggle
 		expect(
 			container.querySelector('[aria-label="Toggle color theme"]'),
 		).toBeInTheDocument();
+		expect(document.documentElement.classList.contains("dark")).toBe(false);
+		expect(document.documentElement.dataset.theme).toBe("light");
 	});
 
-	it("renders dark theme when stored", () => {
+	it("applies dark theme when stored value is dark", () => {
 		localStorageMock.getItem.mockReturnValue("dark");
 		const { container } = render(<ThemeToggle />);
-		const switchElement = container.querySelector(
-			'[aria-label="Toggle color theme"]',
-		);
-		expect(switchElement).toBeInTheDocument();
-	});
-
-	it("applies custom className", () => {
-		localStorageMock.getItem.mockReturnValue("light");
-		const { container } = render(<ThemeToggle className="custom-class" />);
-		const wrapper = container.firstChild;
-		expect(wrapper).toHaveClass("custom-class");
+		expect(
+			container.querySelector('[aria-label="Toggle color theme"]'),
+		).toBeInTheDocument();
+		expect(document.documentElement.classList.contains("dark")).toBe(true);
+		expect(document.documentElement.dataset.theme).toBe("dark");
 	});
 
 	it("reads from localStorage on mount", () => {
@@ -74,10 +71,19 @@ describe("ThemeToggle", () => {
 		expect(localStorageMock.getItem).toHaveBeenCalledWith("clawion-theme");
 	});
 
-	it("uses prefers-color-scheme when no stored value", () => {
+	it("falls back to prefers-color-scheme dark when no stored value", () => {
 		localStorageMock.getItem.mockReturnValue(null);
 		matchMediaMock.mockReturnValue({ matches: true });
 		render(<ThemeToggle />);
 		expect(matchMediaMock).toHaveBeenCalledWith("(prefers-color-scheme: dark)");
+		expect(document.documentElement.classList.contains("dark")).toBe(true);
+		expect(document.documentElement.dataset.theme).toBe("dark");
+	});
+
+	it("falls back to light theme when no stored value and prefers-color-scheme is light", () => {
+		localStorageMock.getItem.mockReturnValue(null);
+		matchMediaMock.mockReturnValue({ matches: false });
+		render(<ThemeToggle />);
+		expect(document.documentElement.classList.contains("dark")).toBe(false);
 	});
 });

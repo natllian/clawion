@@ -17,10 +17,17 @@ describe("ErrorBanner", () => {
 		expect(screen.getByText("Something went wrong")).toBeInTheDocument();
 	});
 
-	it("has error styling classes", () => {
+	it("has role=alert for accessibility", () => {
 		render(<ErrorBanner error="Error message" />);
-		const banner = screen.getByText("Error message").closest("div");
-		expect(banner).toHaveClass("px-6");
-		expect(banner).toHaveClass("text-destructive");
+		const banner = screen.getByRole("alert");
+		expect(banner).toBeInTheDocument();
+		expect(banner).toHaveTextContent("Error message");
+	});
+
+	it("applies destructive styling", () => {
+		render(<ErrorBanner error="Error message" />);
+		const banner = screen.getByRole("alert");
+		expect(banner).toHaveClass("border-destructive/40");
+		expect(banner).toHaveClass("bg-destructive/10");
 	});
 });
