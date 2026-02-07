@@ -5,23 +5,22 @@ description: Multi-agent collaboration powered by OpenClaw cron jobs and the cla
 
 # Clawion (runbook)
 
-**Recurring or periodic work in Clawion must be implemented via OpenClaw cron jobs.** Do not rely on ad-hoc runs or "remember to run later" — create cron jobs so the Gateway wakes agents on schedule. Official reference: **[Cron Jobs — OpenClaw](https://docs.openclaw.ai/automation/cron-jobs#cron-jobs)**.
+**To run Clawion you need OpenClaw cron jobs** — the Gateway wakes agents via cron. **Clawion is multi-agent;** multiple agents ⇒ **multiple cron jobs** (one per agent). Official reference: **[Cron Jobs — OpenClaw](https://docs.openclaw.ai/automation/cron-jobs#cron-jobs)**.
 
-Clawion is **multi-agent**: every agent (the manager and each worker) must have **one dedicated cron job**. One job per agent — no sharing. Clawion is also a **file-based mission coordinator**. Agents interact with state through the **`clawion` CLI**.
+Clawion is a **file-based mission coordinator**. Agents interact with state through the **`clawion` CLI**.
 
 ## Mental model (cron-driven)
 
-Clawion is **wake-driven** — OpenClaw cron is the only reliable engine for periodic runs.
+Clawion is **wake-driven** — OpenClaw cron is the engine that runs agents (you must create the jobs).
 
-1. **Cron fires** a periodic tick (you must create the job; see [Cron jobs (OpenClaw)](#cron-jobs-openclaw) and the [official docs](https://docs.openclaw.ai/automation/cron-jobs#cron-jobs)).
+1. **Cron fires** a tick (you must create the job; see [Cron jobs (OpenClaw)](#cron-jobs-openclaw) and the [official docs](https://docs.openclaw.ai/automation/cron-jobs#cron-jobs)).
 2. Agent runs **`clawion agent wake`** → receives the authoritative prompt for this turn.
 3. Agent follows the **Turn Playbook** in that wake output.
 4. Next wake reflects the updated workspace state.
 
 Key properties:
 - **Wake is the only read entrypoint.**
-- **One cron job per agent.** The manager and every worker each get their own job; multi-agent ⇒ multiple jobs.
-- **No cron job ⇒ no scheduled runs.** Always create cron jobs for missions that need periodic execution.
+- **Run Clawion ⇒ cron jobs; multi-agent ⇒ multiple cron jobs** (one per agent: manager + each worker).
 
 ## Core invariants
 
@@ -105,11 +104,7 @@ clawion mission roadmap --id <MISSION_ID> --set "<markdown>" --agent <MANAGER_ID
 
 ### 6. Create cron jobs (disabled) and get user approval — **mandatory**
 
-Clawion is **multi-agent**: you **must** create **one isolated cron job per agent** — one for the manager, one for each worker. All jobs **disabled** until the user approves. You **must not** enable any job until the user has reviewed in the Clawion Web UI and given explicit approval.
-
-- **Do not skip this step.** Without cron jobs, the mission will not run on schedule. When in doubt, create the jobs and leave them disabled until the user approves.
-- Use OpenClaw’s cron API/CLI; canonical behavior and JSON shapes: **[Cron Jobs — OpenClaw](https://docs.openclaw.ai/automation/cron-jobs#cron-jobs)**.
-- Payload rules and naming: see [Cron jobs (OpenClaw)](#cron-jobs-openclaw) below.
+Clawion is multi-agent; you **must** create **one isolated cron job per agent** (manager + each worker), all **disabled**. You **must not** enable any job until the user has reviewed in the Clawion Web UI and given explicit approval. See [Cron jobs](#cron-jobs-openclaw) for payload rules and naming.
 
 **Required:** Have the user review through the Web UI and confirm before any cron job is enabled. This step is **non-negotiable**.
 
@@ -117,14 +112,12 @@ Clawion is **multi-agent**: you **must** create **one isolated cron job per agen
 
 ## Cron jobs (OpenClaw)
 
-**Canonical reference:** [Cron Jobs — OpenClaw](https://docs.openclaw.ai/automation/cron-jobs#cron-jobs) (schedule kinds, `sessionTarget: "isolated"`, payload shapes, delivery, CLI/API).
-
 ### Hard rules
 
 | Rule                | Detail                                                                                                                                                    |
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Create jobs**     | Multi-agent ⇒ one cron job per agent. You **must** create **one** OpenClaw cron job **per agent** (manager + each worker). No cron job for an agent ⇒ that agent never runs on schedule. |
-| **Isolation**       | Each tick runs in its **own isolated OpenClaw session** (`sessionTarget: "isolated"`, never `main`). Context bleed makes the loop unreliable.              |
+| **One job per agent** | Multi-agent ⇒ multiple cron jobs. Create **one** isolated cron job per agent (manager + each worker). No job for an agent ⇒ that agent never runs.   |
+| **Isolation**       | Each tick runs in its **own isolated OpenClaw session** (never `main`). Context bleed makes the loop unreliable.                                          |
 | **Wake interval**   | If the user didn't specify one, **ask and confirm** before creating jobs.                                                                                 |
 | **Minimal payload** | Do **not** embed mission context, task lists, or SOP text. The authoritative prompt is assembled by `clawion agent wake` from workspace state at runtime. |
 | **Disabled first**  | Always create jobs disabled. Enable only after the user reviews in the Web UI (quickstart step 6).                                                        |
@@ -160,7 +153,3 @@ If the mission is complete, disable all related cron jobs.
 - **Stagger ticks** when multiple agents share the same interval to avoid bursty runs.
   - Given interval = `N` minutes and `K` agents, choose offsets: `round(i * N / K)` for `i = 0..K-1`.
   - Example: `N=10`, `K=3` → offsets `0m`, `3m`, `7m`.
-
-### Before you finish
-
-- **Did you create one cron job per agent?** Multi-agent means one job for the manager and one for each worker. If you only created one job or forgot a worker, that agent will never run on schedule. Double-check: [Cron Jobs — OpenClaw](https://docs.openclaw.ai/automation/cron-jobs#cron-jobs).
