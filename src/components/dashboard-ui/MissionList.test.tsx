@@ -63,7 +63,7 @@ describe("MissionList", () => {
 	it("uses fixed mission row height in expanded mode", () => {
 		render(<MissionList {...defaultProps} />);
 		const alphaLink = screen.getByRole("link", { name: /alpha mission/i });
-		expect(alphaLink).toHaveClass("h-14");
+		expect(alphaLink).toHaveClass("h-12");
 	});
 
 	it("shows loading skeletons when loading", () => {
