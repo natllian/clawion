@@ -5,7 +5,7 @@ description: Multi-agent collaboration powered by OpenClaw cron jobs and the cla
 
 # Clawion (runbook)
 
-**To run Clawion you need OpenClaw cron jobs** — the Gateway wakes agents via cron. **Clawion is multi-agent;** multiple agents ⇒ **multiple cron jobs** (one per agent). Official reference: **[Cron Jobs — OpenClaw](https://docs.openclaw.ai/automation/cron-jobs#cron-jobs)**.
+**To run Clawion you need OpenClaw cron jobs** — the Gateway wakes agents via cron. **Clawion is multi-agent;** multiple agents ⇒ **multiple cron jobs** (one per agent). Do NOT call sessions_spawn (no subagents). Official reference: **[Cron Jobs — OpenClaw](https://docs.openclaw.ai/automation/cron-jobs#cron-jobs)**.
 
 ## Mental model (cron-driven)
 
