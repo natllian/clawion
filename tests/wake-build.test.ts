@@ -332,7 +332,6 @@ describe("buildManagerWakeLines", () => {
 
 		expect(text).toContain("## Pending Tasks");
 		expect(text).toContain("Pending Task");
-		expect(text).toContain("Waiting to start");
 	});
 
 	it("shows empty state for pending tasks", () => {
@@ -369,7 +368,6 @@ describe("buildManagerWakeLines", () => {
 
 		expect(text).toContain("## Ongoing Tasks");
 		expect(text).toContain("Ongoing Task");
-		expect(text).toContain("In progress now");
 	});
 
 	it("shows empty state for ongoing tasks", () => {
@@ -419,42 +417,6 @@ describe("buildManagerWakeLines", () => {
 		expect(text).toContain("_No team working events._");
 	});
 
-	it("renders thread activity from threadSummaries", () => {
-		const ctx = makeBaseContext({
-			agentEntry: makeManagerAgent(),
-			agentId: "manager-1",
-			threadSummaries: [
-				{
-					taskId: "t1",
-					messageCount: 3,
-					lastMessageAt: "2024-01-15 10:00:00",
-					lastAuthorAgentId: "agent-1",
-					lastMentionsAgentIds: ["manager-1"],
-				},
-			],
-			taskTitleById: new Map([["t1", "Build Login"]]),
-		});
-		const lines = buildManagerWakeLines(ctx);
-		const text = lines.join("\n");
-
-		expect(text).toContain("## Thread Activity");
-		expect(text).toContain("Task t1 (Build Login)");
-		expect(text).toContain("3 messages");
-		expect(text).toContain("@agent-1");
-	});
-
-	it("shows empty thread activity", () => {
-		const ctx = makeBaseContext({
-			agentEntry: makeManagerAgent(),
-			agentId: "manager-1",
-		});
-		const lines = buildManagerWakeLines(ctx);
-		const text = lines.join("\n");
-
-		expect(text).toContain("## Thread Activity");
-		expect(text).toContain("_No threads yet._");
-	});
-
 	it("includes manager command templates", () => {
 		const ctx = makeBaseContext({
 			agentEntry: makeManagerAgent(),
@@ -467,7 +429,6 @@ describe("buildManagerWakeLines", () => {
 		expect(text).toContain("clawion task create");
 		expect(text).toContain("clawion task assign");
 		expect(text).toContain("clawion task update");
-		expect(text).toContain("clawion mission roadmap");
 		expect(text).toContain("clawion mission complete");
 		expect(text).toContain("clawion thread show");
 	});

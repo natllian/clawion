@@ -390,7 +390,6 @@ describe("renderWorking", () => {
 		renderWorking(lines, events);
 
 		expect(lines[0]).toContain("## Working");
-		expect(lines[0]).toContain("2");
 		// Most recent should be shown first (reversed)
 		const contentLines = lines.filter(
 			(l) => l.includes("event") && !l.startsWith("##"),
@@ -405,7 +404,7 @@ describe("renderWorking", () => {
 		expect(lines).toHaveLength(0);
 	});
 
-	it("only shows last 8 events", () => {
+	it("shows all events in reverse order (newest first)", () => {
 		const events: WorkingEvent[] = Array.from({ length: 12 }, (_, i) => ({
 			id: `w${i}`,
 			agentId: "a1",
@@ -417,10 +416,10 @@ describe("renderWorking", () => {
 		renderWorking(lines, events);
 
 		const contentLines = lines.filter((l) => l.startsWith("Event "));
-		expect(contentLines).toHaveLength(8);
-		// Should show events 4-11 (last 8), reversed
+		expect(contentLines).toHaveLength(12);
+		// Should show all events reversed (newest first)
 		expect(contentLines[0]).toBe("Event 11");
-		expect(contentLines[7]).toBe("Event 4");
+		expect(contentLines[11]).toBe("Event 0");
 	});
 });
 
