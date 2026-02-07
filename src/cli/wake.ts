@@ -25,7 +25,7 @@ type WakeOptions = {
 	missionsDir: string;
 };
 
-type UnreadMention = {
+export type UnreadMention = {
 	taskId: string;
 	messageId: string;
 	authorAgentId: string;
@@ -34,7 +34,9 @@ type UnreadMention = {
 	createdAt: string;
 };
 
-type TaskWithStatus = TasksFile["tasks"][number] & { status: TaskStatus };
+export type TaskWithStatus = TasksFile["tasks"][number] & {
+	status: TaskStatus;
+};
 
 type TeamWorkingSnapshot = {
 	agentId: string;
@@ -44,7 +46,7 @@ type TeamWorkingSnapshot = {
 	lastEvent: { createdAt: string; content: string } | null;
 };
 
-type WakeContext = {
+export type WakeContext = {
 	missionId: string;
 	agentId: string;
 	missionsDir: string;
@@ -86,11 +88,11 @@ export function buildReplyHereCommand(
 	return `clawion message add --mission ${missionId} --task ${taskId} --content "..." --mentions ${mentions} --agent ${agentId}`;
 }
 
-function buildTaskTitleById(tasks: TasksFile): Map<string, string> {
+export function buildTaskTitleById(tasks: TasksFile): Map<string, string> {
 	return new Map(tasks.tasks.map((task) => [task.id, task.title] as const));
 }
 
-function groupUnreadMentions(unread: UnreadMention[]) {
+export function groupUnreadMentions(unread: UnreadMention[]) {
 	const sorted = [...unread].sort((a, b) =>
 		a.createdAt.localeCompare(b.createdAt),
 	);
@@ -108,7 +110,7 @@ function groupUnreadMentions(unread: UnreadMention[]) {
 	return { byTask, taskIdsOrdered };
 }
 
-function renderTeamDirectory(
+export function renderTeamDirectory(
 	ctx: WakeContext,
 	lines: string[],
 	agents: Agent[],
@@ -125,7 +127,7 @@ function renderTeamDirectory(
 	}
 }
 
-function renderAssignedTasks(lines: string[], tasks: TaskWithStatus[]) {
+export function renderAssignedTasks(lines: string[], tasks: TaskWithStatus[]) {
 	if (tasks.length === 0) return;
 	lines.push("## Assigned Tasks");
 	for (const task of tasks) {
@@ -139,7 +141,7 @@ function renderAssignedTasks(lines: string[], tasks: TaskWithStatus[]) {
 	}
 }
 
-function renderUnreadMentions(
+export function renderUnreadMentions(
 	lines: string[],
 	missionId: string,
 	agentId: string,
@@ -185,7 +187,7 @@ function renderUnreadMentions(
 	}
 }
 
-function renderWorking(lines: string[], workingEvents: WorkingEvent[]) {
+export function renderWorking(lines: string[], workingEvents: WorkingEvent[]) {
 	if (workingEvents.length === 0) return;
 	lines.push(`## Working (recent events: ${workingEvents.length})`);
 	const recent = workingEvents.slice(-8).reverse();
@@ -197,7 +199,7 @@ function renderWorking(lines: string[], workingEvents: WorkingEvent[]) {
 	}
 }
 
-function renderDarkSecret(lines: string[], darkSecret: string) {
+export function renderDarkSecret(lines: string[], darkSecret: string) {
 	if (darkSecret.trim() === "") return;
 	lines.push("## Dark Secret (Strictly Confidential)");
 	lines.push(
