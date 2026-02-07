@@ -1,6 +1,5 @@
-import { join } from "node:path";
-import { readJson } from "../fs/json";
-import { agentsSchema } from "../schemas";
+import { NotFoundError } from "../errors";
+import { listAgents } from "./agents";
 import { resolveMissionPath } from "./mission";
 
 type ManagerCheckInput = {
@@ -14,12 +13,11 @@ export async function assertManager(input: ManagerCheckInput): Promise<void> {
 		input.missionsDir,
 		input.missionId,
 	);
-	const agentsPath = join(missionPath, "agents.json");
-	const agentsFile = await readJson(agentsPath, agentsSchema);
+	const agentsFile = await listAgents(missionPath);
 	const agent = agentsFile.agents.find((entry) => entry.id === input.agentId);
 
 	if (!agent) {
-		throw new Error(`Agent not found: ${input.agentId}`);
+		throw new NotFoundError(`Agent not found: ${input.agentId}`);
 	}
 
 	if (agent.systemRole !== "manager") {

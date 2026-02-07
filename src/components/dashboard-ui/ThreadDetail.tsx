@@ -22,6 +22,7 @@ import type {
 	ThreadMessageEvent,
 	WorkingEvent,
 } from "@/core/schemas";
+import { formatDate, getInitials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { AgentSnapshotPanel } from "./AgentSnapshotPanel";
 import { MarkdownBlock } from "./MarkdownBlock";
@@ -50,27 +51,6 @@ interface ThreadResponse {
 		id: string;
 		name: string;
 	} | null;
-}
-
-function formatDate(value?: string) {
-	if (!value) return "—";
-
-	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) return value;
-
-	return new Intl.DateTimeFormat("en-US", {
-		dateStyle: "medium",
-		timeStyle: "short",
-	}).format(date);
-}
-
-function getInitials(value: string) {
-	return value
-		.split(/\s+/)
-		.map((word) => word.charAt(0))
-		.join("")
-		.slice(0, 2)
-		.toUpperCase();
 }
 
 function isBlocked(statusNotes: string | null): boolean {
@@ -271,6 +251,19 @@ export function ThreadDetail({
 		}
 	}
 
+	const participants = React.useMemo(() => {
+		const set = new Set<string>();
+		if (data?.thread.messages) {
+			for (const message of data.thread.messages) {
+				set.add(message.authorAgentId);
+				for (const id of message.mentionsAgentIds) {
+					set.add(id);
+				}
+			}
+		}
+		return set;
+	}, [data?.thread.messages]);
+
 	async function handleSnapshotRoleDescriptionSave(agentId: string) {
 		setSavingSnapshotRole(true);
 		try {
@@ -319,13 +312,6 @@ export function ThreadDetail({
 	const assigneeLabel = task.assigneeAgentId
 		? `@${agentMap.get(task.assigneeAgentId) ?? task.assigneeAgentId}`
 		: "Unassigned";
-	const participants = new Set<string>();
-	thread.messages.forEach((message: ThreadMessageEvent) => {
-		participants.add(message.authorAgentId);
-		message.mentionsAgentIds.forEach((id) => {
-			participants.add(id);
-		});
-	});
 
 	function renderAgentSnapshotDropdown(
 		agentId: string,

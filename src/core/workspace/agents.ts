@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import { NotFoundError } from "../errors";
 import { readJson, writeJsonAtomic } from "../fs/json";
 import { agentSchema, agentsSchema } from "../schemas";
 import { DEFAULT_MANAGER_ROLE_DESCRIPTION } from "./roles";
@@ -79,7 +80,7 @@ export async function setAgentRoleDescription(
 	const agentsFile = await readJson(agentsPath, agentsSchema);
 	const target = agentsFile.agents.find((agent) => agent.id === input.agentId);
 	if (!target) {
-		throw new Error(`Agent not found: ${input.agentId}`);
+		throw new NotFoundError(`Agent not found: ${input.agentId}`);
 	}
 
 	const nextAgent = agentSchema.parse({

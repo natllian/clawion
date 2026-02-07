@@ -51,8 +51,12 @@ export function SnapshotDropdown({
 	}, [isEditingRoadmap, roadmapContent]);
 
 	async function handleSaveRoadmap() {
-		await onRoadmapSave(roadmapDraft);
-		setIsEditingRoadmap(false);
+		try {
+			await onRoadmapSave(roadmapDraft);
+			setIsEditingRoadmap(false);
+		} catch {
+			// Error is handled by parent; keep editing mode open
+		}
 	}
 
 	function handleCancelRoadmap() {
@@ -124,7 +128,10 @@ export function SnapshotDropdown({
 							/>
 						) : (
 							<div className="rounded-lg border border-border/70 bg-background p-2">
-								<MarkdownBlock content={roadmapContent} />
+								<MarkdownBlock
+									content={roadmapContent}
+									loading={loadingMission}
+								/>
 							</div>
 						)}
 					</div>

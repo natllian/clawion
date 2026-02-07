@@ -90,13 +90,12 @@ describe("TaskBoardSection", () => {
 		).toBeInTheDocument();
 	});
 
-	it("renders agents label and task columns", () => {
+	it("renders task columns", () => {
 		const { container } = render(
 			<TaskBoardSection {...defaultProps}>
 				<div>Content</div>
 			</TaskBoardSection>,
 		);
-		expect(container.textContent).toContain("Agents");
 		expect(container.textContent).toContain("To Do");
 		expect(container.textContent).toContain("Done");
 	});

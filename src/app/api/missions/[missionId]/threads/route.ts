@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
+
+import {
+	errorResponse,
+	type MissionRouteContext,
+	NO_CACHE_HEADERS,
+} from "@/app/api/_lib/route-helpers";
 import { listUnackedTaskMentions } from "@/core/workspace/inbox";
 import { resolveMissionsDir } from "@/core/workspace/paths";
 import { listThreads } from "@/core/workspace/threads";
 
-export async function GET(
-	_request: Request,
-	{ params }: { params: Promise<{ missionId: string }> },
-) {
-	const { missionId } = await params;
+export const runtime = "nodejs";
+
+export async function GET(_request: Request, context: MissionRouteContext) {
+	const { missionId } = await context.params;
 	const missionsDir = resolveMissionsDir();
 
 	try {
@@ -29,11 +34,10 @@ export async function GET(
 				};
 			}),
 		);
-		return NextResponse.json(threadsWithAckState);
-	} catch {
-		return NextResponse.json(
-			{ error: "Unable to load threads." },
-			{ status: 500 },
-		);
+		return NextResponse.json(threadsWithAckState, {
+			headers: NO_CACHE_HEADERS,
+		});
+	} catch (error) {
+		return errorResponse(error);
 	}
 }

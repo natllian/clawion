@@ -1,20 +1,23 @@
 import { NextResponse } from "next/server";
+
+import {
+	errorResponse,
+	type MissionAgentRouteContext,
+	parseJsonBody,
+} from "@/app/api/_lib/route-helpers";
 import { setAgentRoleDescription } from "@/core/workspace/agents";
 import { resolveMissionPath } from "@/core/workspace/mission";
 import { resolveMissionsDir } from "@/core/workspace/paths";
 
 export const runtime = "nodejs";
 
-type RouteContext = {
-	params:
-		| Promise<{ missionId: string; agentId: string }>
-		| { missionId: string; agentId: string };
-};
-
-export async function PUT(request: Request, context: RouteContext) {
+export async function PUT(request: Request, context: MissionAgentRouteContext) {
 	try {
 		const { missionId, agentId } = await context.params;
-		const body = (await request.json()) as { roleDescription?: unknown };
+		const result = await parseJsonBody<{ roleDescription?: unknown }>(request);
+		if (result.error) return result.error;
+
+		const body = result.data;
 		if (typeof body.roleDescription !== "string") {
 			return NextResponse.json(
 				{ error: "roleDescription must be a string" },
@@ -41,8 +44,6 @@ export async function PUT(request: Request, context: RouteContext) {
 			updated: true,
 		});
 	} catch (error) {
-		const message = error instanceof Error ? error.message : "Unknown error";
-		const status = message.toLowerCase().includes("not found") ? 404 : 500;
-		return NextResponse.json({ error: message }, { status });
+		return errorResponse(error);
 	}
 }

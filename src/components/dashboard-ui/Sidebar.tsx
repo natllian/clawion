@@ -3,6 +3,7 @@
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import type * as React from "react";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -20,6 +21,7 @@ export function Sidebar({
 }: SidebarProps) {
 	return (
 		<aside
+			aria-label="Mission navigation"
 			className={cn(
 				"relative z-20 flex shrink-0 flex-col border-r border-border/70 bg-card/40 transition-all",
 				sidebarCollapsed ? "w-20 min-w-20" : "w-[280px] min-w-[280px]",
@@ -101,14 +103,8 @@ export function SidebarHeader({
 				onClick={onToggleCollapse}
 				aria-label="Toggle sidebar"
 			>
-				{sidebarCollapsed ? (
-					<ChevronRight className="h-4 w-4" />
-				) : (
-					<ChevronLeft className="h-4 w-4" />
-				)}
+				<ChevronLeft className="h-4 w-4" />
 			</Button>
 		</div>
 	);
 }
-
-import { Separator } from "@/components/ui/separator";

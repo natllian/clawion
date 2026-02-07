@@ -11,9 +11,9 @@ export function ErrorBanner({ error }: ErrorBannerProps) {
 	if (!error) return null;
 
 	return (
-		<Card className="border-destructive/40 bg-destructive/10">
+		<Card className="border-destructive/40 bg-destructive/10" role="alert">
 			<CardContent className="flex items-center gap-3 py-3 text-sm text-destructive">
-				<AlertTriangle className="h-4 w-4" />
+				<AlertTriangle className="h-4 w-4 shrink-0" />
 				{error}
 			</CardContent>
 		</Card>

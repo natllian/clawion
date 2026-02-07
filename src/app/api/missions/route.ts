@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { errorResponse, NO_CACHE_HEADERS } from "@/app/api/_lib/route-helpers";
 import { loadMissionsIndex } from "@/core/workspace/index-file";
 import { resolveMissionsDir } from "@/core/workspace/paths";
 
@@ -11,14 +12,9 @@ export async function GET() {
 		const index = await loadMissionsIndex(missionsDir);
 		return NextResponse.json(
 			{ missionsDir, ...index },
-			{
-				headers: {
-					"Cache-Control": "no-store",
-				},
-			},
+			{ headers: NO_CACHE_HEADERS },
 		);
 	} catch (error) {
-		const message = error instanceof Error ? error.message : "Unknown error";
-		return NextResponse.json({ error: message }, { status: 500 });
+		return errorResponse(error);
 	}
 }

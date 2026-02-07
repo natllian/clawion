@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
+import * as React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { normalizeMarkdownContent } from "@/lib/markdown";
@@ -8,13 +9,16 @@ import { cn } from "@/lib/utils";
 
 interface MarkdownBlockProps {
 	content: string;
+	loading?: boolean;
 }
 
-export function MarkdownBlock({ content }: MarkdownBlockProps) {
-	const isLoading = content === "Loading ROADMAP.md...";
+export const MarkdownBlock = React.memo(function MarkdownBlock({
+	content,
+	loading = false,
+}: MarkdownBlockProps) {
 	const normalizedContent = normalizeMarkdownContent(content);
 
-	if (isLoading) {
+	if (loading) {
 		return (
 			<div
 				className={cn(
@@ -35,4 +39,4 @@ export function MarkdownBlock({ content }: MarkdownBlockProps) {
 			</ReactMarkdown>
 		</div>
 	);
-}
+});

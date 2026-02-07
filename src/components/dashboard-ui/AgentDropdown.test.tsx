@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AgentsFile, WorkingEvent } from "@/core/schemas";
 
@@ -83,7 +83,7 @@ describe("AgentDropdown - rendering", () => {
 		expect(buttons.length).toBeGreaterThanOrEqual(2);
 	});
 
-	it("calls onAgentSelect when clicking agent button", () => {
+	it("calls onAgentSelect when opening agent dropdown", () => {
 		const onAgentSelect = vi.fn();
 		const props = {
 			...defaultProps,
@@ -94,7 +94,10 @@ describe("AgentDropdown - rendering", () => {
 		const bobButton = Array.from(buttons).find((btn) =>
 			btn.textContent?.includes("Bob"),
 		) as HTMLButtonElement | undefined;
-		bobButton?.click();
+		// Use pointerDown to trigger Radix DropdownMenu open -> onOpenChange
+		if (bobButton) {
+			fireEvent.pointerDown(bobButton, { button: 0, ctrlKey: false });
+		}
 		expect(onAgentSelect).toHaveBeenCalledWith("manager-1");
 	});
 

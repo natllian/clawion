@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { MissionIndexItem } from "@/core/schemas";
+import { getInitials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 interface MissionListProps {
@@ -33,15 +40,6 @@ function MissionListSkeleton({
 	);
 }
 
-function getInitials(value: string) {
-	return value
-		.split(/\s+/)
-		.map((word) => word.charAt(0))
-		.join("")
-		.slice(0, 2)
-		.toUpperCase();
-}
-
 export function MissionList({
 	missions,
 	activeMissionId,
@@ -66,7 +64,6 @@ export function MissionList({
 				const isActive = item.id === activeMissionId;
 				const content = (
 					<Link
-						key={item.id}
 						href={`/missions/${item.id}`}
 						className={cn(
 							"rounded-lg border border-border/70 bg-background text-xs text-foreground transition hover:border-primary/50 hover:bg-primary/5",
@@ -102,15 +99,8 @@ export function MissionList({
 					);
 				}
 
-				return content;
+				return <div key={item.id}>{content}</div>;
 			})}
 		</>
 	);
 }
-
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";

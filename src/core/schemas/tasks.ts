@@ -10,7 +10,7 @@ export const taskColumnSchema = z
 	.object({
 		id: idSchema,
 		name: nonEmptyTextSchema,
-		order: z.number().int(),
+		order: z.number().int().nonnegative(),
 	})
 	.strict();
 

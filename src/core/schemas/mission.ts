@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
 	idSchema,
 	isoDateSchema,
+	missionStatusSchema,
 	nonEmptyTextSchema,
 	schemaVersionSchema,
 } from "./shared";
@@ -11,7 +12,7 @@ export const missionSchema = z
 		schemaVersion: schemaVersionSchema,
 		id: idSchema,
 		name: nonEmptyTextSchema,
-		status: z.enum(["active", "paused", "archived", "completed"]),
+		status: missionStatusSchema,
 		createdAt: isoDateSchema,
 		updatedAt: isoDateSchema,
 	})

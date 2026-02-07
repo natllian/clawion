@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import { NotFoundError } from "../errors";
 import { readJson, writeJsonAtomic } from "../fs/json";
 import { taskItemSchema, tasksSchema } from "../schemas";
 import { resolveColumnIdForStatus, type TaskStatus } from "../task-status";
@@ -20,10 +21,6 @@ type TaskUpdateInput = {
 	status?: TaskStatus;
 	statusNotes?: string;
 };
-
-function nowIso(): string {
-	return nowLocal();
-}
 
 export async function listTasks(missionsDir: string, missionId: string) {
 	const missionPath = await resolveMissionPath(missionsDir, missionId);
@@ -48,7 +45,7 @@ export async function createTask(input: TaskCreateInput) {
 		throw new Error("No columns available to assign task.");
 	}
 
-	const now = nowIso();
+	const now = nowLocal();
 	const task = taskItemSchema.parse({
 		id: input.id,
 		title: input.title,
@@ -78,7 +75,7 @@ export async function updateTask(input: TaskUpdateInput) {
 	);
 	const task = tasksFile.tasks.find((entry) => entry.id === input.id);
 	if (!task) {
-		throw new Error(`Task not found: ${input.id}`);
+		throw new NotFoundError(`Task not found: ${input.id}`);
 	}
 
 	const nextColumnId = input.status
@@ -89,7 +86,7 @@ export async function updateTask(input: TaskUpdateInput) {
 		...task,
 		columnId: nextColumnId,
 		statusNotes: input.statusNotes ?? task.statusNotes,
-		updatedAt: nowIso(),
+		updatedAt: nowLocal(),
 	});
 
 	const nextFile = tasksSchema.parse({
@@ -115,13 +112,13 @@ export async function assignTask(
 	);
 	const task = tasksFile.tasks.find((entry) => entry.id === taskId);
 	if (!task) {
-		throw new Error(`Task not found: ${taskId}`);
+		throw new NotFoundError(`Task not found: ${taskId}`);
 	}
 
 	const nextTask = taskItemSchema.parse({
 		...task,
 		assigneeAgentId,
-		updatedAt: nowIso(),
+		updatedAt: nowLocal(),
 	});
 
 	const nextFile = tasksSchema.parse({

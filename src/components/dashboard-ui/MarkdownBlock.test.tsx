@@ -8,7 +8,7 @@ describe("MarkdownBlock", () => {
 	});
 
 	it("shows loading state with spinner", () => {
-		render(<MarkdownBlock content="Loading ROADMAP.md..." />);
+		render(<MarkdownBlock content="" loading />);
 		expect(screen.getByText("Loading roadmap...")).toBeInTheDocument();
 		const loader = document.querySelector(".animate-spin");
 		expect(loader).toBeInTheDocument();

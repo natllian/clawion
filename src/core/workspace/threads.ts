@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { appendJsonLine, readJsonLines } from "../fs/jsonl";
 import { pathExists } from "../fs/util";
@@ -20,10 +21,6 @@ type ThreadMessageInput = {
 	content: string;
 };
 
-function nowIso(): string {
-	return nowLocal();
-}
-
 function resolveThreadPath(missionPath: string, taskId: string): string {
 	return join(missionPath, "threads", `${taskId}.jsonl`);
 }
@@ -37,7 +34,7 @@ export async function addThreadMessage(input: ThreadMessageInput) {
 	const message = threadMessageEventSchema.parse({
 		type: "message",
 		id: randomUUID(),
-		createdAt: nowIso(),
+		createdAt: nowLocal(),
 		authorAgentId: input.authorAgentId,
 		mentionsAgentIds: input.mentionsAgentIds,
 		content: input.content,
@@ -80,7 +77,6 @@ export async function listThreads(
 		return [];
 	}
 
-	const { readdir } = await import("node:fs/promises");
 	const files = await readdir(threadsDir);
 	const threadFiles = files.filter((file) => file.endsWith(".jsonl"));
 

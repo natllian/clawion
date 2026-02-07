@@ -22,9 +22,7 @@ export function DashboardHeader({
 	onRoadmapSave,
 	savingRoadmap,
 }: DashboardHeaderProps) {
-	const roadmapContent = loadingMission
-		? "Loading ROADMAP.md..."
-		: roadmap.trim() || "No roadmap yet.";
+	const roadmapContent = roadmap.trim() || "No roadmap yet.";
 
 	return (
 		<header className="relative z-40 flex flex-wrap items-start justify-between gap-4 border-b border-border/70 bg-background px-6 py-4">
@@ -48,9 +46,11 @@ export function DashboardHeader({
 						</Badge>
 					)}
 				</div>
-				<p className="mt-1 max-w-2xl text-xs text-muted-foreground">
-					Pick a mission to see its tasks and runbook.
-				</p>
+				{!mission && (
+					<p className="mt-1 max-w-2xl text-xs text-muted-foreground">
+						Pick a mission to see its tasks and runbook.
+					</p>
+				)}
 			</div>
 
 			<div className="flex flex-wrap items-center gap-2">

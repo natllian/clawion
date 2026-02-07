@@ -1,8 +1,9 @@
-import { cp, readFile, writeFile } from "node:fs/promises";
+import { cp, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { readJson, writeJsonAtomic } from "../fs/json";
+import { writeMarkdownAtomic } from "../fs/markdown";
 import { pathExists } from "../fs/util";
-import { agentsSchema, missionSchema, tasksSchema } from "../schemas";
+import { missionSchema, tasksSchema } from "../schemas";
 import { nowLocal } from "../time";
 import {
 	addMissionIndexEntry,
@@ -23,10 +24,6 @@ type MissionRoadmapUpdateInput = {
 	roadmap: string;
 };
 
-function nowIso(): string {
-	return nowLocal();
-}
-
 export async function createMission(input: MissionCreateInput) {
 	const missionDir = join(input.missionsDir, input.id);
 	const templateDir = join(input.missionsDir, "_template");
@@ -37,7 +34,7 @@ export async function createMission(input: MissionCreateInput) {
 
 	await cp(templateDir, missionDir, { recursive: true });
 
-	const now = nowIso();
+	const now = nowLocal();
 	const mission = missionSchema.parse({
 		schemaVersion: 1,
 		id: input.id,
@@ -58,17 +55,20 @@ export async function createMission(input: MissionCreateInput) {
 		}),
 	);
 
-	const agents = await readJson(join(missionDir, "agents.json"), agentsSchema);
-	await writeJsonAtomic(join(missionDir, "agents.json"), agents);
-
-	await addMissionIndexEntry(input.missionsDir, {
-		id: input.id,
-		name: input.name,
-		path: input.id,
-		status: "active",
-		createdAt: now,
-		updatedAt: now,
-	});
+	try {
+		await addMissionIndexEntry(input.missionsDir, {
+			id: input.id,
+			name: input.name,
+			path: input.id,
+			status: "active",
+			createdAt: now,
+			updatedAt: now,
+		});
+	} catch (error) {
+		// Rollback: remove the orphaned mission directory
+		await rm(missionDir, { recursive: true, force: true });
+		throw error;
+	}
 }
 
 export async function listMissions(missionsDir: string) {
@@ -92,9 +92,9 @@ export async function updateMissionRoadmap(input: MissionRoadmapUpdateInput) {
 		join(missionPath, "mission.json"),
 		missionSchema,
 	);
-	const updatedAt = nowIso();
+	const updatedAt = nowLocal();
 
-	await writeFile(join(missionPath, "ROADMAP.md"), input.roadmap, "utf8");
+	await writeMarkdownAtomic(join(missionPath, "ROADMAP.md"), input.roadmap);
 
 	const nextMission = missionSchema.parse({
 		...mission,
@@ -113,7 +113,7 @@ export async function completeMission(missionsDir: string, missionId: string) {
 		join(missionPath, "mission.json"),
 		missionSchema,
 	);
-	const updatedAt = nowIso();
+	const updatedAt = nowLocal();
 	const nextMission = missionSchema.parse({
 		...mission,
 		status: "completed",

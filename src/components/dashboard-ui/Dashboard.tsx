@@ -480,13 +480,18 @@ export function Dashboard({
 	const showThreadsSkeleton = loadingMission && threads.length === 0;
 	const showAgentsSkeleton = loadingMission && !agents;
 
+	const handleToggleSidebar = React.useCallback(
+		() => setSidebarCollapsed((v) => !v),
+		[],
+	);
+
 	return (
 		<div className="h-screen overflow-hidden bg-background text-foreground">
 			<div className="flex h-full">
 				<Sidebar
 					missionsDir={missionsDir}
 					sidebarCollapsed={sidebarCollapsed}
-					onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
+					onToggleCollapse={handleToggleSidebar}
 				>
 					{/* Missions Section */}
 					<div className="shrink-0 space-y-2">
@@ -551,9 +556,9 @@ export function Dashboard({
 					<main className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 py-6">
 						<ErrorBanner error={error} />
 
-						{activeThreadId && mission ? (
+						{activeThreadId && mission && activeMissionId ? (
 							<ThreadDetail
-								missionId={activeMissionId ?? ""}
+								missionId={activeMissionId}
 								threadId={activeThreadId}
 								agentMap={agentMap}
 								agents={agents}

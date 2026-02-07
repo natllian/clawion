@@ -1,17 +1,19 @@
 import { NextResponse } from "next/server";
+
+import {
+	errorResponse,
+	type MissionTaskRouteContext,
+} from "@/app/api/_lib/route-helpers";
 import { resolveMissionPath } from "@/core/workspace/mission";
 import { resolveMissionsDir } from "@/core/workspace/paths";
 import { updateTask } from "@/core/workspace/tasks";
 
 export const runtime = "nodejs";
 
-type RouteContext = {
-	params:
-		| Promise<{ missionId: string; taskId: string }>
-		| { missionId: string; taskId: string };
-};
-
-export async function POST(_request: Request, context: RouteContext) {
+export async function POST(
+	_request: Request,
+	context: MissionTaskRouteContext,
+) {
 	try {
 		const { missionId, taskId } = await context.params;
 		const missionsDir = resolveMissionsDir();
@@ -26,8 +28,6 @@ export async function POST(_request: Request, context: RouteContext) {
 
 		return NextResponse.json({ ok: true, taskId });
 	} catch (error) {
-		const message = error instanceof Error ? error.message : "Unknown error";
-		const status = message.toLowerCase().includes("not found") ? 404 : 500;
-		return NextResponse.json({ error: message }, { status });
+		return errorResponse(error);
 	}
 }

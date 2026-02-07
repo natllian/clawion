@@ -1,18 +1,24 @@
 import { join } from "node:path";
 import { readJson, writeJsonAtomic } from "../fs/json";
-import { missionsIndexSchema } from "../schemas";
+import {
+	type MissionStatus,
+	type MissionsIndex,
+	missionsIndexSchema,
+} from "../schemas";
 import { nowLocal } from "../time";
 
 export type MissionIndexEntryInput = {
 	id: string;
 	name: string;
 	path: string;
-	status: "active" | "paused" | "archived" | "completed";
+	status: MissionStatus;
 	createdAt: string;
 	updatedAt: string;
 };
 
-export async function loadMissionsIndex(missionsDir: string) {
+export async function loadMissionsIndex(
+	missionsDir: string,
+): Promise<MissionsIndex> {
 	const indexPath = join(missionsDir, "index.json");
 	try {
 		return await readJson(indexPath, missionsIndexSchema);
@@ -30,7 +36,7 @@ export async function loadMissionsIndex(missionsDir: string) {
 
 export async function saveMissionsIndex(
 	missionsDir: string,
-	index: ReturnType<typeof missionsIndexSchema.parse>,
+	index: MissionsIndex,
 ) {
 	const indexPath = join(missionsDir, "index.json");
 	await writeJsonAtomic(indexPath, index);

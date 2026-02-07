@@ -4,19 +4,10 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { WorkingEvent } from "@/core/schemas";
+import { formatDate } from "@/lib/format";
 import { MarkdownBlock } from "./MarkdownBlock";
 
 const workingSkeletons = ["working-a", "working-b", "working-c"];
-
-function formatDate(value: string) {
-	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) return value;
-
-	return new Intl.DateTimeFormat("en-US", {
-		dateStyle: "medium",
-		timeStyle: "short",
-	}).format(date);
-}
 
 interface AgentSnapshotPanelProps {
 	roleDescription: string;
@@ -69,8 +60,12 @@ export function AgentSnapshotPanel({
 	const canEditSecret = isActive && isEditingSecret;
 
 	async function handleSaveRole() {
-		await onRoleDescriptionSave();
-		setIsEditingRole(false);
+		try {
+			await onRoleDescriptionSave();
+			setIsEditingRole(false);
+		} catch {
+			// Error is handled by parent; keep editing mode open
+		}
 	}
 
 	function handleCancelRole() {
@@ -78,8 +73,12 @@ export function AgentSnapshotPanel({
 	}
 
 	async function handleSaveSecret() {
-		await onDarkSecretSave();
-		setIsEditingSecret(false);
+		try {
+			await onDarkSecretSave();
+			setIsEditingSecret(false);
+		} catch {
+			// Error is handled by parent; keep editing mode open
+		}
 	}
 
 	function handleCancelSecret() {
@@ -129,6 +128,7 @@ export function AgentSnapshotPanel({
 					</div>
 				</div>
 				<textarea
+					aria-label="Role description"
 					value={isActive ? roleDescription : ""}
 					onChange={(event) => onRoleDescriptionChange(event.target.value)}
 					disabled={!canEditRole || savingRoleDescription}
@@ -181,10 +181,11 @@ export function AgentSnapshotPanel({
 						)}
 					</div>
 				</div>
-				<p className="mb-2 text-[0.7rem] text-amber-700">
+				<p className="mb-2 text-[0.7rem] text-amber-700 dark:text-amber-400">
 					Critical and private. It must never be disclosed to other agents.
 				</p>
 				<textarea
+					aria-label="Dark secret"
 					value={isActive ? darkSecret : ""}
 					onChange={(event) => onDarkSecretChange(event.target.value)}
 					disabled={!canEditSecret || savingDarkSecret}

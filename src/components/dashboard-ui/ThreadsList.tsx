@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ThreadSummary } from "@/core/schemas";
+import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export type ThreadListItem = ThreadSummary & {
@@ -17,18 +18,6 @@ interface ThreadsListProps {
 	loadingMission: boolean;
 	activeMissionId: string | null;
 	activeThreadId?: string | null;
-}
-
-function formatDate(value?: string) {
-	if (!value) return "—";
-
-	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) return value;
-
-	return new Intl.DateTimeFormat("en-US", {
-		dateStyle: "medium",
-		timeStyle: "short",
-	}).format(date);
 }
 
 export function ThreadsList({
@@ -113,8 +102,8 @@ export function ThreadsList({
 							className={cn(
 								"mt-1 text-[0.62rem]",
 								thread.unackedMentionCount > 0
-									? "text-amber-700"
-									: "text-emerald-700",
+									? "text-amber-700 dark:text-amber-400"
+									: "text-emerald-700 dark:text-emerald-400",
 							)}
 						>
 							{ackSummary}

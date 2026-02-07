@@ -9,12 +9,8 @@ type WorkspaceInitOptions = {
 	missionsDir: string;
 };
 
-function nowIso(): string {
-	return nowLocal();
-}
-
 function defaultMissionTemplate() {
-	const now = nowIso();
+	const now = nowLocal();
 	return {
 		schemaVersion: 1,
 		id: "template",
@@ -49,7 +45,7 @@ function defaultAgentsTemplate() {
 function defaultIndexFile() {
 	return {
 		schemaVersion: 1,
-		updatedAt: nowIso(),
+		updatedAt: nowLocal(),
 		missions: [],
 	};
 }

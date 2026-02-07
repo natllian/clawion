@@ -188,10 +188,6 @@ function renderUnreadMentions(
 function renderWorking(lines: string[], workingEvents: WorkingEvent[]) {
 	if (workingEvents.length === 0) return;
 	lines.push(`## Working (recent events: ${workingEvents.length})`);
-	if (workingEvents.length === 0) {
-		lines.push("_No working events yet._");
-		return;
-	}
 	const recent = workingEvents.slice(-8).reverse();
 	for (const event of recent) {
 		lines.push("");

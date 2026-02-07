@@ -1,35 +1,34 @@
 import { NextResponse } from "next/server";
 
+import {
+	errorResponse,
+	type MissionRouteContext,
+	NO_CACHE_HEADERS,
+	parseJsonBody,
+} from "@/app/api/_lib/route-helpers";
 import { showMission, updateMissionRoadmap } from "@/core/workspace/missions";
 import { resolveMissionsDir } from "@/core/workspace/paths";
 
 export const runtime = "nodejs";
 
-type RouteContext = {
-	params: Promise<{ missionId: string }> | { missionId: string };
-};
-
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(_request: Request, context: MissionRouteContext) {
 	try {
 		const { missionId } = await context.params;
 		const missionsDir = resolveMissionsDir();
 		const payload = await showMission(missionsDir, missionId);
-		return NextResponse.json(payload, {
-			headers: {
-				"Cache-Control": "no-store",
-			},
-		});
+		return NextResponse.json(payload, { headers: NO_CACHE_HEADERS });
 	} catch (error) {
-		const message = error instanceof Error ? error.message : "Unknown error";
-		const status = message.toLowerCase().includes("not found") ? 404 : 500;
-		return NextResponse.json({ error: message }, { status });
+		return errorResponse(error);
 	}
 }
 
-export async function PUT(request: Request, context: RouteContext) {
+export async function PUT(request: Request, context: MissionRouteContext) {
 	try {
 		const { missionId } = await context.params;
-		const body = (await request.json()) as { roadmap?: unknown };
+		const result = await parseJsonBody<{ roadmap?: unknown }>(request);
+		if (result.error) return result.error;
+
+		const body = result.data;
 		if (typeof body.roadmap !== "string") {
 			return NextResponse.json(
 				{ error: "roadmap must be a string" },
@@ -44,14 +43,8 @@ export async function PUT(request: Request, context: RouteContext) {
 			roadmap: body.roadmap,
 		});
 		const payload = await showMission(missionsDir, missionId);
-		return NextResponse.json(payload, {
-			headers: {
-				"Cache-Control": "no-store",
-			},
-		});
+		return NextResponse.json(payload, { headers: NO_CACHE_HEADERS });
 	} catch (error) {
-		const message = error instanceof Error ? error.message : "Unknown error";
-		const status = message.toLowerCase().includes("not found") ? 404 : 500;
-		return NextResponse.json({ error: message }, { status });
+		return errorResponse(error);
 	}
 }

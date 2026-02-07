@@ -253,7 +253,6 @@ async function requireManager(
 ): Promise<boolean> {
 	const agentId = requireAgentId(command);
 	if (!agentId) {
-		process.exitCode = 1;
 		return false;
 	}
 
@@ -413,14 +412,20 @@ task
 			}
 
 			const rawStatus = (options.status as string | undefined)?.trim();
-			const status = rawStatus ? (rawStatus as TaskStatus) : undefined;
-			if (
-				status &&
-				!["pending", "ongoing", "blocked", "completed"].includes(status)
-			) {
-				throw new Error(
-					"status must be pending, ongoing, blocked, or completed.",
-				);
+			const validStatuses: TaskStatus[] = [
+				"pending",
+				"ongoing",
+				"blocked",
+				"completed",
+			];
+			let status: TaskStatus | undefined;
+			if (rawStatus) {
+				if (!validStatuses.includes(rawStatus as TaskStatus)) {
+					throw new Error(
+						"status must be pending, ongoing, blocked, or completed.",
+					);
+				}
+				status = rawStatus as TaskStatus;
 			}
 
 			if (status === "completed") {
@@ -619,6 +624,15 @@ message
 			);
 			const agentsFile = await listAgents(missionPath);
 			const agentIds = new Set(agentsFile.agents.map((entry) => entry.id));
+
+			if (!agentIds.has(authorAgentId)) {
+				console.error(
+					`Error: Author agent not found: ${authorAgentId}. Register the agent first.`,
+				);
+				process.exitCode = 1;
+				return;
+			}
+
 			const invalidMentions = mentions.filter((entry) => !agentIds.has(entry));
 
 			if (invalidMentions.length > 0) {

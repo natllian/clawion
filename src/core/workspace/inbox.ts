@@ -20,10 +20,6 @@ export type UnackedTaskMention = {
 	unackedAgentIds: string[];
 };
 
-function nowIso(): string {
-	return nowLocal();
-}
-
 function resolveInboxPath(missionPath: string, agentId: string): string {
 	return join(missionPath, "inbox", `${agentId}.jsonl`);
 }
@@ -37,7 +33,7 @@ export async function appendInboxAck(
 	);
 	const entry = inboxAckEventSchema.parse({
 		type: "ack",
-		ackedAt: nowIso(),
+		ackedAt: nowLocal(),
 		missionId: input.missionId,
 		agentId: input.agentId,
 		messageId: input.messageId,

@@ -9,12 +9,13 @@ import { join } from "node:path";
 export const WORKSPACE_ENV = "CLAWION_WORKSPACE";
 
 export function resolveWorkspaceDir(override?: string): string {
-	if (override?.trim()) {
-		return override;
+	const trimmedOverride = override?.trim();
+	if (trimmedOverride) {
+		return trimmedOverride;
 	}
 
-	const envPath = process.env[WORKSPACE_ENV];
-	if (envPath?.trim()) {
+	const envPath = process.env[WORKSPACE_ENV]?.trim();
+	if (envPath) {
 		return envPath;
 	}
 

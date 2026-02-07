@@ -12,10 +12,6 @@ type WorkingAddInput = {
 	content: string;
 };
 
-function nowIso(): string {
-	return nowLocal();
-}
-
 function resolveWorkingPath(missionPath: string, agentId: string): string {
 	return join(missionPath, "working", `${agentId}.jsonl`);
 }
@@ -29,7 +25,7 @@ export async function appendWorkingEvent(
 	);
 	const entry = workingEventSchema.parse({
 		id: randomUUID(),
-		createdAt: nowIso(),
+		createdAt: nowLocal(),
 		agentId: input.agentId,
 		content: input.content,
 	});

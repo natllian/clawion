@@ -10,18 +10,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { AgentsFile, WorkingEvent } from "@/core/schemas";
+import { getInitials } from "@/lib/format";
 import { AgentSnapshotPanel } from "./AgentSnapshotPanel";
 
 export { WorkingEventItem } from "./AgentSnapshotPanel";
-
-function getInitials(value: string) {
-	return value
-		.split(/\s+/)
-		.map((word) => word.charAt(0))
-		.join("")
-		.slice(0, 2)
-		.toUpperCase();
-}
 
 interface AgentDropdownProps {
 	agents: AgentsFile | null;
@@ -99,7 +91,6 @@ export function AgentDropdown({
 						<DropdownMenuTrigger asChild>
 							<button
 								type="button"
-								onClick={() => onAgentSelect(agent.id)}
 								className="flex items-center gap-2 rounded-full border border-border/70 bg-background px-2 py-1 text-xs text-foreground transition hover:border-primary/40 hover:bg-primary/5"
 							>
 								<Avatar size="sm">

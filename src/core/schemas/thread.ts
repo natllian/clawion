@@ -24,7 +24,12 @@ export const threadSummarySchema = z
 
 export type ThreadMessageEvent = z.infer<typeof threadMessageEventSchema>;
 export type ThreadSummary = z.infer<typeof threadSummarySchema>;
-export type ThreadDetail = {
-	taskId: string;
-	messages: ThreadMessageEvent[];
-};
+
+export const threadDetailSchema = z
+	.object({
+		taskId: idSchema,
+		messages: z.array(threadMessageEventSchema),
+	})
+	.strict();
+
+export type ThreadDetail = z.infer<typeof threadDetailSchema>;
