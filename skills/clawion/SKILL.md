@@ -14,19 +14,16 @@ Clawion is **wake-driven** — OpenClaw cron ticks are the engine.
 1. Cron fires a periodic tick.
 2. Agent runs **`clawion agent wake`** → receives the authoritative prompt for this turn.
 3. Agent follows the **Turn Playbook** in that wake output.
-4. Agent writes back via small actions (**message / working**).
 5. Next wake reflects the updated workspace state.
 
 Key properties:
-
 - **Wake is the only read entrypoint.**
-- **Unread handling is automatic:** wake shows "Unread Mentions" and auto-acks them.
 
 ## Core invariants
 
 - **Workers complete tasks; managers maintain the board.**
-  - Worker: reports progress and asks questions via `message add`; logs process via `working add`.
-  - Manager: dispatches and maintains truth via `task create/assign/update`; also logs via `working add`. When the mission is complete, **disables all related cron jobs**.
+  - Worker: reports progress and asks questions via `clawion message add`; logs process via `clawion working add`.
+  - Manager: dispatches and maintains truth via `clawion task create/assign/update`; also logs via `clawion working add`. When the mission is complete, **disables all related cron jobs**.
 - **Identity is explicit:** every action requires global `--agent <agentId>`.
 
 ---
@@ -102,17 +99,11 @@ clawion mission roadmap --id <MISSION_ID> --set "<markdown>" --agent <MANAGER_ID
 
 > The roadmap can only be written **once** via the CLI. Any subsequent edits must be made by a human in the Web UI.
 
-### 6. Create cron jobs (disabled) and get user approval
+### 6. Create cron jobs (disabled) and get user approval — **mandatory**
 
-Create **one isolated cron job per agent** (manager + each worker), all **disabled**. Then ask the user to review in the Clawion Web UI before enabling anything. See [Cron jobs](#cron-jobs-openclaw) for payload rules and naming.
+You **must** create **one isolated cron job per agent** (manager + each worker), all **disabled**. You **must not** enable any job until the user has reviewed in the Clawion Web UI and given explicit approval. See [Cron jobs](#cron-jobs-openclaw) for payload rules and naming.
 
-**Web UI review checklist:**
-
-- Mission ROADMAP (editable)
-- Each agent's role description (editable)
-- Dark Secret injection settings (ensure secrets don't leak into thread messages)
-
-Only enable cron jobs after **explicit user approval**.
+**Required:** Have the user review through the Web UI and confirm before any cron job is enabled. This step is **non-negotiable**.
 
 ---
 
