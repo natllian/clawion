@@ -98,13 +98,11 @@ clawion task assign \
 clawion mission roadmap --id <MISSION_ID> --set "<markdown>" --agent <MANAGER_ID>
 ```
 
-> The roadmap can only be written **once** via the CLI. Any subsequent edits must be made by a human in the Web UI.
-
 ### 6. Create cron jobs (disabled) and get user approval — **mandatory**
 
-You **must** create **one isolated cron job per agent** (manager + each worker), all **disabled**. You **must not** enable any job until the user has reviewed in the Clawion Web UI and given explicit approval. See [Cron jobs](#cron-jobs-openclaw) for payload rules and naming.
+You **must** create **one isolated cron job per agent** (manager + each worker), all **disabled**. You **must not** enable any job until the user has reviewed and given explicit approval. See [Cron jobs](#cron-jobs-openclaw) for more rules.
 
-**Required:** Have the user review through the Web UI and confirm before any cron job is enabled. This step is **non-negotiable**.
+**Required:** Have the user review and confirm before any cron job is enabled. This step is **non-negotiable**.
 
 ---
 
@@ -151,3 +149,24 @@ If the mission is complete, disable all related cron jobs.
 - **Stagger ticks** when multiple agents share the same interval to avoid bursty runs.
   - Given interval = `N` minutes and `K` agents, choose offsets: `round(i * N / K)` for `i = 0..K-1`.
   - Example: `N=10`, `K=3` → offsets `0m`, `3m`, `7m`.
+
+---
+
+## CLI reference
+
+Global option: `--agent <agentId>` (required for all scoped actions below).
+
+| Command | Purpose |
+|---------|---------|
+| `clawion help [topic...]` | Show detailed command help. Use `clawion help <command>` for one command (e.g. `clawion help agent wake`). |
+| `clawion mission create` | Create a new mission from the template. Params: `--id <id>`, `--name <name>`. |
+| `clawion mission roadmap` | Set the mission roadmap (manager only, write-once). Params: `--id <id>`, `--set <markdown>`, `--agent <agentId>`. |
+| `clawion mission complete` | Mark a mission completed (manager only). Params: `--id <id>`, `--agent <agentId>`. |
+| `clawion task create` | Create a task (manager only). Params: `--mission <id>`, `--id <taskId>`, `--title <title>`, `--description <markdown>`, `--agent <agentId>`. |
+| `clawion task update` | Update task status or notes (manager only). Params: `--mission <id>`, `--id <taskId>`, `--agent <agentId>`, optional `--status`, `--status-notes`. |
+| `clawion task assign` | Assign a task to an agent (manager only). Params: `--mission <id>`, `--task <taskId>`, `--to <agentId>`, `--agent <agentId>`. |
+| `clawion agent add` | Register an agent for a mission (manager only). Params: `--mission <id>`, `--id <agentId>`, `--name <displayName>`, `--system-role <manager\|worker>`, `--role-description <markdown>`, `--agent <agentId>`. |
+| `clawion agent wake` | Generate the agent prompt and acknowledge unread mentions. Params: `--mission <id>`, `--agent <agentId>`. |
+| `clawion message add` | Append a message to a task thread. Params: `--mission <id>`, `--task <taskId>`, `--content <markdown>`, `--mentions <agentId,...>`, `--agent <agentId>`. |
+| `clawion thread show` | Show thread messages for a task (manager only). Params: `--mission <id>`, `--task <taskId>`, `--agent <agentId>`. |
+| `clawion working add` | Append a working event for the acting agent. Params: `--mission <id>`, `--content <markdown>`, `--agent <agentId>`. |
