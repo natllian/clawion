@@ -5,19 +5,22 @@ description: Multi-agent collaboration powered by OpenClaw cron jobs and the cla
 
 # Clawion (runbook)
 
+**Recurring or periodic work in Clawion must be implemented via OpenClaw cron jobs.** Do not rely on ad-hoc runs or "remember to run later" — create cron jobs so the Gateway wakes agents on schedule. Official reference: **[Cron Jobs — OpenClaw](https://docs.openclaw.ai/automation/cron-jobs#cron-jobs)**.
+
 Clawion is a **file-based mission coordinator**. Agents interact with state through the **`clawion` CLI**.
 
-## Mental model
+## Mental model (cron-driven)
 
-Clawion is **wake-driven** — OpenClaw cron ticks are the engine.
+Clawion is **wake-driven** — OpenClaw cron is the only reliable engine for periodic runs.
 
-1. Cron fires a periodic tick.
+1. **Cron fires** a periodic tick (you must create the job; see [Cron jobs (OpenClaw)](#cron-jobs-openclaw) and the [official docs](https://docs.openclaw.ai/automation/cron-jobs#cron-jobs)).
 2. Agent runs **`clawion agent wake`** → receives the authoritative prompt for this turn.
 3. Agent follows the **Turn Playbook** in that wake output.
-5. Next wake reflects the updated workspace state.
+4. Next wake reflects the updated workspace state.
 
 Key properties:
 - **Wake is the only read entrypoint.**
+- **No cron job ⇒ no scheduled runs.** Always create cron jobs for missions that need periodic execution.
 
 ## Core invariants
 
@@ -101,7 +104,11 @@ clawion mission roadmap --id <MISSION_ID> --set "<markdown>" --agent <MANAGER_ID
 
 ### 6. Create cron jobs (disabled) and get user approval — **mandatory**
 
-You **must** create **one isolated cron job per agent** (manager + each worker), all **disabled**. You **must not** enable any job until the user has reviewed in the Clawion Web UI and given explicit approval. See [Cron jobs](#cron-jobs-openclaw) for payload rules and naming.
+You **must** create **one isolated cron job per agent** (manager + each worker), all **disabled**. You **must not** enable any job until the user has reviewed in the Clawion Web UI and given explicit approval.
+
+- **Do not skip this step.** Without cron jobs, the mission will not run on schedule. When in doubt, create the jobs and leave them disabled until the user approves.
+- Use OpenClaw’s cron API/CLI; canonical behavior and JSON shapes: **[Cron Jobs — OpenClaw](https://docs.openclaw.ai/automation/cron-jobs#cron-jobs)**.
+- Payload rules and naming: see [Cron jobs (OpenClaw)](#cron-jobs-openclaw) below.
 
 **Required:** Have the user review through the Web UI and confirm before any cron job is enabled. This step is **non-negotiable**.
 
@@ -109,11 +116,14 @@ You **must** create **one isolated cron job per agent** (manager + each worker),
 
 ## Cron jobs (OpenClaw)
 
+**Canonical reference:** [Cron Jobs — OpenClaw](https://docs.openclaw.ai/automation/cron-jobs#cron-jobs) (schedule kinds, `sessionTarget: "isolated"`, payload shapes, delivery, CLI/API).
+
 ### Hard rules
 
 | Rule                | Detail                                                                                                                                                    |
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Isolation**       | Each tick runs in its **own isolated OpenClaw session** (never `main`). Context bleed makes the loop unreliable.                                          |
+| **Create jobs**     | For any mission that should run periodically, you **must** create the corresponding OpenClaw cron job(s). No cron job ⇒ no scheduled execution.            |
+| **Isolation**       | Each tick runs in its **own isolated OpenClaw session** (`sessionTarget: "isolated"`, never `main`). Context bleed makes the loop unreliable.              |
 | **Wake interval**   | If the user didn't specify one, **ask and confirm** before creating jobs.                                                                                 |
 | **Minimal payload** | Do **not** embed mission context, task lists, or SOP text. The authoritative prompt is assembled by `clawion agent wake` from workspace state at runtime. |
 | **Disabled first**  | Always create jobs disabled. Enable only after the user reviews in the Web UI (quickstart step 6).                                                        |
@@ -149,3 +159,7 @@ If the mission is complete, disable all related cron jobs.
 - **Stagger ticks** when multiple agents share the same interval to avoid bursty runs.
   - Given interval = `N` minutes and `K` agents, choose offsets: `round(i * N / K)` for `i = 0..K-1`.
   - Example: `N=10`, `K=3` → offsets `0m`, `3m`, `7m`.
+
+### Before you finish
+
+- **Did you create the cron job(s)?** If the user asked for recurring/periodic runs, you must have created the OpenClaw cron job(s) (disabled until user approval). If you only described “run clawion agent wake” without creating a job, the workflow will not run on schedule. Double-check against [Cron Jobs — OpenClaw](https://docs.openclaw.ai/automation/cron-jobs#cron-jobs).
