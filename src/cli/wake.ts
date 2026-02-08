@@ -246,7 +246,6 @@ export function buildWorkerWakeLines(ctx: WakeContext): string[] {
 		)?.id ?? null;
 
 	if (ctx.darkSecret !== "") {
-		lines.push("## Dark Secret (Strictly Confidential)");
 		renderDarkSecret(lines, ctx.darkSecret);
 	}
 
@@ -350,7 +349,6 @@ export function buildManagerWakeLines(ctx: WakeContext): string[] {
 	const lines: string[] = [];
 
 	if (ctx.darkSecret !== "") {
-		lines.push("## Dark Secret (Strictly Confidential)");
 		renderDarkSecret(lines, ctx.darkSecret);
 	}
 
@@ -477,6 +475,9 @@ export function buildManagerWakeLines(ctx: WakeContext): string[] {
 	lines.push("## Turn Playbook");
 	lines.push(
 		"Your mission this turn: keep throughput high by dispatching clear work, removing blockers, and keeping the task board accurate.",
+	);
+	lines.push(
+		"Don’t include time or deadline requirements in task plans, messages, or requests to others.",
 	);
 
 	lines.push("");
