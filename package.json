@@ -18,7 +18,7 @@
 		"dev": "next dev",
 		"build": "pnpm build:ui",
 		"build:cli": "tsup --config tsup.config.ts",
-		"build:ui": "next build",
+		"build:ui": "rm -rf .next && next build",
 		"build:ui:dist": "tsx scripts/prepare-ui-dist.ts",
 		"start": "next start",
 		"test": "vitest run",

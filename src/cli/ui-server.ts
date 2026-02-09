@@ -18,6 +18,8 @@ type StartUiServerInput = {
 	port?: number | string;
 	cliModuleUrl?: string;
 	runtimeDir?: string;
+	packageRootDir?: string;
+	nextBinPath?: string;
 	spawnProcess?: SpawnProcess;
 	env?: NodeJS.ProcessEnv;
 };
@@ -49,13 +51,12 @@ function ensurePort(port?: number | string): string | undefined {
 	return String(parsed);
 }
 
-export function resolveUiRuntimeDir(cliModuleUrl = import.meta.url): string {
+function resolvePackageRootDir(cliModuleUrl = import.meta.url): string {
 	const cliDir = dirname(fileURLToPath(cliModuleUrl));
-	const candidates = [resolve(cliDir, "../ui"), resolve(cliDir, "../dist/ui")];
+	const candidates = [resolve(cliDir, "../.."), resolve(cliDir, "..")];
 
 	for (const candidate of candidates) {
-		const serverEntry = resolve(candidate, "server.js");
-		if (existsSync(serverEntry)) {
+		if (existsSync(resolve(candidate, "package.json"))) {
 			return candidate;
 		}
 	}
@@ -63,18 +64,65 @@ export function resolveUiRuntimeDir(cliModuleUrl = import.meta.url): string {
 	return candidates[0];
 }
 
+function hasBuiltUi(runtimeDir: string): boolean {
+	return existsSync(resolve(runtimeDir, ".next/BUILD_ID"));
+}
+
+export function resolveUiRuntimeDir(cliModuleUrl = import.meta.url): string {
+	const packageRootDir = resolvePackageRootDir(cliModuleUrl);
+	const candidates = [resolve(packageRootDir, "dist/ui"), packageRootDir];
+
+	for (const candidate of candidates) {
+		if (hasBuiltUi(candidate)) {
+			return candidate;
+		}
+	}
+
+	return candidates[0];
+}
+
+function resolveNextBinPath(packageRootDir: string): string | undefined {
+	let currentDir = packageRootDir;
+	for (let i = 0; i < 8; i += 1) {
+		const candidate = resolve(currentDir, "node_modules/next/dist/bin/next");
+		if (existsSync(candidate)) {
+			return candidate;
+		}
+
+		const parentDir = resolve(currentDir, "..");
+		if (parentDir === currentDir) {
+			break;
+		}
+		currentDir = parentDir;
+	}
+
+	return undefined;
+}
+
 export function startUiServer({
 	port,
 	cliModuleUrl,
 	runtimeDir,
+	packageRootDir,
+	nextBinPath,
 	spawnProcess = spawn,
 	env = process.env,
 }: StartUiServerInput): StartUiServerResult {
+	const targetPackageRootDir =
+		packageRootDir ?? resolvePackageRootDir(cliModuleUrl);
 	const targetRuntimeDir = runtimeDir ?? resolveUiRuntimeDir(cliModuleUrl);
-	const serverEntry = resolve(targetRuntimeDir, "server.js");
-	if (!existsSync(serverEntry)) {
+	const buildIdPath = resolve(targetRuntimeDir, ".next/BUILD_ID");
+	if (!hasBuiltUi(targetRuntimeDir)) {
 		return {
-			errorMessage: `Web UI runtime not found at ${serverEntry}. Reinstall the package or run "pnpm prepack".`,
+			errorMessage: `Web UI build output not found at ${buildIdPath}. Reinstall the package or run "pnpm prepack".`,
+		};
+	}
+
+	const targetNextBinPath =
+		nextBinPath ?? resolveNextBinPath(targetPackageRootDir);
+	if (!targetNextBinPath) {
+		return {
+			errorMessage: `Next.js CLI not found from ${targetPackageRootDir}. Reinstall dependencies.`,
 		};
 	}
 
@@ -87,10 +135,15 @@ export function startUiServer({
 		};
 	}
 
-	const child = spawnProcess("node", ["server.js"], {
-		cwd: targetRuntimeDir,
+	const args = [targetNextBinPath, "start", targetRuntimeDir];
+	if (normalizedPort) {
+		args.push("-p", normalizedPort);
+	}
+
+	const child = spawnProcess(process.execPath, args, {
+		cwd: targetPackageRootDir,
 		stdio: "inherit",
-		env: normalizedPort ? { ...env, PORT: normalizedPort } : env,
+		env,
 	});
 
 	return { child };

@@ -17,8 +17,9 @@ describe("ui server runtime", () => {
 	it("resolves packaged dist/ui runtime from compiled cli path", async () => {
 		const root = await mkdtemp(join(tmpdir(), "clawion-ui-runtime-"));
 		const runtimeDir = resolve(root, "dist/ui");
-		await mkdir(runtimeDir, { recursive: true });
-		await writeFile(resolve(runtimeDir, "server.js"), "console.log('ok');");
+		await mkdir(resolve(runtimeDir, ".next"), { recursive: true });
+		await writeFile(resolve(runtimeDir, ".next/BUILD_ID"), "build");
+		await writeFile(resolve(root, "package.json"), "{}");
 
 		const resolved = resolveUiRuntimeDir(
 			`file://${resolve(root, "dist/bin/clawion.js")}`,
@@ -29,36 +30,60 @@ describe("ui server runtime", () => {
 
 	it("falls back to repo dist/ui runtime from source cli path", async () => {
 		const root = await mkdtemp(join(tmpdir(), "clawion-ui-runtime-src-"));
-		const runtimeDir = resolve(root, "dist/ui");
-		await mkdir(runtimeDir, { recursive: true });
-		await writeFile(resolve(runtimeDir, "server.js"), "console.log('ok');");
+		await mkdir(resolve(root, ".next"), { recursive: true });
+		await writeFile(resolve(root, ".next/BUILD_ID"), "build");
+		await writeFile(resolve(root, "package.json"), "{}");
 
 		const resolved = resolveUiRuntimeDir(
 			`file://${resolve(root, "bin/clawion.ts")}`,
 		);
 
-		expect(resolved).toBe(runtimeDir);
+		expect(resolved).toBe(root);
 	});
 });
 
 describe("startUiServer", () => {
-	it("returns actionable error when server entry is missing", () => {
+	it("returns actionable error when build output is missing", () => {
 		const result = startUiServer({
 			runtimeDir: "/tmp/clawion-ui-missing",
 		});
 
 		expect(result.child).toBeUndefined();
-		expect(result.errorMessage).toContain("Web UI runtime not found");
+		expect(result.errorMessage).toContain("Web UI build output not found");
+	});
+
+	it("returns actionable error when next cli is missing", async () => {
+		const runtimeDir = await mkdtemp(join(tmpdir(), "clawion-ui-runtime-"));
+		await mkdir(resolve(runtimeDir, ".next"), { recursive: true });
+		await writeFile(resolve(runtimeDir, ".next/BUILD_ID"), "build");
+
+		const result = startUiServer({
+			runtimeDir,
+			packageRootDir: runtimeDir,
+		});
+
+		expect(result.child).toBeUndefined();
+		expect(result.errorMessage).toContain("Next.js CLI not found");
 	});
 
 	it("passes cwd and PORT to node spawn", async () => {
-		const runtimeDir = await mkdtemp(join(tmpdir(), "clawion-ui-start-"));
-		await writeFile(resolve(runtimeDir, "server.js"), "console.log('ok');");
+		const packageRootDir = await mkdtemp(join(tmpdir(), "clawion-ui-start-"));
+		const runtimeDir = resolve(packageRootDir, "dist/ui");
+		const nextBinPath = resolve(
+			packageRootDir,
+			"node_modules/next/dist/bin/next",
+		);
+		await mkdir(resolve(runtimeDir, ".next"), { recursive: true });
+		await writeFile(resolve(runtimeDir, ".next/BUILD_ID"), "build");
+		await mkdir(resolve(nextBinPath, ".."), { recursive: true });
+		await writeFile(nextBinPath, "console.log('next');");
 
 		const spawnProcess = vi.fn(() => createFakeChild());
 
 		const result = startUiServer({
 			runtimeDir,
+			packageRootDir,
+			nextBinPath,
 			port: "4310",
 			spawnProcess,
 			env: { ...process.env, TEST_ENV: "1" },
@@ -67,24 +92,37 @@ describe("startUiServer", () => {
 		expect(result.errorMessage).toBeUndefined();
 		expect(result.child).toBeDefined();
 		expect(spawnProcess).toHaveBeenCalledTimes(1);
-		expect(spawnProcess).toHaveBeenCalledWith("node", ["server.js"], {
-			cwd: runtimeDir,
-			stdio: "inherit",
-			env: expect.objectContaining({
-				PORT: "4310",
-				TEST_ENV: "1",
-			}),
-		});
+		expect(spawnProcess).toHaveBeenCalledWith(
+			process.execPath,
+			[nextBinPath, "start", runtimeDir, "-p", "4310"],
+			{
+				cwd: packageRootDir,
+				stdio: "inherit",
+				env: expect.objectContaining({
+					TEST_ENV: "1",
+				}),
+			},
+		);
 	});
 
 	it("validates invalid port values", async () => {
-		const runtimeDir = await mkdtemp(join(tmpdir(), "clawion-ui-port-"));
-		await writeFile(resolve(runtimeDir, "server.js"), "console.log('ok');");
+		const packageRootDir = await mkdtemp(join(tmpdir(), "clawion-ui-port-"));
+		const runtimeDir = resolve(packageRootDir, "dist/ui");
+		const nextBinPath = resolve(
+			packageRootDir,
+			"node_modules/next/dist/bin/next",
+		);
+		await mkdir(resolve(runtimeDir, ".next"), { recursive: true });
+		await writeFile(resolve(runtimeDir, ".next/BUILD_ID"), "build");
+		await mkdir(resolve(nextBinPath, ".."), { recursive: true });
+		await writeFile(nextBinPath, "console.log('next');");
 
 		const spawnProcess = vi.fn(() => createFakeChild());
 
 		const result = startUiServer({
 			runtimeDir,
+			packageRootDir,
+			nextBinPath,
 			port: "abc",
 			spawnProcess,
 		});
@@ -92,5 +130,42 @@ describe("startUiServer", () => {
 		expect(result.child).toBeUndefined();
 		expect(result.errorMessage).toContain('Invalid port "abc"');
 		expect(spawnProcess).not.toHaveBeenCalled();
+	});
+
+	it("spawns without port when no port is provided", async () => {
+		const packageRootDir = await mkdtemp(join(tmpdir(), "clawion-ui-np-"));
+		const runtimeDir = resolve(packageRootDir, "dist/ui");
+		const nextBinPath = resolve(
+			packageRootDir,
+			"node_modules/next/dist/bin/next",
+		);
+		await mkdir(resolve(runtimeDir, ".next"), { recursive: true });
+		await writeFile(resolve(runtimeDir, ".next/BUILD_ID"), "build");
+		await mkdir(resolve(nextBinPath, ".."), { recursive: true });
+		await writeFile(nextBinPath, "console.log('next');");
+
+		const spawnProcess = vi.fn(() => createFakeChild());
+
+		const result = startUiServer({
+			runtimeDir,
+			packageRootDir,
+			nextBinPath,
+			env: { ...process.env, TEST_ENV: "2" },
+			spawnProcess,
+		});
+
+		expect(result.errorMessage).toBeUndefined();
+		expect(result.child).toBeDefined();
+		expect(spawnProcess).toHaveBeenCalledWith(
+			process.execPath,
+			[nextBinPath, "start", runtimeDir],
+			{
+				cwd: packageRootDir,
+				stdio: "inherit",
+				env: expect.objectContaining({
+					TEST_ENV: "2",
+				}),
+			},
+		);
 	});
 });
