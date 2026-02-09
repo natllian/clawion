@@ -1,5 +1,11 @@
-import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { MissionIndexItem } from "@/core/schemas";
 import { MissionList } from "./MissionList";
 
@@ -32,6 +38,7 @@ describe("MissionList", () => {
 
 	afterEach(() => {
 		cleanup();
+		vi.restoreAllMocks();
 	});
 
 	it("renders mission list", () => {
@@ -116,5 +123,74 @@ describe("MissionList", () => {
 		expect(
 			screen.queryByRole("button", { name: /delete/i }),
 		).not.toBeInTheDocument();
+	});
+
+	it("deletes mission when confirmed and API succeeds", async () => {
+		const onDeleteMission = vi.fn();
+		vi.spyOn(window, "confirm").mockReturnValue(true);
+		vi.spyOn(global, "fetch").mockResolvedValue({
+			ok: true,
+		} as Response);
+
+		render(<MissionList {...defaultProps} onDeleteMission={onDeleteMission} />);
+
+		fireEvent.click(
+			screen.getByRole("button", { name: /delete alpha mission/i }),
+		);
+
+		await waitFor(() => {
+			expect(global.fetch).toHaveBeenCalledWith("/api/missions/m1", {
+				method: "DELETE",
+			});
+		});
+		expect(onDeleteMission).toHaveBeenCalledWith("m1");
+	});
+
+	it("does not delete mission when confirm is canceled", () => {
+		const onDeleteMission = vi.fn();
+		vi.spyOn(window, "confirm").mockReturnValue(false);
+		const fetchSpy = vi.spyOn(global, "fetch");
+
+		render(<MissionList {...defaultProps} onDeleteMission={onDeleteMission} />);
+		fireEvent.click(
+			screen.getByRole("button", { name: /delete alpha mission/i }),
+		);
+
+		expect(fetchSpy).not.toHaveBeenCalled();
+		expect(onDeleteMission).not.toHaveBeenCalled();
+	});
+
+	it("does not call callback when delete API fails", async () => {
+		const onDeleteMission = vi.fn();
+		vi.spyOn(window, "confirm").mockReturnValue(true);
+		vi.spyOn(global, "fetch").mockResolvedValue({
+			ok: false,
+		} as Response);
+
+		render(<MissionList {...defaultProps} onDeleteMission={onDeleteMission} />);
+		fireEvent.click(
+			screen.getByRole("button", { name: /delete beta mission/i }),
+		);
+
+		await waitFor(() => {
+			expect(global.fetch).toHaveBeenCalled();
+		});
+		expect(onDeleteMission).not.toHaveBeenCalled();
+	});
+
+	it("swallows delete API exceptions", async () => {
+		const onDeleteMission = vi.fn();
+		vi.spyOn(window, "confirm").mockReturnValue(true);
+		vi.spyOn(global, "fetch").mockRejectedValue(new Error("network failed"));
+
+		render(<MissionList {...defaultProps} onDeleteMission={onDeleteMission} />);
+		fireEvent.click(
+			screen.getByRole("button", { name: /delete beta mission/i }),
+		);
+
+		await waitFor(() => {
+			expect(global.fetch).toHaveBeenCalled();
+		});
+		expect(onDeleteMission).not.toHaveBeenCalled();
 	});
 });

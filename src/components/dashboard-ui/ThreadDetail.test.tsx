@@ -29,9 +29,10 @@ interface ThreadResponse {
 }
 
 // Mock Next.js router
+const pushMock = vi.fn();
 vi.mock("next/navigation", () => ({
 	useRouter: vi.fn(() => ({
-		push: vi.fn(),
+		push: pushMock,
 		replace: vi.fn(),
 		refresh: vi.fn(),
 		back: vi.fn(),
@@ -95,6 +96,7 @@ describe("ThreadDetail", () => {
 	afterEach(() => {
 		cleanup();
 		vi.clearAllMocks();
+		pushMock.mockReset();
 	});
 
 	it("shows skeleton while loading", () => {
@@ -162,6 +164,21 @@ describe("ThreadDetail", () => {
 		await waitFor(() => {
 			expect(screen.getByText("Back to board")).toBeInTheDocument();
 		});
+	});
+
+	it("navigates back to board when back button is clicked", async () => {
+		(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+			ok: true,
+			json: async () => mockThreadResponse,
+		});
+
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
+		await waitFor(() => {
+			expect(screen.getByText("Task Title")).toBeInTheDocument();
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: "Back to board" }));
+		expect(pushMock).toHaveBeenCalledWith("/missions/m1");
 	});
 
 	it("shows thread title and messages", async () => {
@@ -268,6 +285,43 @@ describe("ThreadDetail", () => {
 				method: "POST",
 			},
 		);
+	});
+
+	it("handles acknowledge-all API failure without crashing", async () => {
+		const pendingPayload: ThreadResponse = {
+			...mockThreadResponse,
+			pendingAckByMessageId: {
+				"msg-1": ["agent-1"],
+			},
+		};
+
+		const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+		(global.fetch as ReturnType<typeof vi.fn>)
+			.mockResolvedValueOnce({
+				ok: true,
+				json: async () => pendingPayload,
+			})
+			.mockResolvedValueOnce({
+				ok: false,
+				json: async () => ({ error: "ack failed" }),
+			});
+
+		render(<ThreadDetail missionId="m1" threadId="t1" agentMap={agentMap} />);
+
+		await waitFor(() => {
+			expect(
+				screen.getByRole("button", { name: "All acknowledged" }),
+			).toBeEnabled();
+		});
+		fireEvent.click(screen.getByRole("button", { name: "All acknowledged" }));
+
+		await waitFor(() => {
+			expect(errorSpy).toHaveBeenCalled();
+		});
+		expect(
+			screen.getByRole("button", { name: "All acknowledged" }),
+		).toBeEnabled();
 	});
 
 	it("opens agent snapshot when clicking avatar", async () => {

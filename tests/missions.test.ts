@@ -1,9 +1,12 @@
+import { access, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { readJson } from "../src/core/fs/json";
 import { missionSchema, missionsIndexSchema } from "../src/core/schemas";
 import {
 	completeMission,
+	createMission,
+	deleteMission,
 	listMissions,
 	showMission,
 	updateMissionRoadmap,
@@ -81,5 +84,40 @@ describe("missions", () => {
 		await expect(createMissionFixture(missionsDir, "m1")).rejects.toThrow(
 			"Mission directory already exists",
 		);
+	});
+
+	it("deletes mission directory and index entry", async () => {
+		const missionsDir = await createWorkspace();
+		await createMissionFixture(missionsDir, "m1");
+
+		await deleteMission(missionsDir, "m1");
+
+		await expect(showMission(missionsDir, "m1")).rejects.toThrow(
+			"Mission not found: m1",
+		);
+		const index = await readJson(
+			join(missionsDir, "index.json"),
+			missionsIndexSchema,
+		);
+		expect(index.missions).toHaveLength(0);
+	});
+
+	it("rolls back mission directory if adding index entry fails", async () => {
+		const missionsDir = await createWorkspace();
+		await createMissionFixture(missionsDir, "m1");
+
+		// Keep a duplicate id in index, but remove directory so createMission passes pre-check
+		await rm(join(missionsDir, "m1"), { recursive: true, force: true });
+
+		await expect(
+			createMission({
+				missionsDir,
+				id: "m1",
+				name: "Mission One Duplicate",
+			}),
+		).rejects.toThrow("Mission already exists in index: m1");
+
+		// Rollback should remove the recreated mission directory on failure
+		await expect(access(join(missionsDir, "m1"))).rejects.toThrow();
 	});
 });

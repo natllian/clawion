@@ -82,4 +82,65 @@ describe("thread-show", () => {
 		expect(output).toContain("mentions: @agent-2");
 		expect(output).toContain("Hello @agent-2");
 	});
+
+	it("shows empty-thread placeholder when no messages exist", async () => {
+		const missionsDir = await createWorkspace();
+		const missionPath = `${missionsDir}/mission-empty`;
+		await mkdir(missionPath, { recursive: true });
+
+		await writeFile(
+			`${missionsDir}/index.json`,
+			JSON.stringify({
+				schemaVersion: 1,
+				updatedAt: "2026-02-06 10:00:00",
+				missions: [
+					{
+						id: "mission-empty",
+						name: "Mission Empty",
+						path: missionPath,
+						status: "active",
+						createdAt: "2026-02-06 10:00:00",
+						updatedAt: "2026-02-06 10:00:00",
+					},
+				],
+			}),
+		);
+
+		await writeFile(
+			`${missionPath}/tasks.json`,
+			JSON.stringify({
+				schemaVersion: 1,
+				description: "Tasks",
+				columns: [{ id: "pending", name: "Pending", order: 1 }],
+				tasks: [
+					{
+						id: "task-empty",
+						title: "Empty Task",
+						description: "Description",
+						columnId: "pending",
+						statusNotes: "",
+						createdAt: "2026-02-06 10:00:00",
+						updatedAt: "2026-02-06 10:00:00",
+					},
+				],
+			}),
+		);
+
+		const threadsDir = `${missionPath}/threads`;
+		await mkdir(threadsDir, { recursive: true });
+		await writeFile(`${threadsDir}/task-empty.jsonl`, "");
+
+		const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+		await runThreadShow({
+			missionsDir,
+			missionId: "mission-empty",
+			taskId: "task-empty",
+		});
+
+		const output = logSpy.mock.calls.at(-1)?.[0] as string;
+		expect(output).toContain("Thread for Task: task-empty");
+		expect(output).toContain("0 messages");
+		expect(output).toContain("_No messages in this thread._");
+	});
 });

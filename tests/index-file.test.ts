@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { readJson } from "../src/core/fs/json";
@@ -7,6 +7,7 @@ import { nowLocal } from "../src/core/time";
 import {
 	addMissionIndexEntry,
 	loadMissionsIndex,
+	removeMissionIndexEntry,
 	updateMissionIndexEntry,
 } from "../src/core/workspace/index-file";
 import { createWorkspace } from "./helpers";
@@ -80,6 +81,54 @@ describe("missions index", () => {
 		try {
 			await expect(loadMissionsIndex(tempDir)).rejects.toThrow(
 				"Missions index not found",
+			);
+		} finally {
+			await rm(tempDir, { recursive: true, force: true });
+		}
+	});
+
+	it("removes a mission index entry", async () => {
+		const missionsDir = await createWorkspace();
+
+		await addMissionIndexEntry(missionsDir, {
+			id: "m1",
+			name: "Mission One",
+			path: "m1",
+			status: "active",
+			createdAt: nowLocal(),
+			updatedAt: nowLocal(),
+		});
+		await addMissionIndexEntry(missionsDir, {
+			id: "m2",
+			name: "Mission Two",
+			path: "m2",
+			status: "active",
+			createdAt: nowLocal(),
+			updatedAt: nowLocal(),
+		});
+
+		await removeMissionIndexEntry(missionsDir, "m1");
+		const index = await readJson(
+			join(missionsDir, "index.json"),
+			missionsIndexSchema,
+		);
+		expect(index.missions).toHaveLength(1);
+		expect(index.missions[0]?.id).toBe("m2");
+	});
+
+	it("throws for removing missing mission index entry", async () => {
+		const missionsDir = await createWorkspace();
+		await expect(
+			removeMissionIndexEntry(missionsDir, "missing"),
+		).rejects.toThrow("Mission not found in index: missing");
+	});
+
+	it("wraps non-ENOENT read errors with index read context", async () => {
+		const tempDir = await mkdtemp("/tmp/clawion-test-invalid-");
+		try {
+			await writeFile(join(tempDir, "index.json"), "{not-valid-json");
+			await expect(loadMissionsIndex(tempDir)).rejects.toThrow(
+				"Failed to read missions index:",
 			);
 		} finally {
 			await rm(tempDir, { recursive: true, force: true });
