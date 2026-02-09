@@ -29,6 +29,8 @@ export function TaskCard({
 		<div
 			className={cn(
 				"group relative w-full overflow-hidden rounded-xl border border-border/70 bg-background p-3 shadow-sm transition will-change-transform hover:-translate-y-0.5 hover:shadow-md",
+				"dark:border-border/90 dark:bg-card dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.055),0_16px_26px_-18px_rgba(0,0,0,0.85),0_2px_6px_-3px_rgba(0,0,0,0.6)] dark:hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_24px_34px_-18px_rgba(0,0,0,0.9),0_6px_12px_-5px_rgba(0,0,0,0.62)]",
+				"after:pointer-events-none after:absolute after:inset-[1px] after:rounded-[11px] after:bg-gradient-to-b after:from-transparent after:to-transparent dark:after:from-white/[0.045] dark:after:to-transparent",
 				"before:absolute before:left-0 before:top-0 before:h-full before:w-1 before:bg-border/60 before:content-['']",
 				isBlocked && "before:bg-destructive/60",
 			)}
@@ -44,7 +46,7 @@ export function TaskCard({
 				{activeMissionId && hasThread ? (
 					<Link
 						href={`/missions/${activeMissionId}/threads/${task.id}`}
-						className="shrink-0 inline-flex items-center gap-1 rounded-full border border-border/80 bg-muted/70 px-2.5 py-1 text-[0.65rem] font-medium text-foreground/80 shadow-sm transition hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+						className="shrink-0 inline-flex items-center gap-1 rounded-full border border-border/80 bg-muted/70 px-2.5 py-1 text-[0.65rem] font-medium text-foreground/80 shadow-sm transition hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:border-border/90 dark:bg-muted/45 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
 					>
 						<MessageSquare className="h-3 w-3" />
 						Thread
