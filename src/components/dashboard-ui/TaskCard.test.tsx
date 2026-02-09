@@ -89,7 +89,7 @@ describe("TaskCard", () => {
 		expect(screen.getByText("Thread")).toBeInTheDocument();
 		const threadLink = screen.getByRole("link", { name: /thread/i });
 		expect(threadLink).toHaveClass("hover:border-primary/55");
-		expect(threadLink).toHaveClass("hover:bg-primary/20");
+		expect(threadLink).toHaveClass("hover-bg-unified");
 	});
 
 	it("shows Unassigned when no assignee", () => {

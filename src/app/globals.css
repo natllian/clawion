@@ -188,6 +188,14 @@
 		color: color-mix(in oklch, var(--foreground) 78%, var(--chart-2) 22%);
 	}
 
+	.hover-bg-unified {
+		transition: background-color 180ms ease;
+	}
+
+	.hover-bg-unified:hover {
+		background-color: color-mix(in oklch, var(--primary) 8%, var(--background));
+	}
+
 	.font-display {
 		font-family: var(--font-display);
 	}

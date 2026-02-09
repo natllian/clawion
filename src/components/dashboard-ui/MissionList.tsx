@@ -107,7 +107,7 @@ export function MissionList({
 					<div
 						data-testid={`mission-item-${item.id}`}
 						className={cn(
-							"group relative flex w-full items-center gap-2 rounded-xl border border-border/70 bg-background text-xs text-foreground transition hover:border-primary/50 hover:bg-primary/5",
+							"group hover-bg-unified relative flex w-full items-center gap-2 rounded-xl border border-border/70 bg-background text-xs text-foreground transition hover:border-primary/50",
 							sidebarCollapsed ? "flex-row justify-center" : "",
 							isActive &&
 								"border-border/80 bg-muted/55 shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.28)] dark:bg-muted/70",

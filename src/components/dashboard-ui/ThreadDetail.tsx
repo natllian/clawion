@@ -436,7 +436,7 @@ export function ThreadDetail({
 				<Button
 					variant="ghost"
 					size="sm"
-					className="hover:bg-muted/50"
+					className="hover-bg-unified"
 					onClick={() => router.push(`/missions/${missionId}`)}
 				>
 					<ArrowLeft className="mr-2 h-4 w-4" />
@@ -625,7 +625,7 @@ export function ThreadDetail({
 									agentMap.get(task.assigneeAgentId) ?? task.assigneeAgentId,
 									<button
 										type="button"
-										className="inline-flex items-center rounded-full border border-border/70 bg-background px-2 py-0.5 text-[0.65rem] font-medium text-foreground hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+										className="hover-bg-unified inline-flex items-center rounded-full border border-border/70 bg-background px-2 py-0.5 text-[0.65rem] font-medium text-foreground hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
 									>
 										{assigneeLabel}
 									</button>,
@@ -658,7 +658,7 @@ export function ThreadDetail({
 												participantLabel,
 												<button
 													type="button"
-													className="inline-flex items-center rounded-full border border-border/70 bg-background px-2 py-0.5 text-[0.6rem] font-medium text-foreground/80 hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+													className="hover-bg-unified inline-flex items-center rounded-full border border-border/70 bg-background px-2 py-0.5 text-[0.6rem] font-medium text-foreground/80 hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
 												>
 													{participantLabel}
 												</button>,
