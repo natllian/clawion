@@ -6,10 +6,17 @@ vi.mock("next/link", () => ({
 	default: ({
 		children,
 		href,
+		className,
+		...rest
 	}: {
 		children: React.ReactNode;
 		href: string;
-	}) => <a href={href}>{children}</a>,
+		className?: string;
+	} & React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
+		<a href={href} className={className} {...rest}>
+			{children}
+		</a>
+	),
 }));
 
 vi.mock("lucide-react", async () => {
@@ -80,6 +87,9 @@ describe("TaskCard", () => {
 		const props = { ...defaultProps, activeMissionId: "m1", hasThread: true };
 		render(<TaskCard {...props} />);
 		expect(screen.getByText("Thread")).toBeInTheDocument();
+		const threadLink = screen.getByRole("link", { name: /thread/i });
+		expect(threadLink).toHaveClass("hover:border-primary/55");
+		expect(threadLink).toHaveClass("hover:bg-primary/20");
 	});
 
 	it("shows Unassigned when no assignee", () => {

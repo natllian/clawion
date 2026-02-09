@@ -46,7 +46,7 @@ export function TaskCard({
 				{activeMissionId && hasThread ? (
 					<Link
 						href={`/missions/${activeMissionId}/threads/${task.id}`}
-						className="shrink-0 inline-flex items-center gap-1 rounded-full border border-border/80 bg-muted/70 px-2.5 py-1 text-[0.65rem] font-medium text-foreground/80 shadow-sm transition hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:border-border/90 dark:bg-muted/45 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+						className="shrink-0 inline-flex items-center gap-1 rounded-full border border-border/80 bg-muted/70 px-2.5 py-1 text-[0.65rem] font-medium text-foreground/80 shadow-sm transition-colors duration-200 hover:border-primary/55 hover:bg-primary/20 hover:text-foreground hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:border-border/90 dark:bg-muted/45 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] dark:hover:border-primary/50 dark:hover:bg-primary/26 dark:hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_16px_-12px_rgba(0,0,0,0.7)]"
 					>
 						<MessageSquare className="h-3 w-3" />
 						Thread
