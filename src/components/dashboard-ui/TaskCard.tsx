@@ -28,8 +28,8 @@ export function TaskCard({
 	return (
 		<div
 			className={cn(
-				"group relative w-full overflow-hidden rounded-xl border border-border/70 bg-background p-3 shadow-sm transition will-change-transform hover:-translate-y-0.5 hover:shadow-md",
-				"dark:border-border/90 dark:bg-card dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.055),0_16px_26px_-18px_rgba(0,0,0,0.85),0_2px_6px_-3px_rgba(0,0,0,0.6)] dark:hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_24px_34px_-18px_rgba(0,0,0,0.9),0_6px_12px_-5px_rgba(0,0,0,0.62)]",
+				"group relative w-full overflow-hidden rounded-xl border border-border/70 bg-background p-3 shadow-sm transition will-change-transform hover:-translate-y-px hover:shadow-[0_10px_16px_-12px_rgba(0,0,0,0.35),0_2px_4px_-2px_rgba(0,0,0,0.2)]",
+				"dark:border-border/90 dark:bg-card dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.055),0_14px_20px_-16px_rgba(0,0,0,0.82),0_2px_6px_-4px_rgba(0,0,0,0.56)] dark:hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_18px_24px_-16px_rgba(0,0,0,0.86),0_4px_8px_-4px_rgba(0,0,0,0.58)]",
 				"after:pointer-events-none after:absolute after:inset-[1px] after:rounded-[11px] after:bg-gradient-to-b after:from-transparent after:to-transparent dark:after:from-white/[0.045] dark:after:to-transparent",
 				"before:absolute before:left-0 before:top-0 before:h-full before:w-1 before:bg-border/60 before:content-[''] dark:before:bg-transparent",
 				isBlocked && "before:bg-destructive/60 dark:before:bg-destructive/55",
