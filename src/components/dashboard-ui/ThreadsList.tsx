@@ -84,7 +84,7 @@ export function ThreadsList({
 						className={cn(
 							"block rounded-lg border border-border/70 bg-background px-3 py-2 transition hover:border-primary/40 hover:bg-primary/5",
 							activeThreadId === thread.taskId &&
-								"border-primary/60 bg-primary/10",
+								"border-border/80 bg-muted/55 shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.28)] dark:bg-muted/70",
 						)}
 					>
 						<div className="flex items-start justify-between gap-2">

@@ -56,7 +56,7 @@ describe("MissionList", () => {
 		const props = { ...defaultProps, activeMissionId: "m1" };
 		render(<MissionList {...props} />);
 		expect(screen.getByTestId("mission-item-m1")).toHaveClass(
-			"border-primary/60",
+			"border-border/80",
 		);
 	});
 

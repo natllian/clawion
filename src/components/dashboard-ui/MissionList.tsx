@@ -110,7 +110,7 @@ export function MissionList({
 							"group relative flex w-full items-center gap-2 rounded-xl border border-border/70 bg-background text-xs text-foreground transition hover:border-primary/50 hover:bg-primary/5",
 							sidebarCollapsed ? "flex-row justify-center" : "",
 							isActive &&
-								"border-primary/60 bg-primary/10 shadow-[0_1px_0_hsl(var(--primary)/0.2)]",
+								"border-border/80 bg-muted/55 shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.28)] dark:bg-muted/70",
 						)}
 					>
 						<Link
