@@ -31,8 +31,8 @@ export function TaskCard({
 				"group relative w-full overflow-hidden rounded-xl border border-border/70 bg-background p-3 shadow-sm transition will-change-transform hover:-translate-y-0.5 hover:shadow-md",
 				"dark:border-border/90 dark:bg-card dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.055),0_16px_26px_-18px_rgba(0,0,0,0.85),0_2px_6px_-3px_rgba(0,0,0,0.6)] dark:hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_24px_34px_-18px_rgba(0,0,0,0.9),0_6px_12px_-5px_rgba(0,0,0,0.62)]",
 				"after:pointer-events-none after:absolute after:inset-[1px] after:rounded-[11px] after:bg-gradient-to-b after:from-transparent after:to-transparent dark:after:from-white/[0.045] dark:after:to-transparent",
-				"before:absolute before:left-0 before:top-0 before:h-full before:w-1 before:bg-border/60 before:content-['']",
-				isBlocked && "before:bg-destructive/60",
+				"before:absolute before:left-0 before:top-0 before:h-full before:w-1 before:bg-border/60 before:content-[''] dark:before:bg-transparent",
+				isBlocked && "before:bg-destructive/60 dark:before:bg-destructive/55",
 			)}
 			data-testid="task-card"
 		>

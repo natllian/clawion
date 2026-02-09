@@ -126,6 +126,7 @@ describe("TaskCard", () => {
 		render(<TaskCard {...defaultProps} />);
 		const card = screen.getByTestId("task-card");
 		expect(card).toHaveClass("dark:border-border/90");
+		expect(card).toHaveClass("dark:before:bg-transparent");
 		expect(card.className).toContain(
 			"dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.055)",
 		);
