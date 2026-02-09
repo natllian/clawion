@@ -191,7 +191,7 @@ export function AgentSnapshotPanel({
 						)}
 					</div>
 				</div>
-				<p className="mb-2 text-[0.7rem] text-amber-700 dark:text-amber-400">
+				<p className="tone-warning-text mb-2 text-[0.7rem]">
 					Critical and private. It must never be disclosed to other agents.
 				</p>
 				<textarea

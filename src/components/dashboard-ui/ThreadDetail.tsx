@@ -61,15 +61,15 @@ function resolveColumnBadgeTone(columnId: string, columnName?: string | null) {
 	const value = `${columnId} ${columnName ?? ""}`.toLowerCase();
 
 	if (value.includes("block")) {
-		return "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+		return "tone-warning-soft";
 	}
 	if (value.includes("ongoing") || value.includes("doing")) {
-		return "border-blue-500/40 bg-blue-500/10 text-blue-700 dark:text-blue-300";
+		return "tone-info-soft";
 	}
 	if (value.includes("complete") || value.includes("done")) {
-		return "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+		return "tone-success-soft";
 	}
-	return "border-slate-500/40 bg-slate-500/10 text-slate-700 dark:text-slate-300";
+	return "tone-neutral-soft";
 }
 
 function ThreadSkeleton() {
@@ -589,8 +589,8 @@ export function ThreadDetail({
 														className={cn(
 															"rounded-full border px-2 py-0.5 text-[0.6rem] font-medium",
 															hasPendingAck
-																? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-																: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+																? "tone-warning-soft"
+																: "tone-success-soft",
 														)}
 													>
 														{hasPendingAck

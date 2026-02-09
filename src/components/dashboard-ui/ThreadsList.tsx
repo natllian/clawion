@@ -102,8 +102,8 @@ export function ThreadsList({
 							className={cn(
 								"mt-1 text-[0.62rem]",
 								thread.unackedMentionCount > 0
-									? "text-amber-700 dark:text-amber-400"
-									: "text-emerald-700 dark:text-emerald-400",
+									? "tone-warning-text"
+									: "tone-success-text",
 							)}
 						>
 							{ackSummary}

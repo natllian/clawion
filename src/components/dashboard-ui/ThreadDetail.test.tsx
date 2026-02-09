@@ -568,7 +568,7 @@ describe("ThreadDetail", () => {
 
 		await waitFor(() => {
 			const badge = screen.getByText("Done");
-			expect(badge).toHaveClass("border-emerald-500/40");
+			expect(badge).toHaveClass("tone-success-soft");
 		});
 	});
 

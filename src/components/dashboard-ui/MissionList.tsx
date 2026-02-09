@@ -26,7 +26,7 @@ function getStatusBadgeClass(status: MissionIndexItem["status"]) {
 		case "active":
 			return "border-primary/35 bg-primary/10 text-primary";
 		case "completed":
-			return "border-emerald-500/35 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+			return "tone-success-soft";
 		default:
 			return "border-border/60 bg-muted/40 text-muted-foreground";
 	}
