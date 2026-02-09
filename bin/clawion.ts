@@ -1,8 +1,8 @@
-#!/usr/bin/env tsx
-import { spawn } from "node:child_process";
+#!/usr/bin/env node
 import { Command } from "commander";
 import { logInvocations } from "../src/cli/log";
 import { runThreadShow } from "../src/cli/thread-show";
+import { startUiServer } from "../src/cli/ui-server";
 import { runWake } from "../src/cli/wake";
 import {
 	resolveStatusForColumn,
@@ -62,14 +62,31 @@ program.hook("preAction", async (_thisCommand, _actionCommand) => {
 
 program
 	.command("ui")
-	.description("Start the web UI dev server")
-	.action(() => {
-		const child = spawn("pnpm", ["dev"], {
-			stdio: "inherit",
+	.description("Start the web UI server")
+	.option("--port <port>", "Port for the web UI server")
+	.action((options) => {
+		const result = startUiServer({
+			port: options.port as string | undefined,
+			cliModuleUrl: import.meta.url,
 		});
+		if (!result.child) {
+			console.error(result.errorMessage ?? "Failed to start web UI server.");
+			process.exitCode = 1;
+			return;
+		}
+		const child = result.child;
 
 		child.on("exit", (code) => {
 			process.exit(code ?? 0);
+		});
+
+		child.on("error", (error) => {
+			console.error(
+				error instanceof Error
+					? error.message
+					: "Failed to start web UI server.",
+			);
+			process.exitCode = 1;
 		});
 	});
 
@@ -83,9 +100,9 @@ type HelpEntry = {
 const HELP_ENTRIES: HelpEntry[] = [
 	{
 		command: "ui",
-		purpose: "Start the web UI dev server.",
-		params: ["(no params)"],
-		example: "clawion ui",
+		purpose: "Start the packaged web UI server.",
+		params: ["--port <port> (optional)"],
+		example: "clawion ui --port 3000",
 	},
 	{
 		command: "log",

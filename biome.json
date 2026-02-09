@@ -11,6 +11,7 @@
 			"**",
 			"!!**/.next",
 			"!!**/.dist",
+			"!!**/dist",
 			"!**/node_modules",
 			"!!**/.claude",
 			"!!**/coverage"

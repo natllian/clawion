@@ -2,9 +2,13 @@ import { redirect } from "next/navigation";
 import { loadMissionsIndex } from "@/core/workspace/index-file";
 import { resolveMissionsDir } from "@/core/workspace/paths";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
 	const missionsDir = resolveMissionsDir();
-	const missionsIndex = await loadMissionsIndex(missionsDir);
+	const missionsIndex = await loadMissionsIndex(missionsDir).catch(() => ({
+		missions: [],
+	}));
 
 	if (missionsIndex.missions.length > 0) {
 		redirect(`/missions/${missionsIndex.missions[0].id}`);
