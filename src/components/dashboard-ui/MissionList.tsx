@@ -26,7 +26,7 @@ function getStatusBadgeClass(status: MissionIndexItem["status"]) {
 		case "active":
 			return "border-primary/35 bg-primary/10 text-primary";
 		case "completed":
-			return "border-emerald-500/35 bg-emerald-500/10 text-emerald-700";
+			return "border-emerald-500/35 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
 		default:
 			return "border-border/60 bg-muted/40 text-muted-foreground";
 	}
@@ -158,7 +158,7 @@ export function MissionList({
 											handleDelete(e, item.id, item.name || item.id)
 										}
 									>
-										<Trash2 className="h-3.5 w-3.5 text-red-600" />
+										<Trash2 className="h-3.5 w-3.5 text-destructive/90" />
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent side="right">Delete mission</TooltipContent>
