@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { ThreadSummary } from "@/core/schemas";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { StatusTag } from "./StatusTag";
 
 export type ThreadListItem = ThreadSummary & {
 	unackedMentionCount: number;
@@ -99,16 +100,15 @@ export function ThreadsList({
 							by {lastAuthor} · {lastMessage}
 						</p>
 						<div className="mt-1 flex flex-wrap items-center gap-1 text-[0.62rem]">
-							<span
+							<StatusTag
+								tone={thread.unackedMentionCount > 0 ? "warning" : "success"}
 								className={cn(
-									"inline-flex items-center rounded-full border px-1.5 py-0.5 font-medium",
-									thread.unackedMentionCount > 0
-										? "thread-ack-pending"
-										: "thread-ack-ok",
+									"px-1.5 py-0.5 text-[0.6rem]",
+									thread.unackedMentionCount > 0 && "thread-ack-pending",
 								)}
 							>
 								{ackSummary}
-							</span>
+							</StatusTag>
 							{pendingAckLabel ? (
 								<span className="text-muted-foreground">
 									· {pendingAckLabel}
