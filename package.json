@@ -12,6 +12,7 @@
 	},
 	"files": [
 		"dist",
+		"skills/clawion/SKILL.md",
 		"README.md"
 	],
 	"scripts": {

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
+import { runInit } from "../src/cli/init";
 import { logInvocations } from "../src/cli/log";
 import { runThreadShow } from "../src/cli/thread-show";
 import { startUiServer } from "../src/cli/ui-server";
@@ -61,6 +62,21 @@ program.hook("preAction", async (_thisCommand, _actionCommand) => {
 });
 
 program
+	.command("init")
+	.description("Install built-in clawion skill into OpenClaw workspace")
+	.action(async () => {
+		try {
+			const result = await runInit({ cliModuleUrl: import.meta.url });
+			console.log(`OpenClaw config: ${result.configPath}`);
+			console.log(`OpenClaw workspace: ${result.workspaceDir}`);
+			console.log(`Skill installed: ${result.targetPath}`);
+		} catch (error) {
+			console.error(error instanceof Error ? error.message : String(error));
+			process.exitCode = 1;
+		}
+	});
+
+program
 	.command("ui")
 	.description("Start the web UI server")
 	.option("--port <port>", "Port for the web UI server")
@@ -98,6 +114,13 @@ type HelpEntry = {
 };
 
 const HELP_ENTRIES: HelpEntry[] = [
+	{
+		command: "init",
+		purpose:
+			"Install built-in clawion SKILL.md into OpenClaw workspace from openclaw.json.",
+		params: ["(no params)"],
+		example: "clawion init",
+	},
 	{
 		command: "ui",
 		purpose: "Start the packaged web UI server.",
