@@ -120,7 +120,7 @@ export function MissionList({
 							) : (
 								<div className="min-w-0 flex-1">
 									<div className="flex items-center justify-between gap-2">
-										<span className="truncate pr-1 text-[0.75rem] font-medium leading-none">
+										<span className="truncate pr-1 text-[0.75rem] font-medium leading-snug">
 											{item.name}
 										</span>
 										<StatusTag
