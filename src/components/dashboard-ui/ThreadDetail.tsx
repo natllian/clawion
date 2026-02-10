@@ -24,9 +24,21 @@ import type {
 } from "@/core/schemas";
 import { formatDate, getInitials } from "@/lib/format";
 import type { StatusTone } from "@/lib/status-tones";
+import { isBlockedStatusNotes, isCompletedTaskColumn } from "@/lib/task-state";
 import { cn } from "@/lib/utils";
 import { AgentSnapshotPanel } from "./AgentSnapshotPanel";
+import {
+	fetchAgentSnapshotPayload,
+	saveAgentRoleDescription,
+	saveAgentSecret,
+} from "./agent-snapshot-api";
 import { MarkdownBlock } from "./MarkdownBlock";
+import {
+	pillClass,
+	pillInteractiveClass,
+	pillInteractiveCompactClass,
+	pillMutedClass,
+} from "./pill-tokens";
 import { StatusTag } from "./StatusTag";
 
 interface ThreadDetailProps {
@@ -53,10 +65,6 @@ interface ThreadResponse {
 		id: string;
 		name: string;
 	} | null;
-}
-
-function isBlocked(statusNotes: string | null): boolean {
-	return (statusNotes ?? "").toLowerCase().startsWith("blocked:");
 }
 
 function resolveColumnBadgeTone(
@@ -177,38 +185,27 @@ export function ThreadDetail({
 			setSnapshotSecret("");
 			return;
 		}
+		const agentId = snapshotAgentId;
 
 		const controller = new AbortController();
 		setLoadingSnapshot(true);
 
 		async function loadSnapshot() {
 			try {
-				const [workingResponse, secretResponse] = await Promise.all([
-					fetch(`/api/missions/${missionId}/working/${snapshotAgentId}`, {
-						cache: "no-store",
-						signal: controller.signal,
-					}),
-					fetch(`/api/missions/${missionId}/secrets/${snapshotAgentId}`, {
-						cache: "no-store",
-						signal: controller.signal,
-					}),
-				]);
+				const snapshot = await fetchAgentSnapshotPayload(
+					missionId,
+					agentId,
+					controller.signal,
+				);
 
-				if (!workingResponse.ok || !secretResponse.ok) {
+				if (!snapshot) {
 					setSnapshotWorking([]);
 					setSnapshotSecret("");
 					return;
 				}
 
-				const workingPayload = (await workingResponse.json()) as {
-					events: WorkingEvent[];
-				};
-				const secretPayload = (await secretResponse.json()) as {
-					content: string;
-				};
-
-				setSnapshotWorking(workingPayload.events);
-				setSnapshotSecret(secretPayload.content);
+				setSnapshotWorking(snapshot.working);
+				setSnapshotSecret(snapshot.secret);
 			} catch {
 				setSnapshotWorking([]);
 				setSnapshotSecret("");
@@ -239,19 +236,7 @@ export function ThreadDetail({
 	async function handleSnapshotSecretSave(agentId: string) {
 		setSavingSnapshot(true);
 		try {
-			const response = await fetch(
-				`/api/missions/${missionId}/secrets/${agentId}`,
-				{
-					method: "PUT",
-					headers: {
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify({ content: snapshotSecret }),
-				},
-			);
-			if (!response.ok) {
-				throw new Error("Failed to save secret.");
-			}
+			await saveAgentSecret(missionId, agentId, snapshotSecret);
 		} finally {
 			setSavingSnapshot(false);
 		}
@@ -273,19 +258,11 @@ export function ThreadDetail({
 	async function handleSnapshotRoleDescriptionSave(agentId: string) {
 		setSavingSnapshotRole(true);
 		try {
-			const response = await fetch(
-				`/api/missions/${missionId}/agents/${agentId}`,
-				{
-					method: "PUT",
-					headers: {
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify({ roleDescription: snapshotRoleDescription }),
-				},
+			await saveAgentRoleDescription(
+				missionId,
+				agentId,
+				snapshotRoleDescription,
 			);
-			if (!response.ok) {
-				throw new Error("Failed to save role description.");
-			}
 			setSnapshotRoleDraftByAgentId((current) => ({
 				...current,
 				[agentId]: snapshotRoleDescription,
@@ -314,12 +291,9 @@ export function ThreadDetail({
 		0,
 	);
 	const hasPendingAcks = pendingAckCount > 0;
-	const isTaskBlocked = isBlocked(task.statusNotes);
+	const isTaskBlocked = isBlockedStatusNotes(task.statusNotes);
 	const columnBadgeTone = resolveColumnBadgeTone(task.columnId, column?.name);
-	const isTaskCompleted =
-		`${task.columnId} ${column?.name ?? ""}`
-			.toLowerCase()
-			.match(/complete|done/) !== null;
+	const isTaskCompleted = isCompletedTaskColumn(task.columnId, column?.name);
 	const assigneeLabel = task.assigneeAgentId
 		? `@${agentMap.get(task.assigneeAgentId) ?? task.assigneeAgentId}`
 		: "Unassigned";
@@ -484,9 +458,8 @@ export function ThreadDetail({
 					<span>Updated {formatDate(task.updatedAt)}</span>
 					<span
 						className={cn(
-							"inline-flex items-center rounded-full border border-border/70 bg-background px-2 py-0.5 text-[0.65rem] font-medium text-foreground",
-							assigneeLabel === "Unassigned" &&
-								"border-dashed text-muted-foreground",
+							pillClass,
+							assigneeLabel === "Unassigned" && pillMutedClass,
 						)}
 					>
 						{assigneeLabel}
@@ -618,17 +591,12 @@ export function ThreadDetail({
 								renderAgentSnapshotDropdown(
 									task.assigneeAgentId,
 									agentMap.get(task.assigneeAgentId) ?? task.assigneeAgentId,
-									<button
-										type="button"
-										className="hover-bg-unified inline-flex items-center rounded-full border border-border/70 bg-background px-2 py-0.5 text-[0.65rem] font-medium text-foreground hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-									>
+									<button type="button" className={pillInteractiveClass}>
 										{assigneeLabel}
 									</button>,
 								)
 							) : (
-								<span className="inline-flex items-center rounded-full border border-border/70 border-dashed bg-background px-2 py-0.5 text-[0.65rem] font-medium text-muted-foreground">
-									Unassigned
-								</span>
+								<span className={pillMutedClass}>Unassigned</span>
 							)}
 						</CardContent>
 					</Card>
@@ -653,7 +621,10 @@ export function ThreadDetail({
 												participantLabel,
 												<button
 													type="button"
-													className="hover-bg-unified inline-flex items-center rounded-full border border-border/70 bg-background px-2 py-0.5 text-[0.6rem] font-medium text-foreground/80 hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+													className={cn(
+														pillInteractiveCompactClass,
+														"text-[0.6rem]",
+													)}
 												>
 													{participantLabel}
 												</button>,

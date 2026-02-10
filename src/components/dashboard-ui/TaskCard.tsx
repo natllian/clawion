@@ -6,7 +6,9 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { TaskItem } from "@/core/schemas";
 import { normalizeMarkdownContent } from "@/lib/markdown";
+import { isBlockedStatusNotes } from "@/lib/task-state";
 import { cn } from "@/lib/utils";
+import { pillClass, pillMutedClass } from "./pill-tokens";
 
 interface TaskCardProps {
 	task: TaskItem;
@@ -22,7 +24,7 @@ export function TaskCard({
 	hasThread,
 }: TaskCardProps) {
 	const statusNotes = task.statusNotes ?? "";
-	const isBlocked = statusNotes.toLowerCase().startsWith("blocked:");
+	const isBlocked = isBlockedStatusNotes(task.statusNotes);
 	const normalizedDescription = normalizeMarkdownContent(task.description);
 
 	return (
@@ -83,8 +85,9 @@ export function TaskCard({
 				<div className="mt-2 flex items-center gap-2 text-[0.65rem] text-muted-foreground">
 					<span
 						className={cn(
-							"inline-flex items-center rounded-full border border-border/70 bg-background px-2 py-0.5 text-[0.6rem] font-medium text-foreground",
-							!task.assigneeAgentId && "border-dashed text-muted-foreground",
+							pillClass,
+							"text-[0.6rem]",
+							!task.assigneeAgentId && pillMutedClass,
 						)}
 					>
 						{task.assigneeAgentId

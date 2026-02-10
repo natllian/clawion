@@ -1,8 +1,8 @@
 import { existsSync } from "node:fs";
 import { copyFile, mkdir, readFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
+import { resolvePackageRootDir } from "./runtime-paths";
 
 type EnvMap = Record<string, string | undefined>;
 
@@ -18,19 +18,6 @@ type InitResult = {
 	workspaceDir: string;
 	targetPath: string;
 };
-
-function resolvePackageRootDir(cliModuleUrl = import.meta.url): string {
-	const cliDir = dirname(fileURLToPath(cliModuleUrl));
-	const candidates = [resolve(cliDir, "../.."), resolve(cliDir, "..")];
-
-	for (const candidate of candidates) {
-		if (existsSync(join(candidate, "package.json"))) {
-			return candidate;
-		}
-	}
-
-	return candidates[0];
-}
 
 export function resolveOpenClawConfigPath(
 	env: EnvMap = process.env,

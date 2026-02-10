@@ -46,6 +46,11 @@ const context: CliContext = {
 
 const program = new Command();
 
+function handleCliError(error: unknown): void {
+	console.error(error instanceof Error ? error.message : String(error));
+	process.exitCode = 1;
+}
+
 program
 	.name("clawion")
 	.description("Clawion CLI")
@@ -71,8 +76,7 @@ program
 			console.log(`OpenClaw workspace: ${result.workspaceDir}`);
 			console.log(`Skill installed: ${result.targetPath}`);
 		} catch (error) {
-			console.error(error instanceof Error ? error.message : String(error));
-			process.exitCode = 1;
+			handleCliError(error);
 		}
 	});
 
@@ -314,8 +318,7 @@ async function requireManager(
 		});
 		return true;
 	} catch (error) {
-		console.error(error instanceof Error ? error.message : String(error));
-		process.exitCode = 1;
+		handleCliError(error);
 		return false;
 	}
 }
@@ -336,8 +339,7 @@ mission
 			});
 			console.log(`Mission created: ${options.id}`);
 		} catch (error) {
-			console.error(error instanceof Error ? error.message : String(error));
-			process.exitCode = 1;
+			handleCliError(error);
 		}
 	});
 
@@ -375,8 +377,7 @@ mission
 			});
 			console.log(`Mission roadmap set: ${options.id}`);
 		} catch (error) {
-			console.error(error instanceof Error ? error.message : String(error));
-			process.exitCode = 1;
+			handleCliError(error);
 		}
 	});
 
@@ -419,8 +420,7 @@ mission
 			await completeMission(context.missionsDir, options.id);
 			console.log(`Mission completed: ${options.id}`);
 		} catch (error) {
-			console.error(error instanceof Error ? error.message : String(error));
-			process.exitCode = 1;
+			handleCliError(error);
 		}
 	});
 
@@ -452,8 +452,7 @@ task
 			});
 			console.log(`Task created: ${options.id}`);
 		} catch (error) {
-			console.error(error instanceof Error ? error.message : String(error));
-			process.exitCode = 1;
+			handleCliError(error);
 		}
 	});
 
@@ -520,8 +519,7 @@ task
 			});
 			console.log(`Task updated: ${options.id}`);
 		} catch (error) {
-			console.error(error instanceof Error ? error.message : String(error));
-			process.exitCode = 1;
+			handleCliError(error);
 		}
 	});
 
@@ -545,8 +543,7 @@ task
 			);
 			console.log(`Task assigned: ${options.task}`);
 		} catch (error) {
-			console.error(error instanceof Error ? error.message : String(error));
-			process.exitCode = 1;
+			handleCliError(error);
 		}
 	});
 
@@ -606,8 +603,7 @@ agent
 			});
 			console.log(`Agent registered: ${options.id}`);
 		} catch (error) {
-			console.error(error instanceof Error ? error.message : String(error));
-			process.exitCode = 1;
+			handleCliError(error);
 		}
 	});
 
@@ -719,8 +715,7 @@ message
 			});
 			console.log(`Message added: ${messageId}`);
 		} catch (error) {
-			console.error(error instanceof Error ? error.message : String(error));
-			process.exitCode = 1;
+			handleCliError(error);
 		}
 	});
 
@@ -747,8 +742,7 @@ thread
 				taskId: options.task,
 			});
 		} catch (error) {
-			console.error(error instanceof Error ? error.message : String(error));
-			process.exitCode = 1;
+			handleCliError(error);
 		}
 	});
 
@@ -778,8 +772,7 @@ working
 			});
 			console.log(`Working event added: ${entry.id}`);
 		} catch (error) {
-			console.error(error instanceof Error ? error.message : String(error));
-			process.exitCode = 1;
+			handleCliError(error);
 		}
 	});
 

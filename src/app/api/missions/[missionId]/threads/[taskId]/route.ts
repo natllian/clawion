@@ -8,7 +8,10 @@ import {
 } from "@/app/api/_lib/route-helpers";
 import { readJson } from "@/core/fs/json";
 import { tasksSchema } from "@/core/schemas";
-import { listUnackedTaskMentions } from "@/core/workspace/inbox";
+import {
+	groupPendingAckByMessageId,
+	listUnackedTaskMentions,
+} from "@/core/workspace/inbox";
 import { resolveMissionPath } from "@/core/workspace/mission";
 import { resolveMissionsDir } from "@/core/workspace/paths";
 import { getThread } from "@/core/workspace/threads";
@@ -36,10 +39,7 @@ export async function GET(_request: Request, context: MissionTaskRouteContext) {
 			(entry) => entry.id === task.columnId,
 		);
 
-		const pendingAckByMessageId: Record<string, string[]> = {};
-		for (const item of pendingMentions) {
-			pendingAckByMessageId[item.messageId] = item.unackedAgentIds;
-		}
+		const pendingAckByMessageId = groupPendingAckByMessageId(pendingMentions);
 
 		return NextResponse.json(
 			{

@@ -5,6 +5,7 @@ import {
 	type MissionRouteContext,
 	NO_CACHE_HEADERS,
 	parseJsonBody,
+	validateStringField,
 } from "@/app/api/_lib/route-helpers";
 import {
 	deleteMission,
@@ -32,19 +33,14 @@ export async function PUT(request: Request, context: MissionRouteContext) {
 		const result = await parseJsonBody<{ roadmap?: unknown }>(request);
 		if (result.error) return result.error;
 
-		const body = result.data;
-		if (typeof body.roadmap !== "string") {
-			return NextResponse.json(
-				{ error: "roadmap must be a string" },
-				{ status: 400 },
-			);
-		}
+		const roadmapResult = validateStringField(result.data.roadmap, "roadmap");
+		if (roadmapResult.error) return roadmapResult.error;
 
 		const missionsDir = resolveMissionsDir();
 		await updateMissionRoadmap({
 			missionsDir,
 			id: missionId,
-			roadmap: body.roadmap,
+			roadmap: roadmapResult.value,
 		});
 		const payload = await showMission(missionsDir, missionId);
 		return NextResponse.json(payload, { headers: NO_CACHE_HEADERS });

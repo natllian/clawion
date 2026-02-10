@@ -20,6 +20,22 @@ export type UnackedTaskMention = {
 	unackedAgentIds: string[];
 };
 
+export function collectPendingAckAgentIds(
+	items: UnackedTaskMention[],
+): string[] {
+	return Array.from(new Set(items.flatMap((item) => item.unackedAgentIds)));
+}
+
+export function groupPendingAckByMessageId(
+	items: UnackedTaskMention[],
+): Record<string, string[]> {
+	const grouped: Record<string, string[]> = {};
+	for (const item of items) {
+		grouped[item.messageId] = item.unackedAgentIds;
+	}
+	return grouped;
+}
+
 function resolveInboxPath(missionPath: string, agentId: string): string {
 	return join(missionPath, "inbox", `${agentId}.jsonl`);
 }

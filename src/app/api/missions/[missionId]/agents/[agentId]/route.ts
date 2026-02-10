@@ -4,6 +4,7 @@ import {
 	errorResponse,
 	type MissionAgentRouteContext,
 	parseJsonBody,
+	validateStringField,
 } from "@/app/api/_lib/route-helpers";
 import { setAgentRoleDescription } from "@/core/workspace/agents";
 import { resolveMissionPath } from "@/core/workspace/mission";
@@ -17,26 +18,19 @@ export async function PUT(request: Request, context: MissionAgentRouteContext) {
 		const result = await parseJsonBody<{ roleDescription?: unknown }>(request);
 		if (result.error) return result.error;
 
-		const body = result.data;
-		if (typeof body.roleDescription !== "string") {
-			return NextResponse.json(
-				{ error: "roleDescription must be a string" },
-				{ status: 400 },
-			);
-		}
-		if (body.roleDescription.length < 1) {
-			return NextResponse.json(
-				{ error: "roleDescription must not be empty" },
-				{ status: 400 },
-			);
-		}
+		const roleResult = validateStringField(
+			result.data.roleDescription,
+			"roleDescription",
+			{ nonEmpty: true },
+		);
+		if (roleResult.error) return roleResult.error;
 
 		const missionsDir = resolveMissionsDir();
 		const missionDir = await resolveMissionPath(missionsDir, missionId);
 		const agent = await setAgentRoleDescription({
 			missionDir,
 			agentId,
-			roleDescription: body.roleDescription,
+			roleDescription: roleResult.value,
 		});
 		return NextResponse.json({
 			agentId: agent.id,

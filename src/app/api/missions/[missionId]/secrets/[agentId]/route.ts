@@ -5,6 +5,7 @@ import {
 	type MissionAgentRouteContext,
 	NO_CACHE_HEADERS,
 	parseJsonBody,
+	validateStringField,
 } from "@/app/api/_lib/route-helpers";
 import { NotFoundError } from "@/core/errors";
 import { listAgents } from "@/core/workspace/agents";
@@ -53,19 +54,14 @@ export async function PUT(request: Request, context: MissionAgentRouteContext) {
 		const result = await parseJsonBody<{ content?: unknown }>(request);
 		if (result.error) return result.error;
 
-		const body = result.data;
-		if (typeof body.content !== "string") {
-			return NextResponse.json(
-				{ error: "content must be a string" },
-				{ status: 400 },
-			);
-		}
+		const contentResult = validateStringField(result.data.content, "content");
+		if (contentResult.error) return contentResult.error;
 
 		await setAgentSecret({
 			missionsDir,
 			missionId,
 			agentId,
-			content: body.content,
+			content: contentResult.value,
 		});
 
 		return NextResponse.json({ agentId, updated: true });

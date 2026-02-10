@@ -1,8 +1,8 @@
 import type { ChildProcess } from "node:child_process";
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
+import { resolvePackageRootDir } from "./runtime-paths";
 
 type SpawnProcess = (
 	command: string,
@@ -49,19 +49,6 @@ function ensurePort(port?: number | string): string | undefined {
 	}
 
 	return String(parsed);
-}
-
-function resolvePackageRootDir(cliModuleUrl = import.meta.url): string {
-	const cliDir = dirname(fileURLToPath(cliModuleUrl));
-	const candidates = [resolve(cliDir, "../.."), resolve(cliDir, "..")];
-
-	for (const candidate of candidates) {
-		if (existsSync(resolve(candidate, "package.json"))) {
-			return candidate;
-		}
-	}
-
-	return candidates[0];
 }
 
 function hasBuiltUi(runtimeDir: string): boolean {

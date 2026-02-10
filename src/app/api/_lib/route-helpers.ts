@@ -52,3 +52,29 @@ export async function parseJsonBody<T = unknown>(
 		};
 	}
 }
+
+export function validateStringField(
+	value: unknown,
+	fieldName: string,
+	options?: { nonEmpty?: boolean },
+): { value: string; error?: never } | { value?: never; error: NextResponse } {
+	if (typeof value !== "string") {
+		return {
+			error: NextResponse.json(
+				{ error: `${fieldName} must be a string` },
+				{ status: 400 },
+			),
+		};
+	}
+
+	if (options?.nonEmpty && value.length < 1) {
+		return {
+			error: NextResponse.json(
+				{ error: `${fieldName} must not be empty` },
+				{ status: 400 },
+			),
+		};
+	}
+
+	return { value };
+}

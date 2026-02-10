@@ -5,7 +5,10 @@ import {
 	type MissionRouteContext,
 	NO_CACHE_HEADERS,
 } from "@/app/api/_lib/route-helpers";
-import { listUnackedTaskMentions } from "@/core/workspace/inbox";
+import {
+	collectPendingAckAgentIds,
+	listUnackedTaskMentions,
+} from "@/core/workspace/inbox";
 import { resolveMissionsDir } from "@/core/workspace/paths";
 import { listThreads } from "@/core/workspace/threads";
 
@@ -24,9 +27,7 @@ export async function GET(_request: Request, context: MissionRouteContext) {
 					missionId,
 					thread.taskId,
 				);
-				const pendingAckAgentIds = Array.from(
-					new Set(pendingMentions.flatMap((item) => item.unackedAgentIds)),
-				);
+				const pendingAckAgentIds = collectPendingAckAgentIds(pendingMentions);
 				return {
 					...thread,
 					unackedMentionCount: pendingMentions.length,

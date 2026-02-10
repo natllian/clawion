@@ -11,7 +11,13 @@ import type {
 	ThreadSummary,
 	WorkingEvent,
 } from "@/core/schemas";
+import { resolveStatusForColumn } from "@/core/task-status";
 import { cn } from "@/lib/utils";
+import {
+	fetchAgentSnapshotPayload,
+	saveAgentRoleDescription,
+	saveAgentSecret,
+} from "./agent-snapshot-api";
 import {
 	AgentDropdown,
 	DashboardHeader,
@@ -22,6 +28,7 @@ import {
 	ThreadDetail,
 	ThreadsList,
 } from "./index";
+import { pillClass } from "./pill-tokens";
 
 type MissionsResponse = {
 	missionsDir: string;
@@ -32,16 +39,6 @@ type MissionsResponse = {
 type MissionResponse = {
 	mission: Mission;
 	roadmap: string;
-};
-
-type WorkingResponse = {
-	agentId: string;
-	events: WorkingEvent[];
-};
-
-type SecretResponse = {
-	agentId: string;
-	content: string;
 };
 
 type ThreadListItem = ThreadSummary & {
@@ -300,34 +297,27 @@ export function Dashboard({
 			setDarkSecret("");
 			return;
 		}
+		const missionId = activeMissionId;
+		const agentId = activeAgentId;
 
 		const controller = new AbortController();
 		setLoadingAgent(true);
 
 		async function loadAgent() {
 			try {
-				const [workingResponse, secretResponse] = await Promise.all([
-					fetch(`/api/missions/${activeMissionId}/working/${activeAgentId}`, {
-						cache: "no-store",
-						signal: controller.signal,
-					}),
-					fetch(`/api/missions/${activeMissionId}/secrets/${activeAgentId}`, {
-						cache: "no-store",
-						signal: controller.signal,
-					}),
-				]);
-
-				if (!workingResponse.ok || !secretResponse.ok) {
+				const snapshot = await fetchAgentSnapshotPayload(
+					missionId,
+					agentId,
+					controller.signal,
+				);
+				if (!snapshot) {
 					setWorking([]);
 					setDarkSecret("");
 					return;
 				}
 
-				const workingPayload =
-					(await workingResponse.json()) as WorkingResponse;
-				const secretPayload = (await secretResponse.json()) as SecretResponse;
-				setWorking(workingPayload.events);
-				setDarkSecret(secretPayload.content);
+				setWorking(snapshot.working);
+				setDarkSecret(snapshot.secret);
 			} catch (err) {
 				if (isAbortError(err)) return;
 				setWorking([]);
@@ -360,19 +350,7 @@ export function Dashboard({
 			if (!activeMissionId) return;
 			setSavingDarkSecret(true);
 			try {
-				const response = await fetch(
-					`/api/missions/${activeMissionId}/secrets/${agentId}`,
-					{
-						method: "PUT",
-						headers: {
-							"Content-Type": "application/json",
-						},
-						body: JSON.stringify({ content }),
-					},
-				);
-				if (!response.ok) {
-					throw new Error("Failed to save dark secret.");
-				}
+				await saveAgentSecret(activeMissionId, agentId, content);
 				setDarkSecret(content);
 			} catch (err) {
 				if (!isAbortError(err)) {
@@ -390,19 +368,7 @@ export function Dashboard({
 			if (!activeMissionId) return;
 			setSavingRoleDescription(true);
 			try {
-				const response = await fetch(
-					`/api/missions/${activeMissionId}/agents/${agentId}`,
-					{
-						method: "PUT",
-						headers: {
-							"Content-Type": "application/json",
-						},
-						body: JSON.stringify({ roleDescription: content }),
-					},
-				);
-				if (!response.ok) {
-					throw new Error("Failed to save role description.");
-				}
+				await saveAgentRoleDescription(activeMissionId, agentId, content);
 				setAgents((current) => {
 					if (!current) return current;
 					return {
@@ -483,15 +449,9 @@ export function Dashboard({
 	const completion = React.useMemo(() => {
 		if (!tasks || tasks.tasks.length === 0) return 0;
 
-		const completedColumn =
-			tasks.columns.find((column) => column.id.toLowerCase() === "completed") ??
-			tasks.columns.find((column) =>
-				column.name.toLowerCase().includes("complete"),
-			) ??
-			tasks.columns[tasks.columns.length - 1];
-
 		const doneCount = tasks.tasks.filter(
-			(task) => task.columnId === completedColumn?.id,
+			(task) =>
+				resolveStatusForColumn(tasks.columns, task.columnId) === "completed",
 		).length;
 
 		return Math.round((doneCount / tasks.tasks.length) * 100);
@@ -568,9 +528,7 @@ export function Dashboard({
 					) : (
 						<div className="flex flex-col items-center gap-2 text-[0.65rem] text-muted-foreground">
 							<Sparkles className="h-4 w-4" />
-							<span className="rounded-full border border-border/70 bg-background px-2 py-0.5 text-[0.65rem] font-medium text-foreground">
-								{sortedThreads.length}
-							</span>
+							<span className={pillClass}>{sortedThreads.length}</span>
 						</div>
 					)}
 				</Sidebar>
