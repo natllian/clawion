@@ -1,11 +1,10 @@
 "use client";
 
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Badge } from "@/components/ui/badge";
 import type { Mission } from "@/core/schemas";
 import { missionStatusTone } from "@/lib/status-tones";
-import { cn } from "@/lib/utils";
 import { SnapshotDropdown } from "./SnapshotDropdown";
+import { StatusTag } from "./StatusTag";
 
 interface DashboardHeaderProps {
 	mission: Mission | null;
@@ -35,15 +34,12 @@ export function DashboardHeader({
 						{mission?.name ?? "Select a mission"}
 					</h1>
 					{mission && (
-						<Badge
-							variant="outline"
-							className={cn(
-								"rounded-full text-[0.6rem] uppercase tracking-wide",
-								missionStatusTone[mission.status],
-							)}
+						<StatusTag
+							tone={missionStatusTone[mission.status]}
+							className="text-[0.6rem] uppercase tracking-wide"
 						>
 							{mission.status}
-						</Badge>
+						</StatusTag>
 					)}
 				</div>
 				{!mission && (

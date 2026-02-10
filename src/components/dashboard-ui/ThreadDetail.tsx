@@ -23,9 +23,11 @@ import type {
 	WorkingEvent,
 } from "@/core/schemas";
 import { formatDate, getInitials } from "@/lib/format";
+import type { StatusTone } from "@/lib/status-tones";
 import { cn } from "@/lib/utils";
 import { AgentSnapshotPanel } from "./AgentSnapshotPanel";
 import { MarkdownBlock } from "./MarkdownBlock";
+import { StatusTag } from "./StatusTag";
 
 interface ThreadDetailProps {
 	missionId: string;
@@ -57,19 +59,22 @@ function isBlocked(statusNotes: string | null): boolean {
 	return (statusNotes ?? "").toLowerCase().startsWith("blocked:");
 }
 
-function resolveColumnBadgeTone(columnId: string, columnName?: string | null) {
+function resolveColumnBadgeTone(
+	columnId: string,
+	columnName?: string | null,
+): StatusTone {
 	const value = `${columnId} ${columnName ?? ""}`.toLowerCase();
 
 	if (value.includes("block")) {
-		return "tone-warning-soft";
+		return "warning";
 	}
 	if (value.includes("ongoing") || value.includes("doing")) {
-		return "tone-info-soft";
+		return "info";
 	}
 	if (value.includes("complete") || value.includes("done")) {
-		return "tone-success-soft";
+		return "success";
 	}
-	return "tone-neutral-soft";
+	return "neutral";
 }
 
 function ThreadSkeleton() {
@@ -458,15 +463,9 @@ export function ThreadDetail({
 						</div>
 					</div>
 					<div className="flex flex-wrap items-center gap-2">
-						<Badge
-							variant="outline"
-							className={cn(
-								"rounded-full px-2 py-0.5 text-[0.65rem] font-medium",
-								columnBadgeTone,
-							)}
-						>
+						<StatusTag tone={columnBadgeTone}>
 							{column?.name ?? task.columnId}
-						</Badge>
+						</StatusTag>
 						{isTaskBlocked ? (
 							<Badge
 								variant="destructive"
@@ -585,18 +584,14 @@ export function ThreadDetail({
 															to {mentionsLabel}
 														</span>
 													</div>
-													<span
-														className={cn(
-															"rounded-full border px-2 py-0.5 text-[0.6rem] font-medium",
-															hasPendingAck
-																? "tone-warning-soft"
-																: "tone-success-soft",
-														)}
+													<StatusTag
+														tone={hasPendingAck ? "warning" : "success"}
+														className="text-[0.6rem]"
 													>
 														{hasPendingAck
 															? `Awaiting ack: ${pendingAckLabels.join(", ")}`
 															: "Acknowledged"}
-													</span>
+													</StatusTag>
 												</div>
 												<div className="px-3 py-3">
 													<MarkdownBlock content={message.content} />

@@ -11,7 +11,9 @@ import {
 } from "@/components/ui/tooltip";
 import type { MissionIndexItem } from "@/core/schemas";
 import { getInitials } from "@/lib/format";
+import { missionStatusTone } from "@/lib/status-tones";
 import { cn } from "@/lib/utils";
+import { StatusTag } from "./StatusTag";
 
 interface MissionListProps {
 	missions: MissionIndexItem[];
@@ -19,17 +21,6 @@ interface MissionListProps {
 	loadingMissions: boolean;
 	sidebarCollapsed: boolean;
 	onDeleteMission?: (missionId: string) => void;
-}
-
-function getStatusBadgeClass(status: MissionIndexItem["status"]) {
-	switch (status) {
-		case "active":
-			return "border-primary/35 bg-primary/10 text-primary";
-		case "completed":
-			return "tone-success-soft";
-		default:
-			return "border-border/60 bg-muted/40 text-muted-foreground";
-	}
 }
 
 function MissionListSkeleton({
@@ -132,14 +123,12 @@ export function MissionList({
 										<span className="truncate pr-1 text-[0.75rem] font-medium leading-none">
 											{item.name}
 										</span>
-										<span
-											className={cn(
-												"inline-flex shrink-0 items-center rounded-full border px-1.5 py-0.5 text-[0.55rem] uppercase tracking-wide transition-opacity duration-150 group-hover:opacity-0",
-												getStatusBadgeClass(item.status),
-											)}
+										<StatusTag
+											tone={missionStatusTone[item.status]}
+											className="px-1.5 py-0.5 text-[0.55rem] uppercase tracking-wide transition-opacity duration-150 group-hover:opacity-0"
 										>
 											{item.status}
-										</span>
+										</StatusTag>
 									</div>
 								</div>
 							)}

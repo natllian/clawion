@@ -103,8 +103,8 @@ export function ThreadsList({
 								className={cn(
 									"inline-flex items-center rounded-full border px-1.5 py-0.5 font-medium",
 									thread.unackedMentionCount > 0
-										? "tone-warning-soft tone-warning-border"
-										: "tone-success-soft tone-success-border",
+										? "thread-ack-pending"
+										: "thread-ack-ok",
 								)}
 							>
 								{ackSummary}

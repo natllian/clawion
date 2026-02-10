@@ -188,6 +188,46 @@
 		color: color-mix(in oklch, var(--foreground) 78%, var(--chart-2) 22%);
 	}
 
+	.thread-ack-pending {
+		border-color: color-mix(in oklch, var(--chart-4) 42%, var(--border));
+		background-color: color-mix(
+			in oklch,
+			var(--chart-4) 14%,
+			var(--background)
+		);
+		color: color-mix(in oklch, var(--foreground) 82%, var(--chart-4) 18%);
+	}
+
+	.thread-ack-ok {
+		border-color: color-mix(in oklch, var(--chart-2) 40%, var(--border));
+		background-color: color-mix(
+			in oklch,
+			var(--chart-2) 13%,
+			var(--background)
+		);
+		color: color-mix(in oklch, var(--foreground) 82%, var(--chart-2) 18%);
+	}
+
+	.dark .thread-ack-pending {
+		border-color: color-mix(in oklch, var(--chart-4) 30%, var(--border));
+		background-color: color-mix(
+			in oklch,
+			var(--chart-4) 20%,
+			var(--background)
+		);
+		color: color-mix(in oklch, var(--foreground) 72%, var(--chart-4) 28%);
+	}
+
+	.dark .thread-ack-ok {
+		border-color: color-mix(in oklch, var(--chart-2) 32%, var(--border));
+		background-color: color-mix(
+			in oklch,
+			var(--chart-2) 18%,
+			var(--background)
+		);
+		color: color-mix(in oklch, var(--foreground) 74%, var(--chart-2) 26%);
+	}
+
 	.hover-bg-unified {
 		transition: background-color 180ms ease;
 	}
