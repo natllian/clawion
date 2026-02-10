@@ -568,9 +568,6 @@ export function Dashboard({
 											<Sparkles className="h-3.5 w-3.5" />
 											Task Board
 										</div>
-										<p className="mt-2 text-sm text-muted-foreground">
-											Dragless, CLI-driven. One column per status.
-										</p>
 									</div>
 									<div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
 										<span>{tasks?.tasks.length ?? 0} tasks</span>
