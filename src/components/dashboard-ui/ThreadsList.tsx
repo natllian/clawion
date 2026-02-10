@@ -98,17 +98,23 @@ export function ThreadsList({
 						<p className="mt-1 line-clamp-1 text-[0.65rem] text-muted-foreground">
 							by {lastAuthor} · {lastMessage}
 						</p>
-						<p
-							className={cn(
-								"mt-1 text-[0.62rem]",
-								thread.unackedMentionCount > 0
-									? "tone-warning-text"
-									: "tone-success-text",
-							)}
-						>
-							{ackSummary}
-							{pendingAckLabel ? ` · ${pendingAckLabel}` : ""}
-						</p>
+						<div className="mt-1 flex flex-wrap items-center gap-1 text-[0.62rem]">
+							<span
+								className={cn(
+									"inline-flex items-center rounded-full border px-1.5 py-0.5 font-medium",
+									thread.unackedMentionCount > 0
+										? "tone-warning-soft tone-warning-border"
+										: "tone-success-soft tone-success-border",
+								)}
+							>
+								{ackSummary}
+							</span>
+							{pendingAckLabel ? (
+								<span className="text-muted-foreground">
+									· {pendingAckLabel}
+								</span>
+							) : null}
+						</div>
 					</Link>
 				);
 			})}
