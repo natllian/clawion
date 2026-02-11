@@ -1,6 +1,6 @@
 ---
 name: clawion
-description: Multi-agent collaboration powered by OpenClaw cron jobs and the clawion CLI (wake-driven workflow).
+description: Multi-agent collaboration powered by OpenClaw cron jobs and the clawion CLI.
 ---
 
 # Clawion (runbook)
